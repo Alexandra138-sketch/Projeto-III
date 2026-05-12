@@ -17,8 +17,11 @@ export default function Navbar() {
       <div className="container">
         {/* Logo */}
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/" style={{ textDecoration: 'none' }}>
-          <FaShieldAlt style={{ color: '#9810fa', fontSize: '22px' }} />
-          <span className="fw-bold" style={{ fontSize: '15px', color: '#101828' }}>CyberBoxSecur</span>
+          <img
+            src="/img/logo.jpg"
+            alt="CyberBoxSecur"
+            style={{ height: '34px', width: 'auto', objectFit: 'contain' }}
+          />
         </Link>
 
         {/* Hamburger */}

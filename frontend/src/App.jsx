@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Login from './pages/auth/Login';
+import Inicio from './pages/public/Inicio';
+import Servicos from './pages/public/Servicos';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUtilizadores from './pages/admin/Utilizadores';
 import AdminDocumentos from './pages/admin/Documentos';
@@ -20,7 +22,9 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Inicio />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/servicos" element={<Servicos />} />
 
           <Route path="/admin" element={<ProtectedRoute perfil="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/utilizadores" element={<ProtectedRoute perfil="admin"><AdminUtilizadores /></ProtectedRoute>} />

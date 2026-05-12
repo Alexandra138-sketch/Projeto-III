@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaShieldAlt } from 'react-icons/fa';
+import '../App.css';
 
 const NAV_LINKS = [
   { label: 'Início', to: '/' },
@@ -60,17 +61,7 @@ export default function Navbar() {
             })}
           </ul>
 
-          <button
-            onClick={() => navigate('/login')}
-            className="btn text-white fw-semibold"
-            style={{
-              background: 'linear-gradient(90deg, #9810fa 0%, #155dfc 50%, #00b8db 100%)',
-              borderRadius: '16px',
-              padding: '8px 22px',
-              fontSize: '14px',
-              border: 'none',
-            }}
-          >
+          <button onClick={() => navigate('/login')} className="btn-gradient" style={{ padding: '8px 22px' }}>
             Entrar
           </button>
         </div>

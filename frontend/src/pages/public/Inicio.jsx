@@ -1,8 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaCrosshairs, FaShieldAlt, FaFileAlt, FaDesktop, FaChalkboardTeacher, FaCloud } from 'react-icons/fa';
 import { FiArrowRight } from 'react-icons/fi';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import '../../App.css';
 
 const PRIMARY_GRADIENT = 'linear-gradient(90deg, #9810fa 0%, #155dfc 50%, #00b8db 100%)';
 
@@ -85,18 +86,10 @@ export default function Inicio() {
             conformidade com as diretivas europeias de cibersegurança.
           </p>
           <div className="d-flex gap-3 justify-content-center flex-wrap">
-            <button
-              onClick={() => navigate('/servicos')}
-              className="btn text-white fw-semibold d-inline-flex align-items-center gap-2"
-              style={{ background: PRIMARY_GRADIENT, borderRadius: '16px', padding: '10px 22px', fontSize: '14px' }}
-            >
+            <button type="button" onClick={() => navigate('/servicos')} className="btn-gradient">
               Explorar Serviços <FiArrowRight />
             </button>
-            <button
-              onClick={() => navigate('/contacto')}
-              className="btn fw-semibold"
-              style={{ borderRadius: '16px', padding: '10px 22px', fontSize: '14px', border: '1.5px solid #d1d5db', color: '#0a0a0a', background: 'white' }}
-            >
+            <button type="button" onClick={() => navigate('/contacto')} className="btn-outline-custom">
               Agendar Serviços
             </button>
           </div>
@@ -130,20 +123,16 @@ export default function Inicio() {
                   </div>
                   <h5 className="fw-semibold mb-2" style={{ color: '#101828' }}>{s.titulo}</h5>
                   <p className="small mb-3" style={{ color: '#4a5565', lineHeight: 1.6 }}>{s.descricao}</p>
-                  <a href="/servicos" className="d-inline-flex align-items-center gap-1 text-decoration-none small fw-medium" style={{ color: '#9810fa' }}>
+                  <Link to="/servicos" className="d-inline-flex align-items-center gap-1 text-decoration-none small fw-medium" style={{ color: '#9810fa' }}>
                     Saber mais <FiArrowRight size={13} />
-                  </a>
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="mt-5">
-            <button
-              onClick={() => navigate('/servicos')}
-              className="btn"
-              style={{ borderRadius: '16px', padding: '10px 24px', fontSize: '14px', border: '1.6px solid #9810fa', color: '#9810fa', background: '#faf5ff' }}
-            >
+            <button onClick={() => navigate('/servicos')} className="btn-purple-outline">
               + Detalhes
             </button>
           </div>
@@ -171,11 +160,7 @@ export default function Inicio() {
           <p className="mx-auto mb-5" style={{ maxWidth: '560px', fontSize: '17px', color: 'rgba(0,0,0,0.65)', lineHeight: 1.7 }}>
             Agende uma demonstração gratuita e descubra como a nossa tecnologia pode proteger a sua empresa contra ameaças digitais.
           </p>
-          <button
-            onClick={() => navigate('/contacto')}
-            className="btn text-white fw-semibold d-inline-flex align-items-center gap-2"
-            style={{ background: PRIMARY_GRADIENT, borderRadius: '16px', padding: '10px 22px', fontSize: '14px' }}
-          >
+          <button onClick={() => navigate('/contacto')} className="btn-gradient">
             Agendar Serviços <FiArrowRight />
           </button>
         </div>

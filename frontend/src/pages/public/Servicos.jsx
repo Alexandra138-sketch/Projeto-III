@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import '../../App.css';
 import { FaCrosshairs, FaShieldAlt, FaFileAlt, FaDesktop, FaChalkboardTeacher, FaCloud } from 'react-icons/fa';
 import { FiArrowRight } from 'react-icons/fi';
 import Navbar from '../../components/Navbar';
@@ -104,12 +105,7 @@ export default function Servicos() {
           </div>
 
           <div className="text-center mt-5">
-            <button
-              className="btn"
-              style={{ borderRadius: '16px', padding: '10px 24px', fontSize: '14px', border: '1.6px solid #9810fa', color: '#9810fa', background: '#faf5ff' }}
-            >
-              + Detalhes
-            </button>
+            <button className="btn-purple-outline">+ Detalhes</button>
           </div>
         </div>
       </section>
@@ -133,11 +129,7 @@ export default function Servicos() {
           <p className="mx-auto mb-5" style={{ maxWidth: '560px', fontSize: '17px', color: 'rgba(0,0,0,0.65)', lineHeight: 1.7 }}>
             Agende uma demonstração gratuita e descubra como a nossa tecnologia pode proteger a sua empresa contra ameaças digitais.
           </p>
-          <button
-            onClick={() => navigate('/contacto')}
-            className="btn text-white fw-semibold d-inline-flex align-items-center gap-2"
-            style={{ background: PRIMARY_GRADIENT, borderRadius: '16px', padding: '10px 22px', fontSize: '14px' }}
-          >
+          <button onClick={() => navigate('/contacto')} className="btn-gradient">
             Agendar Serviços <FiArrowRight />
           </button>
         </div>

@@ -1,3 +1,61 @@
+/* ── Botões personalizados (sem conflito com Bootstrap) ── */
+.btn-gradient {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff !important;
+  background: linear-gradient(90deg, #9810fa 0%, #155dfc 50%, #00b8db 100%) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.btn-gradient:hover {
+  opacity: 0.88;
+  color: #fff !important;
+}
+
+.btn-outline-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0a0a0a !important;
+  background: #fff !important;
+  border: 1.5px solid #d1d5db !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-outline-custom:hover {
+  background: #f9fafb !important;
+}
+
+.btn-purple-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #9810fa !important;
+  background: #faf5ff !important;
+  border: 1.6px solid #9810fa !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-purple-outline:hover {
+  background: #f3e8ff !important;
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

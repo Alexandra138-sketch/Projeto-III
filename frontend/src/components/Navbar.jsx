@@ -13,17 +13,17 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <nav className="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+    <nav className="navbar navbar-expand-lg bg-white border-bottom sticky-top" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <div className="container">
         {/* Logo */}
-        <Link className="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark" to="/">
-          <FaShieldAlt style={{ color: '#7c3aed', fontSize: '22px' }} />
-          <span style={{ fontSize: '15px', color: '#1e1b4b' }}>CyberBoxSecur</span>
+        <Link className="navbar-brand d-flex align-items-center gap-2" to="/" style={{ textDecoration: 'none' }}>
+          <FaShieldAlt style={{ color: '#9810fa', fontSize: '22px' }} />
+          <span className="fw-bold" style={{ fontSize: '15px', color: '#101828' }}>CyberBoxSecur</span>
         </Link>
 
         {/* Hamburger */}
         <button
-          className="navbar-toggler"
+          className="navbar-toggler border-0"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#navMenu"
@@ -36,15 +36,19 @@ export default function Navbar() {
 
         {/* Links */}
         <div className="collapse navbar-collapse" id="navMenu">
-          <ul className="navbar-nav mx-auto gap-lg-2">
+          <ul className="navbar-nav mx-auto gap-lg-1">
             {NAV_LINKS.map(({ label, to }) => {
               const active = location.pathname === to;
               return (
                 <li className="nav-item" key={to}>
                   <Link
                     to={to}
-                    className={`nav-link fw-medium ${active ? 'fw-semibold' : 'text-secondary'}`}
-                    style={active ? { color: '#7c3aed' } : {}}
+                    className="nav-link px-3"
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: active ? '600' : '500',
+                      color: active ? '#9810fa' : '#4a5565',
+                    }}
                   >
                     {label}
                   </Link>
@@ -55,8 +59,14 @@ export default function Navbar() {
 
           <button
             onClick={() => navigate('/login')}
-            className="btn text-white fw-semibold rounded-pill px-4"
-            style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}
+            className="btn text-white fw-semibold"
+            style={{
+              background: 'linear-gradient(90deg, #9810fa 0%, #155dfc 50%, #00b8db 100%)',
+              borderRadius: '16px',
+              padding: '8px 22px',
+              fontSize: '14px',
+              border: 'none',
+            }}
           >
             Entrar
           </button>

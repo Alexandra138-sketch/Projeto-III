@@ -1,11 +1,11 @@
 import AdminLayout from '../../components/AdminLayout';
 
-function Incidentes() {
+function Conteudo() {
   return (
     <AdminLayout>
-      <h2>Incidentes</h2>
+      <h2>Conteúdo do Site</h2>
     </AdminLayout>
   );
 }
 
-export default Incidentes;
+export default Conteudo;

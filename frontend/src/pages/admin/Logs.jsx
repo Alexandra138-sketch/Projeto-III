@@ -1,11 +1,11 @@
 import AdminLayout from '../../components/AdminLayout';
 
-function Incidentes() {
+function Logs() {
   return (
     <AdminLayout>
-      <h2>Incidentes</h2>
+      <h2>Logs de Atividade</h2>
     </AdminLayout>
   );
 }
 
-export default Incidentes;
+export default Logs;

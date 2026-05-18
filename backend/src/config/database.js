@@ -9,6 +9,8 @@ const sequelize = new Sequelize("neondb", "neondb_owner", "npg_FExf5Idh4UCy", {
       require: true,
       rejectUnauthorized: false,
     },
+    clientMinMessages: "notice",
+    channelBinding: "require",
   },
 });
 

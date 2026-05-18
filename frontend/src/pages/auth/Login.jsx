@@ -4,10 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
 const DEMO_ACCOUNTS = [
-  { role: 'Administrador', email: 'admin@cyberboxsecur.pt' },
-  { role: 'Gestor', email: 'joao.silva@cyberboxsecur.pt' },
-  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt' },
+  { role: 'Administrador', email: 'admin@cyberboxsecur.pt',      perfil: 'admin',   nome: 'Admin Demo' },
+  { role: 'Gestor',        email: 'joao.silva@cyberboxsecur.pt', perfil: 'gestor',  nome: 'João Silva' },
+  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt',     perfil: 'empresa', nome: 'TechCorp' },
 ];
+
+const DEMO_PASSWORD = 'demo1234';
 
 function ShieldIcon() {
   return (
@@ -83,6 +85,18 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro('');
+
+    // Verificar se é uma conta demo
+    const demoUser = DEMO_ACCOUNTS.find(acc => acc.email === email);
+    if (demoUser && password === DEMO_PASSWORD) {
+      login({ nome: demoUser.nome, perfil: demoUser.perfil, email: demoUser.email }, 'demo-token');
+      if (demoUser.perfil === 'admin') navigate('/admin');
+      else if (demoUser.perfil === 'gestor') navigate('/gestor');
+      else navigate('/empresa');
+      return;
+    }
+
+    // Login real via API
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.utilizador, res.data.token);

@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaShieldAlt } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 import '../App.css';
 
 const NAV_LINKS = [
@@ -9,9 +10,22 @@ const NAV_LINKS = [
   { label: 'Contacto', to: '/contacto' },
 ];
 
+const PERFIL_LABELS = {
+  admin: 'Administrador',
+  gestor: 'Gestor',
+  empresa: 'Empresa',
+};
+
+const PERFIL_ROUTES = {
+  admin: '/admin',
+  gestor: '/gestor',
+  empresa: '/empresa',
+};
+
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { utilizador, logout } = useAuth();
 
   return (
     <nav className="navbar navbar-expand-lg bg-white border-bottom sticky-top" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -61,9 +75,28 @@ export default function Navbar() {
             })}
           </ul>
 
-          <button onClick={() => navigate('/login')} className="btn-gradient" style={{ padding: '8px 22px' }}>
-            Entrar
-          </button>
+          {utilizador ? (
+            <div className="d-flex align-items-center gap-2">
+              <button
+                onClick={() => navigate(PERFIL_ROUTES[utilizador.perfil] || '/login')}
+                className="btn-gradient"
+                style={{ padding: '8px 18px' }}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => { logout(); navigate('/'); }}
+                className="btn-outline-custom"
+                style={{ padding: '8px 16px', fontSize: '13px' }}
+              >
+                Sair
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => navigate('/login')} className="btn-gradient" style={{ padding: '8px 22px' }}>
+              Entrar
+            </button>
+          )}
         </div>
       </div>
     </nav>

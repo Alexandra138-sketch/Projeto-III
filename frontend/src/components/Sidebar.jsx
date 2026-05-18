@@ -1,5 +1,40 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  FiGrid, FiBarChart2, FiUsers, FiBriefcase, FiFileText,
+  FiAlertTriangle, FiActivity, FiGlobe, FiLogOut, FiShield,
+} from 'react-icons/fi';
+import './layout.css';
+
+const ADMIN_LINKS = [
+  { to: '/admin', label: 'Dashboard', icon: FiGrid, end: true },
+  { to: '/admin/analises', label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/admin/utilizadores', label: 'Utilizadores', icon: FiUsers },
+  { to: '/admin/clientes', label: 'Clientes', icon: FiBriefcase, badge: 1 },
+  { to: '/admin/documentos', label: 'Documentos', icon: FiFileText },
+  { to: '/admin/incidentes', label: 'Incidentes', icon: FiAlertTriangle },
+  { to: '/admin/logs', label: 'Logs de Atividade', icon: FiActivity },
+  { to: '/admin/conteudo', label: 'Conteúdo do Site', icon: FiGlobe },
+];
+
+const GESTOR_LINKS = [
+  { to: '/gestor', label: 'Dashboard', icon: FiGrid, end: true },
+  { to: '/gestor/clientes', label: 'Clientes', icon: FiBriefcase },
+  { to: '/gestor/documentos', label: 'Documentos', icon: FiFileText },
+  { to: '/gestor/incidentes', label: 'Incidentes', icon: FiAlertTriangle },
+];
+
+const EMPRESA_LINKS = [
+  { to: '/empresa', label: 'Dashboard', icon: FiGrid, end: true },
+  { to: '/empresa/documentos', label: 'Os Meus Documentos', icon: FiFileText },
+  { to: '/empresa/incidentes', label: 'Incidentes', icon: FiAlertTriangle },
+];
+
+const ROLE_LABELS = {
+  admin: 'Administrador',
+  gestor: 'Gestor',
+  empresa: 'Empresa',
+};
 
 function Sidebar() {
   const { utilizador, logout } = useAuth();
@@ -10,44 +45,44 @@ function Sidebar() {
     navigate('/login');
   };
 
-  const linksAdmin = [
-    { to: '/admin', label: 'Dashboard' },
-    { to: '/admin/utilizadores', label: 'Utilizadores' },
-    { to: '/admin/documentos', label: 'Documentos' },
-    { to: '/admin/incidentes', label: 'Incidentes' },
-  ];
+  const links =
+    utilizador?.perfil === 'admin' ? ADMIN_LINKS :
+    utilizador?.perfil === 'gestor' ? GESTOR_LINKS :
+    EMPRESA_LINKS;
 
-  const linksGestor = [
-    { to: '/gestor', label: 'Dashboard' },
-    { to: '/gestor/clientes', label: 'Clientes' },
-    { to: '/gestor/documentos', label: 'Documentos' },
-    { to: '/gestor/incidentes', label: 'Incidentes' },
-  ];
-
-  const linksEmpresa = [
-    { to: '/empresa', label: 'Dashboard' },
-    { to: '/empresa/documentos', label: 'Os Meus Documentos' },
-    { to: '/empresa/incidentes', label: 'Incidentes' },
-  ];
-
-  const links = utilizador?.perfil === 'admin' ? linksAdmin
-              : utilizador?.perfil === 'gestor' ? linksGestor
-              : linksEmpresa;
+  const roleLabel = ROLE_LABELS[utilizador?.perfil] || 'Utilizador';
+  const initial = utilizador?.nome?.[0]?.toUpperCase() || 'U';
 
   return (
-    <div style={{ width: '220px', minHeight: '100vh', background: '#0f172a', color: 'white', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '2rem', color: '#818cf8' }}>CyberBoxSecur</div>
-      <nav style={{ flex: 1 }}>
-        {links.map(l => (
-          <Link key={l.to} to={l.to} style={{ display: 'block', padding: '0.6rem 0.8rem', marginBottom: '0.3rem', color: '#cbd5e1', textDecoration: 'none', borderRadius: '6px' }}>
-            {l.label}
-          </Link>
+    <div className="admin-sidebar">
+      <a href="/" className="sidebar-brand">
+        <FiShield size={20} color="#3b82f6" />
+        CyberBoxSecur
+      </a>
+
+      <nav className="sidebar-nav">
+        {links.map(({ to, label, icon: Icon, badge, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+          >
+            <Icon size={18} />
+            <span>{label}</span>
+            {badge != null && <span className="sidebar-badge">{badge}</span>}
+          </NavLink>
         ))}
       </nav>
-      <div style={{ borderTop: '1px solid #1e293b', paddingTop: '1rem' }}>
-        <div style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>{utilizador?.nome}</div>
-        <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #475569', color: '#94a3b8', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer' }}>
-          Sair
+
+      <div className="sidebar-user">
+        <div className="user-avatar">{initial}</div>
+        <div className="user-info">
+          <p className="user-name">{utilizador?.nome || 'Utilizador'}</p>
+          <span className="user-role">{roleLabel}</span>
+        </div>
+        <button className="sidebar-logout" onClick={handleLogout} title="Sair">
+          <FiLogOut size={16} />
         </button>
       </div>
     </div>

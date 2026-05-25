@@ -7,6 +7,7 @@ import Inicio from './pages/public/Inicio';
 import Servicos from './pages/public/Servicos';
 import Noticias from './pages/public/Noticias';
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe';
+import Contacto from './pages/public/Contacto';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminAnalises from './pages/admin/Analises';
 import AdminUtilizadores from './pages/admin/Utilizadores';
@@ -33,6 +34,7 @@ function App() {
           <Route path="/servicos" element={<Servicos />} />
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/noticias/:articleId" element={<NoticiaDetalhe />} />
+          <Route path="/contacto" element={<Contacto />} />
 
           <Route path="/admin" element={<ProtectedRoute perfil="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/analises" element={<ProtectedRoute perfil="admin"><AdminAnalises /></ProtectedRoute>} />

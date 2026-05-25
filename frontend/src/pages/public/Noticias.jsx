@@ -71,7 +71,7 @@ export default function Noticias() {
       {/* ── HERO ── */}
       <section
         className="position-relative overflow-hidden text-center"
-        style={{ backgroundColor: '#faf5ff', padding: '120px 0 64px' }}
+        style={{ backgroundColor: '#faf5ff', padding: '54px 0 48px' }}
       >
         <div
           className="position-absolute rounded-circle"
@@ -82,7 +82,7 @@ export default function Noticias() {
             filter: 'blur(80px)', pointerEvents: 'none',
           }}
         />
-        <div className="container position-relative">
+        <div className="container position-relative text-center">
           <h1 className="fw-semibold mb-3" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', color: '#101828' }}>
             Notícias de{' '}
             <span style={{ background: 'linear-gradient(90deg, #9810fa 0%, #155dfc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>

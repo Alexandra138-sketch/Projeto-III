@@ -18,7 +18,7 @@ export default function NoticiaDetalhe() {
       <Navbar />
 
       {/* ── HERO ── */}
-      <section style={{ paddingTop: '120px' }}>
+      <section style={{ paddingTop: '48px' }}>
         <div className="container" style={{ maxWidth: '960px' }}>
 
           {/* Breadcrumb */}

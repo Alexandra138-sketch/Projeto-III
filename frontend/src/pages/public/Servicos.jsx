@@ -11,7 +11,7 @@ const SERVICOS = [
     iconBg: 'linear-gradient(135deg, #2b7fff 0%, #155dfc 100%)',
     titulo: 'Testes de Penetração (Pentesting)',
     descricao: 'Simulação de ataques reais para identificar vulnerabilidades na sua infraestrutura antes que os atacantes o façam.',
-    detalhes: 'Relatórios detalhados com CVSS scoring, exploração controlada e plano de remediação priorizado.',
+    detalhes: 'Realizamos pentests externos, internos, web, mobile e de engenharia social. Relatórios detalhados com CVSS scoring e planos de remediação.',
     nis2: true,
   },
   {
@@ -19,7 +19,7 @@ const SERVICOS = [
     iconBg: 'linear-gradient(135deg, #f6339a 0%, #e60076 100%)',
     titulo: 'Gestão de Incidentes NIS2',
     descricao: 'Resposta rápida a incidentes de segurança com notificação às autoridades dentro dos prazos NIS2 (24h/72h).',
-    detalhes: 'Equipa SOC disponível 24/7 com playbooks de resposta e coordenação com autoridades competentes.',
+    detalhes: 'SOC 24/7, triagem de incidentes, contenção, erradicação e recuperação. Relatórios para CNCS e ENISA.',
     nis2: true,
   },
   {
@@ -27,7 +27,7 @@ const SERVICOS = [
     iconBg: 'linear-gradient(135deg, #ad46ff 0%, #9810fa 100%)',
     titulo: 'Auditoria de Conformidade NIS2',
     descricao: 'Avaliação completa do estado de conformidade com a Diretiva NIS2 e elaboração de planos de ação.',
-    detalhes: 'Gap analysis, roadmap de implementação e suporte durante o processo de certificação.',
+    detalhes: 'Gap analysis, avaliação de riscos, políticas e procedimentos, formação de colaboradores.',
     nis2: true,
   },
   {
@@ -35,7 +35,7 @@ const SERVICOS = [
     iconBg: 'linear-gradient(135deg, #2b7fff 0%, #155dfc 100%)',
     titulo: 'SIEM & Monitorização Contínua',
     descricao: 'Monitorização contínua de eventos de segurança com correlação avançada de ameaças.',
-    detalhes: 'Dashboards em tempo real, alertas automatizados e relatórios de conformidade mensais.',
+    detalhes: 'Implementação e gestão de SIEM, threat hunting, detecção de anomalias e alertas em tempo real.',
     nis2: true,
   },
   {
@@ -43,7 +43,7 @@ const SERVICOS = [
     iconBg: 'linear-gradient(135deg, #00b8db 0%, #0092b8 100%)',
     titulo: 'Formação e Consciencialização',
     descricao: 'Programas de formação personalizados para aumentar a maturidade de segurança das suas equipas.',
-    detalhes: 'Simulações de phishing, workshops presenciais e e-learning adaptado ao perfil dos colaboradores.',
+    detalhes: 'Workshops, simulações de phishing, e-learning, certificações e exercícios de tabletop.',
     nis2: false,
   },
   {
@@ -51,7 +51,7 @@ const SERVICOS = [
     iconBg: 'linear-gradient(135deg, #ad46ff 0%, #9810fa 100%)',
     titulo: 'Segurança Cloud & DevSecOps',
     descricao: 'Proteção de ambientes cloud e integração de segurança no ciclo de desenvolvimento de software.',
-    detalhes: 'Revisão de arquiteturas cloud, pipelines CI/CD seguros e políticas de acesso baseadas em Zero Trust.',
+    detalhes: 'Avaliação de postura cloud (AWS, Azure, GCP), CSPM, SAST/DAST, segurança de containers e Kubernetes.',
     nis2: false,
   },
 ];

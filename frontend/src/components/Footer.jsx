@@ -29,8 +29,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-12 col-lg-4">
             <div className="d-flex align-items-center gap-2 mb-3">
-              <FaShieldAlt style={{ color: '#9810fa', fontSize: '20px' }} />
-              <span className="fw-bold text-white" style={{ fontSize: '15px' }}>CyberBoxSecur</span>
+              <img src="/img/logovariant2.png" alt="CyberBoxSecur Logo" style={{ width: '100px', height: 'auto' }} />
             </div>
             <p className="small mb-4" style={{ color: '#99a1af', lineHeight: 1.7, maxWidth: '232px' }}>
               Protegendo o seu negócio no mundo digital com soluções avançadas de cibersegurança.

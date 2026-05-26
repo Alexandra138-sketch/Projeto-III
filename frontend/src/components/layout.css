@@ -4,6 +4,7 @@
   display: flex;
   min-height: 100vh;
   background-color: #f1f5f9;
+  align-items: flex-start;
 }
 
 .admin-main {
@@ -24,12 +25,15 @@
 
 .admin-sidebar {
   width: 240px;
-  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   background-color: #040c22;
   border-right: 1px solid #1e40af;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .sidebar-brand {

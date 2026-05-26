@@ -33,7 +33,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/" style={{ textDecoration: 'none' }}>
           <img
-            src="/img/logo.jpg"
+            src="/img/logo.png"
             alt="CyberBoxSecur"
             style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
           />

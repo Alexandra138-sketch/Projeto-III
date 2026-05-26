@@ -57,7 +57,7 @@ function Sidebar() {
     <div className="admin-sidebar">
       <a href="/" className="sidebar-brand">
           <img
-            src="/img/logovariant2.png" alt="CyberBoxSecur" style={{ height: '50px', width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+            src="/img/logo2.png" alt="CyberBoxSecur" style={{ height: '50px', width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }}
           />
       </a>
 

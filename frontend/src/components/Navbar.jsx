@@ -35,7 +35,7 @@ export default function Navbar() {
           <img
             src="/img/logo.jpg"
             alt="CyberBoxSecur"
-            style={{ height: '34px', width: 'auto', objectFit: 'contain' }}
+            style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
           />
         </Link>
 

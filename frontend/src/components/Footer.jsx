@@ -23,7 +23,7 @@ const CONTACTO = [
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: '#0d0f14', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+    <footer style={{ backgroundColor: '#040c22', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <div className="container py-5">
         <div className="row g-5">
           {/* Brand */}

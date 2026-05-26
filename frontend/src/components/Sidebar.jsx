@@ -56,8 +56,9 @@ function Sidebar() {
   return (
     <div className="admin-sidebar">
       <a href="/" className="sidebar-brand">
-        <FiShield size={20} color="#3b82f6" />
-        CyberBoxSecur
+          <img
+            src="/img/logovariant2.png" alt="CyberBoxSecur" style={{ height: '50px', width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+          />
       </a>
 
       <nav className="sidebar-nav">

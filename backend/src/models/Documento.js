@@ -41,6 +41,7 @@ const Documento = sequelize.define('Documento', {
 }, {
   tableName: 'documentos',
   timestamps: true,
+  underscored: true,
 });
 
 module.exports = Documento;

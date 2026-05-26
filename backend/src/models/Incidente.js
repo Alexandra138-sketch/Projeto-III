@@ -41,6 +41,7 @@ const Incidente = sequelize.define('Incidente', {
 }, {
   tableName: 'incidentes',
   timestamps: true,
+  underscored: true,
 });
 
 module.exports = Incidente;

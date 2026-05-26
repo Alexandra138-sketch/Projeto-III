@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import {
   FiSearch, FiX, FiMail, FiPhone, FiUser,
   FiShield, FiFileText, FiAlertTriangle, FiPlus,
+  FiMessageCircle,
 } from 'react-icons/fi';
 
 /* ── Dados de demonstração ── */
@@ -68,7 +70,7 @@ const CLIENTES_INICIAIS = [
 
 /* ── Modal de detalhe ── */
 
-function ModalCliente({ cliente, onClose, onToggleAtivo }) {
+function ModalCliente({ cliente, onClose, onToggleAtivo, onChat }) {
   if (!cliente) return null;
 
   return (
@@ -172,18 +174,34 @@ function ModalCliente({ cliente, onClose, onToggleAtivo }) {
           <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
             Cliente desde {cliente.criadoEm}
           </span>
-          <button
-            onClick={() => onToggleAtivo(cliente.id)}
-            style={{
-              background: cliente.ativo ? '#fef2f2' : '#f0fdf4',
-              color: cliente.ativo ? '#dc2626' : '#16a34a',
-              border: `1px solid ${cliente.ativo ? '#fca5a5' : '#86efac'}`,
-              borderRadius: 8, padding: '5px 14px',
-              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            {cliente.ativo ? 'Desativar cliente' : 'Ativar cliente'}
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              onClick={() => onChat(cliente.id)}
+              style={{
+                background: '#eff6ff',
+                color: '#2563eb',
+                border: '1px solid #bfdbfe',
+                borderRadius: 8, padding: '5px 14px',
+                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <FiMessageCircle size={14} />
+              Chat
+            </button>
+            <button
+              onClick={() => onToggleAtivo(cliente.id)}
+              style={{
+                background: cliente.ativo ? '#fef2f2' : '#f0fdf4',
+                color: cliente.ativo ? '#dc2626' : '#16a34a',
+                border: `1px solid ${cliente.ativo ? '#fca5a5' : '#86efac'}`,
+                borderRadius: 8, padding: '5px 14px',
+                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              {cliente.ativo ? 'Desativar cliente' : 'Ativar cliente'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -193,6 +211,7 @@ function ModalCliente({ cliente, onClose, onToggleAtivo }) {
 /* ── Componente principal ── */
 
 function AdminClientes() {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState(CLIENTES_INICIAIS);
   const [pesquisa, setPesquisa] = useState('');
   const [filtroAtivo, setFiltroAtivo] = useState('todos');
@@ -378,6 +397,7 @@ function AdminClientes() {
         cliente={selecionado}
         onClose={() => setSelecionado(null)}
         onToggleAtivo={toggleAtivo}
+        onChat={(id) => navigate(`/admin/chat?cliente=${id}`)}
       />
 
     </AdminLayout>

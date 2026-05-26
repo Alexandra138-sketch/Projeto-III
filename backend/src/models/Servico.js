@@ -32,6 +32,7 @@ const Servico = sequelize.define('Servico', {
 }, {
   tableName: 'servicos',
   timestamps: true,
+  underscored: true,
 });
 
 module.exports = Servico;

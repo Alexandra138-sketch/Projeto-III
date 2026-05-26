@@ -31,6 +31,7 @@ const Cliente = sequelize.define('Cliente', {
 }, {
   tableName: 'clientes',
   timestamps: true,
+  underscored: true,
 });
 
 module.exports = Cliente;

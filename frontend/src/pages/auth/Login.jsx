@@ -113,8 +113,7 @@ function Login() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <ShieldIcon />
-          <span style={styles.brandName}>CyberBoxSecur</span>
+          <img src="../public/img/logovariantep3.png" alt="CyberBoxSecur" style={{ width: '150px', height: 'auto' }} />
           <p style={styles.tagline}>Área Reservada — Acesso Seguro</p>
         </div>
 

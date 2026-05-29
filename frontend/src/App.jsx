@@ -24,6 +24,10 @@ import EmpresaDashboard from './pages/empresa/Dashboard';
 import EmpresaDocumentos from './pages/empresa/Documentos';
 import EmpresaIncidentes from './pages/empresa/Incidentes';
 import Chat from './pages/Chat';
+import ClientePerfil from './pages/admin/ClientePerfil';
+
+// Dentro das rotas do admin:
+
 
 function App() {
   return (
@@ -46,7 +50,9 @@ function App() {
           <Route path="/admin/logs" element={<ProtectedRoute perfil="admin"><AdminLogs /></ProtectedRoute>} />
           <Route path="/admin/conteudo" element={<ProtectedRoute perfil="admin"><AdminConteudo /></ProtectedRoute>} />
           <Route path="/admin/chat" element={<ProtectedRoute perfil="admin"><Chat /></ProtectedRoute>} />
+          <Route path="/admin/clientes/:clienteId" element={<ClientePerfil />} />
 
+          
           <Route path="/gestor" element={<ProtectedRoute perfil="gestor"><GestorDashboard /></ProtectedRoute>} />
           <Route path="/gestor/clientes" element={<ProtectedRoute perfil="gestor"><GestorClientes /></ProtectedRoute>} />
           <Route path="/gestor/documentos" element={<ProtectedRoute perfil="gestor"><GestorDocumentos /></ProtectedRoute>} />

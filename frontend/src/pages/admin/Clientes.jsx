@@ -1,405 +1,115 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search, Users, Mail, Phone, FileText, Shield, AlertTriangle, MessageSquare, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
-import {
-  FiSearch, FiX, FiMail, FiPhone, FiUser,
-  FiShield, FiFileText, FiAlertTriangle, FiPlus,
-  FiMessageCircle,
-} from 'react-icons/fi';
 
-/* ── Dados de demonstração ── */
-
-const CLIENTES_INICIAIS = [
-  {
-    id: 1,
-    nome: 'Tech Corp Portugal',
-    email: 'seguranca@techcorp.pt',
-    telefone: '+351 215 000 100',
-    cor: '#3b82f6',
-    ativo: true,
-    criadoEm: '2024-01-15',
-    responsavelSeguranca: { nome: 'Carlos Mendes',  email: 'c.mendes@techcorp.pt',    telefone: '+351 916 000 004' },
-    contatoPermanente:    { nome: 'Sofia Lopes',    email: 's.lopes@techcorp.pt',      telefone: '+351 917 000 005' },
-    incidentes: 3,
-    documentos: 6,
-    pentests: 2,
-  },
-  {
-    id: 2,
-    nome: 'Retail Group SA',
-    email: 'it@retailgroup.pt',
-    telefone: '+351 218 000 200',
-    cor: '#8b5cf6',
-    ativo: true,
-    criadoEm: '2024-03-08',
-    responsavelSeguranca: { nome: 'Miguel Ferreira', email: 'm.ferreira@retailgroup.pt', telefone: '+351 918 000 006' },
-    contatoPermanente:    { nome: 'Inês Pereira',    email: 'i.pereira@retailgroup.pt',  telefone: '+351 919 000 007' },
-    incidentes: 2,
-    documentos: 4,
-    pentests: 1,
-  },
-  {
-    id: 3,
-    nome: 'FinBank Portugal',
-    email: 'ciso@finbank.pt',
-    telefone: '+351 213 000 300',
-    cor: '#10b981',
-    ativo: true,
-    criadoEm: '2024-05-20',
-    responsavelSeguranca: { nome: 'Ricardo Nunes',  email: 'r.nunes@finbank.pt',    telefone: '+351 920 000 008' },
-    contatoPermanente:    { nome: 'Beatriz Santos', email: 'b.santos@finbank.pt',   telefone: '+351 921 000 009' },
-    incidentes: 1,
-    documentos: 8,
-    pentests: 1,
-  },
-  {
-    id: 4,
-    nome: 'MediSafe Clinic',
-    email: 'admin@medisafe.pt',
-    telefone: '+351 222 000 400',
-    cor: '#f59e0b',
-    ativo: false,
-    criadoEm: '2024-07-01',
-    responsavelSeguranca: { nome: 'Ana Rodrigues', email: 'a.rodrigues@medisafe.pt', telefone: '+351 922 000 010' },
-    contatoPermanente:    { nome: 'Luís Faria',    email: 'l.faria@medisafe.pt',    telefone: '+351 923 000 011' },
-    incidentes: 1,
-    documentos: 3,
-    pentests: 1,
-  },
+const CLIENTES = [
+  { id: 'c1', nome: 'Tech Corp Portugal',  email: 'seguranca@techcorp.pt',  telefone: '+351 215 000 100', cor: '#3b82f6', ativo: true,  criadoEm: '2024-05-20', gestorResponsavel: 'João Silva', responsavelSeguranca: { nome: 'Carlos Mendes',   email: 'c.mendes@techcorp.pt',     telefone: '+351 916 000 004' }, contatoPermanente: { nome: 'Sofia Lopes',    email: 's.lopes@techcorp.pt',     telefone: '+351 917 000 005' }, documentos: 3, pentests: 2, incidentes: 3, mensagens: 4, incidentesAbertos: 1 },
+  { id: 'c2', nome: 'Retail Group SA',     email: 'it@retailgroup.pt',      telefone: '+351 218 000 200', cor: '#8b5cf6', ativo: true,  criadoEm: '2024-03-08', gestorResponsavel: 'Ana Costa',  responsavelSeguranca: { nome: 'Miguel Ferreira', email: 'm.ferreira@retailgroup.pt', telefone: '+351 918 000 006' }, contatoPermanente: { nome: 'Inês Pereira',  email: 'i.pereira@retailgroup.pt', telefone: '+351 919 000 007' }, documentos: 4, pentests: 1, incidentes: 2, mensagens: 2, incidentesAbertos: 1 },
+  { id: 'c3', nome: 'FinBank Portugal',    email: 'ciso@finbank.pt',        telefone: '+351 213 000 300', cor: '#10b981', ativo: true,  criadoEm: '2024-05-20', gestorResponsavel: 'João Silva', responsavelSeguranca: { nome: 'Ricardo Nunes',   email: 'r.nunes@finbank.pt',       telefone: '+351 920 000 008' }, contatoPermanente: { nome: 'Beatriz Santos', email: 'b.santos@finbank.pt',      telefone: '+351 921 000 009' }, documentos: 8, pentests: 1, incidentes: 1, mensagens: 0, incidentesAbertos: 0 },
+  { id: 'c4', nome: 'MediSafe Clinic',     email: 'admin@medisafe.pt',      telefone: '+351 222 000 400', cor: '#f59e0b', ativo: false, criadoEm: '2024-07-01', gestorResponsavel: 'Ana Costa',  responsavelSeguranca: { nome: 'Ana Rodrigues',   email: 'a.rodrigues@medisafe.pt',  telefone: '+351 922 000 010' }, contatoPermanente: { nome: 'Luís Faria',    email: 'l.faria@medisafe.pt',      telefone: '+351 923 000 011' }, documentos: 3, pentests: 1, incidentes: 1, mensagens: 5, incidentesAbertos: 0 },
 ];
-
-/* ── Modal de detalhe ── */
-
-function ModalCliente({ cliente, onClose, onToggleAtivo, onChat }) {
-  if (!cliente) return null;
-
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1050,
-        background: 'rgba(15, 23, 42, 0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="dash-card"
-        style={{ width: '100%', maxWidth: 560, margin: 0, maxHeight: '90vh', overflowY: 'auto' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabeçalho */}
-        <div className="d-flex justify-content-between align-items-start mb-3">
-          <div className="d-flex align-items-center gap-3">
-            <div
-              className="cliente-avatar"
-              style={{ width: 48, height: 48, fontSize: '1.1rem', backgroundColor: cliente.cor }}
-            >
-              {cliente.nome[0]}
-            </div>
-            <div>
-              <h5 className="mb-0">{cliente.nome}</h5>
-              <span className={cliente.ativo ? 'badge-ativo' : 'badge-inativo'}>
-                {cliente.ativo ? '● Ativo' : '○ Inativo'}
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}
-          >
-            <FiX size={20} />
-          </button>
-        </div>
-
-        {/* Contactos da empresa */}
-        <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem', marginBottom: '1rem' }}>
-          <p style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.6rem' }}>
-            Contactos da Empresa
-          </p>
-          <div className="d-flex align-items-center gap-2 mb-2">
-            <FiMail size={14} color="#94a3b8" />
-            <span style={{ fontSize: '0.875rem', color: '#1e293b' }}>{cliente.email}</span>
-          </div>
-          <div className="d-flex align-items-center gap-2">
-            <FiPhone size={14} color="#94a3b8" />
-            <span style={{ fontSize: '0.875rem', color: '#1e293b' }}>{cliente.telefone}</span>
-          </div>
-        </div>
-
-        {/* Responsável de Segurança + Contato Permanente */}
-        <div className="row g-2 mb-3">
-          {[
-            { titulo: 'Responsável de Segurança', dados: cliente.responsavelSeguranca, icon: FiShield },
-            { titulo: 'Contacto Permanente',      dados: cliente.contatoPermanente,    icon: FiUser  },
-          ].map(({ titulo, dados, icon: Icone }) => (
-            <div className="col-12 col-sm-6" key={titulo}>
-              <div style={{ background: '#f8fafc', borderRadius: 10, padding: '0.85rem' }}>
-                <div className="d-flex align-items-center gap-2 mb-2">
-                  <Icone size={13} color="#64748b" />
-                  <p style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>
-                    {titulo}
-                  </p>
-                </div>
-                <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b', marginBottom: 2 }}>{dados.nome}</p>
-                <p style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: 2 }}>{dados.email}</p>
-                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>{dados.telefone}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Estatísticas rápidas */}
-        <div className="row g-2 mb-3">
-          {[
-            { label: 'Incidentes', valor: cliente.incidentes, icon: FiAlertTriangle, cor: '#ef4444', bg: '#fef2f2' },
-            { label: 'Documentos', valor: cliente.documentos, icon: FiFileText,      cor: '#2563eb', bg: '#eff6ff' },
-            { label: 'Pentests',   valor: cliente.pentests,   icon: FiShield,        cor: '#7c3aed', bg: '#faf5ff' },
-          ].map(({ label, valor, icon: Icone, cor, bg }) => (
-            <div className="col-4" key={label}>
-              <div style={{ background: bg, borderRadius: 10, padding: '0.75rem', textAlign: 'center' }}>
-                <Icone size={16} color={cor} style={{ marginBottom: 4 }} />
-                <p style={{ fontSize: '1.2rem', fontWeight: 700, color: cor, margin: 0 }}>{valor}</p>
-                <p style={{ fontSize: '0.72rem', color: cor, margin: 0, fontWeight: 500 }}>{label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Rodapé */}
-        <div
-          className="d-flex justify-content-between align-items-center pt-2"
-          style={{ borderTop: '1px solid #f1f5f9' }}
-        >
-          <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-            Cliente desde {cliente.criadoEm}
-          </span>
-          <div className="d-flex gap-2">
-            <button
-              onClick={() => onChat(cliente.id)}
-              style={{
-                background: '#eff6ff',
-                color: '#2563eb',
-                border: '1px solid #bfdbfe',
-                borderRadius: 8, padding: '5px 14px',
-                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <FiMessageCircle size={14} />
-              Chat
-            </button>
-            <button
-              onClick={() => onToggleAtivo(cliente.id)}
-              style={{
-                background: cliente.ativo ? '#fef2f2' : '#f0fdf4',
-                color: cliente.ativo ? '#dc2626' : '#16a34a',
-                border: `1px solid ${cliente.ativo ? '#fca5a5' : '#86efac'}`,
-                borderRadius: 8, padding: '5px 14px',
-                fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              {cliente.ativo ? 'Desativar cliente' : 'Ativar cliente'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Componente principal ── */
 
 function AdminClientes() {
   const navigate = useNavigate();
-  const [clientes, setClientes] = useState(CLIENTES_INICIAIS);
-  const [pesquisa, setPesquisa] = useState('');
-  const [filtroAtivo, setFiltroAtivo] = useState('todos');
-  const [selecionado, setSelecionado] = useState(null);
+  const [pesquisa, setPesquisa]     = useState('');
+  const [filtroAtivo, setFiltroAtivo] = useState('all');
 
-  /* Contadores banner */
-  const totalAtivos   = clientes.filter((c) => c.ativo).length;
-  const totalInativos = clientes.filter((c) => !c.ativo).length;
-  const totalInc      = clientes.reduce((s, c) => s + c.incidentes, 0);
-  const totalDocs     = clientes.reduce((s, c) => s + c.documentos, 0);
-
-  /* Filtragem */
-  const filtrados = clientes.filter((c) => {
-    const matchPesquisa =
-      c.nome.toLowerCase().includes(pesquisa.toLowerCase()) ||
-      c.email.toLowerCase().includes(pesquisa.toLowerCase());
-    const matchAtivo =
-      filtroAtivo === 'todos' ||
-      (filtroAtivo === 'ativo' && c.ativo) ||
-      (filtroAtivo === 'inativo' && !c.ativo);
-    return matchPesquisa && matchAtivo;
+  const filtrados = CLIENTES.filter((c) => {
+    const matchP = c.nome.toLowerCase().includes(pesquisa.toLowerCase()) || c.email.toLowerCase().includes(pesquisa.toLowerCase());
+    const matchA = filtroAtivo === 'all' || (filtroAtivo === 'active' && c.ativo) || (filtroAtivo === 'inactive' && !c.ativo);
+    return matchP && matchA;
   });
-
-  /* Toggle ativo/inativo */
-  const toggleAtivo = (id) => {
-    setClientes((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ativo: !c.ativo } : c))
-    );
-    setSelecionado((prev) =>
-      prev?.id === id ? { ...prev, ativo: !prev.ativo } : prev
-    );
-  };
 
   return (
     <AdminLayout>
+      {/* Cabeçalho */}
+      <div className="clientes-header">
+        <div>
+          <h4 className="clientes-titulo">Gestão de Clientes</h4>
+          <p className="clientes-subtitulo">{CLIENTES.filter((c) => c.ativo).length} clientes ativos · {CLIENTES.filter((c) => !c.ativo).length} inativos</p>
+        </div>
+        <div className="clientes-total-badge">
+          <Users size={16} />
+          {CLIENTES.length} no total
+        </div>
+      </div>
 
-      {/* ── Banner de resumo ── */}
-      <div className="dash-banner">
-        <h4>Gestão de Clientes</h4>
-        <p>Visualize e gira todos os clientes da plataforma CyberBoxSecur.</p>
-        <div className="row g-3">
-          {[
-            { numero: totalAtivos,   label: 'Clientes Ativos'   },
-            { numero: totalInativos, label: 'Clientes Inativos' },
-            { numero: totalInc,      label: 'Total Incidentes'  },
-            { numero: totalDocs,     label: 'Total Documentos'  },
-          ].map((s) => (
-            <div className="col-6 col-md-3" key={s.label}>
-              <div className="stat-card">
-                <div className="stat-number">{s.numero}</div>
-                <div className="stat-label">{s.label}</div>
-              </div>
-            </div>
+      {/* Filtros */}
+      <div className="d-flex flex-wrap gap-3 mb-4 align-items-center">
+        <div className="pesquisa-wrapper" style={{ flex: 1, minWidth: 220 }}>
+          <Search size={15} />
+          <input placeholder="Pesquisar por nome ou e-mail..." value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} />
+        </div>
+        <div className="filtro-tabs">
+          {[{ k: 'all', l: 'Todos' }, { k: 'active', l: 'Ativos' }, { k: 'inactive', l: 'Inativos' }].map((opt) => (
+            <button key={opt.k} className={`filtro-tab ${filtroAtivo === opt.k ? 'ativo' : 'inativo-tab'}`} onClick={() => setFiltroAtivo(opt.k)}>
+              {opt.l}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* ── Filtros ── */}
-      <div className="dash-card" style={{ padding: '1rem 1.25rem', marginBottom: '1rem' }}>
-        <div className="row g-2 align-items-center">
-
-          {/* Pesquisa */}
-          <div className="col-12 col-md-6">
-            <div style={{ position: 'relative' }}>
-              <FiSearch
-                size={15}
-                style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}
-              />
-              <input
-                type="text"
-                placeholder="Pesquisar por nome ou e-mail…"
-                value={pesquisa}
-                onChange={(e) => setPesquisa(e.target.value)}
-                style={{
-                  width: '100%', padding: '0.5rem 0.75rem 0.5rem 2.1rem',
-                  borderRadius: 8, border: '1px solid #e2e8f0',
-                  fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Filtro estado */}
-          <div className="col-6 col-md-3">
-            <select
-              value={filtroAtivo}
-              onChange={(e) => setFiltroAtivo(e.target.value)}
-              style={{
-                width: '100%', padding: '0.5rem 0.6rem', borderRadius: 8,
-                border: '1px solid #e2e8f0', fontSize: '0.85rem',
-                outline: 'none', color: '#1e293b', background: 'white',
-              }}
-            >
-              <option value="todos">Estado: Todos</option>
-              <option value="ativo">Ativos</option>
-              <option value="inativo">Inativos</option>
-            </select>
-          </div>
-
-          {/* Contador */}
-          <div className="col-6 col-md-3 text-md-end">
-            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-              {filtrados.length} cliente{filtrados.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
+      {/* Lista */}
+      {filtrados.length === 0 ? (
+        <div className="dash-card" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+          Nenhum cliente corresponde aos critérios de pesquisa.
         </div>
-      </div>
+      ) : filtrados.map((c) => (
+        <button key={c.id} className="cliente-card" onClick={() => navigate(`/admin/clientes/${c.id}`)}>
+          <div className="d-flex align-items-start gap-3">
+            {/* Avatar */}
+            <div className="cliente-avatar" style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: c.ativo ? c.cor : '#94a3b8' }}>
+              {c.nome.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
 
-      {/* ── Cards de clientes ── */}
-      <div className="row g-3">
-        {filtrados.map((c) => (
-          <div className="col-12 col-md-6" key={c.id}>
-            <div
-              className="dash-card"
-              style={{ marginBottom: 0, cursor: 'pointer', transition: 'box-shadow 0.2s' }}
-              onClick={() => setSelecionado(c)}
-              onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.09)')}
-              onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}
-            >
-              {/* Cabeçalho do card */}
-              <div className="d-flex justify-content-between align-items-start mb-3">
-                <div className="d-flex align-items-center gap-3">
-                  <div
-                    className="cliente-avatar"
-                    style={{ width: 44, height: 44, fontSize: '1rem', backgroundColor: c.cor }}
-                  >
-                    {c.nome[0]}
-                  </div>
-                  <div>
-                    <p className="cliente-nome" style={{ fontSize: '0.95rem' }}>{c.nome}</p>
-                    <p className="cliente-email">{c.email}</p>
-                  </div>
-                </div>
-                <span className={c.ativo ? 'badge-ativo' : 'badge-inativo'}>
-                  {c.ativo ? '● Ativo' : '○ Inativo'}
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <p className="cliente-nome">{c.nome}</p>
+                <span className="badge-pill" style={{ background: c.ativo ? '#dcfce7' : '#f1f5f9', color: c.ativo ? '#16a34a' : '#94a3b8' }}>
+                  {c.ativo ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                  {c.ativo ? 'Ativo' : 'Inativo'}
                 </span>
+                {c.incidentesAbertos > 0 && (
+                  <span className="badge-pill" style={{ background: '#fee2e2', color: '#dc2626' }}>
+                    <AlertTriangle size={10} /> {c.incidentesAbertos} incidente{c.incidentesAbertos > 1 ? 's' : ''}
+                  </span>
+                )}
               </div>
-
-              {/* Responsável de segurança */}
-              <div
-                style={{
-                  background: '#f8fafc', borderRadius: 8,
-                  padding: '0.6rem 0.85rem', marginBottom: '0.85rem',
-                }}
-              >
-                <p style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, marginBottom: 2 }}>
-                  Responsável de Segurança
-                </p>
-                <p style={{ fontSize: '0.875rem', color: '#1e293b', fontWeight: 500, margin: 0 }}>
-                  {c.responsavelSeguranca.nome}
-                </p>
+              <div className="d-flex flex-wrap gap-3 mb-2">
+                <span className="perfil-meta"><Mail size={12} /> {c.email}</span>
+                <span className="perfil-meta"><Phone size={12} /> {c.telefone}</span>
               </div>
-
-              {/* Métricas rápidas */}
-              <div className="d-flex gap-3">
+              <div className="d-flex flex-wrap gap-4">
                 {[
-                  { label: 'Incidentes', valor: c.incidentes },
-                  { label: 'Documentos', valor: c.documentos },
-                  { label: 'Pentests',   valor: c.pentests   },
-                ].map(({ label, valor }) => (
-                  <div key={label} style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>{valor}</p>
-                    <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0 }}>{label}</p>
-                  </div>
+                  { Icone: FileText,      cor: '#3b82f6', val: c.documentos, label: 'documentos' },
+                  { Icone: Shield,        cor: '#8b5cf6', val: c.pentests,   label: 'pentests'   },
+                  { Icone: AlertTriangle, cor: '#f97316', val: c.incidentes, label: 'incidentes' },
+                  { Icone: MessageSquare, cor: '#22c55e', val: c.mensagens,  label: 'mensagens'  },
+                ].map(({ Icone, cor, val, label }) => (
+                  <span key={label} className="cliente-metrica">
+                    <Icone size={13} color={cor} />
+                    <strong>{val}</strong> {label}
+                  </span>
                 ))}
               </div>
             </div>
-          </div>
-        ))}
 
-        {filtrados.length === 0 && (
-          <div className="col-12">
-            <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
-              Nenhum cliente encontrado com os filtros selecionados.
+            {/* Contacto + seta */}
+            <div className="d-none d-lg-flex flex-column align-items-end gap-1" style={{ flexShrink: 0, minWidth: 180 }}>
+              {c.gestorResponsavel && (
+                <div className="text-end">
+                  <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Gestor responsável</p>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2563eb', margin: 0 }}>{c.gestorResponsavel}</p>
+                </div>
+              )}
+              <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Desde {c.criadoEm}</p>
             </div>
+            <ChevronRight size={18} color="#d1d5db" style={{ flexShrink: 0, marginTop: 2 }} />
           </div>
-        )}
-      </div>
-
-      {/* ── Modal de detalhe ── */}
-      <ModalCliente
-        cliente={selecionado}
-        onClose={() => setSelecionado(null)}
-        onToggleAtivo={toggleAtivo}
-        onChat={(id) => navigate(`/admin/chat?cliente=${id}`)}
-      />
-
+        </button>
+      ))}
     </AdminLayout>
   );
 }

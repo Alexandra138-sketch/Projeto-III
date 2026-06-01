@@ -628,14 +628,14 @@
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 0.5rem;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
   border-top: 1px solid #f1f5f9;
 }
 
@@ -660,6 +660,8 @@
   color: #1e293b;
   background: white;
   font-family: inherit;
+  appearance: auto;
+  -webkit-appearance: auto;
 }
 
 .form-input:focus,
@@ -670,6 +672,7 @@
 
 .form-textarea {
   resize: vertical;
+  min-height: 100px;
 }
 
 .nis2-checkbox {
@@ -1256,17 +1259,20 @@
 
 .chat-input-row {
   display: flex;
+  flex-direction: row;
   align-items: flex-end;
   gap: 10px;
   margin-bottom: 6px;
+  width: 100%;
 }
 
 .chat-input-box {
   flex: 1;
+  min-width: 0;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
   border-radius: 14px;
-  padding: 0.65rem 1rem;
+  padding: 0.75rem 1rem;
   transition: border-color 0.15s;
 }
 
@@ -1280,11 +1286,13 @@
   border: none;
   outline: none;
   resize: none;
+  overflow: hidden;
   font-size: 0.875rem;
   color: #1e293b;
   font-family: inherit;
   line-height: 1.5;
   display: block;
+  box-sizing: border-box;
 }
 
 .chat-send-btn {
@@ -1297,6 +1305,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  align-self: flex-end;
   transition: background 0.15s, opacity 0.15s;
   cursor: pointer;
 }

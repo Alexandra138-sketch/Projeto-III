@@ -3,26 +3,23 @@ import { useAuth } from '../context/AuthContext';
 import {
   FiGrid, FiBarChart2, FiUsers, FiBriefcase, FiFileText,
   FiAlertTriangle, FiActivity, FiGlobe, FiLogOut, FiShield,
-  FiMessageCircle,
 } from 'react-icons/fi';
 import './layout.css';
 
 const ADMIN_LINKS = [
-  { to: '/admin',            label: 'Dashboard',         icon: FiGrid,          end: true },
-  { to: '/admin/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
-  { to: '/admin/utilizadores', label: 'Utilizadores',    icon: FiUsers },
-  { to: '/admin/clientes',   label: 'Clientes',          icon: FiBriefcase },
-  { to: '/admin/chat',       label: 'Mensagens',         icon: FiMessageCircle },
-  { to: '/admin/documentos', label: 'Documentos',        icon: FiFileText },
-  { to: '/admin/incidentes', label: 'Incidentes',        icon: FiAlertTriangle },
-  { to: '/admin/logs',       label: 'Logs de Atividade', icon: FiActivity },
-  { to: '/admin/conteudo',   label: 'Conteúdo do Site',  icon: FiGlobe },
+  { to: '/admin',              label: 'Dashboard',           icon: FiGrid,          end: true },
+  { to: '/admin/analises',     label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/admin/utilizadores', label: 'Utilizadores',        icon: FiUsers },
+  { to: '/admin/clientes',     label: 'Clientes',            icon: FiBriefcase },
+  { to: '/admin/documentos',   label: 'Documentos',          icon: FiFileText },
+  { to: '/admin/incidentes',   label: 'Incidentes',          icon: FiAlertTriangle },
+  { to: '/admin/logs',         label: 'Logs de Atividade',   icon: FiActivity },
+  { to: '/admin/conteudo',     label: 'Conteúdo do Site',    icon: FiGlobe },
 ];
 
 const GESTOR_LINKS = [
   { to: '/gestor',            label: 'Dashboard',  icon: FiGrid,          end: true },
   { to: '/gestor/clientes',   label: 'Clientes',   icon: FiBriefcase },
-  { to: '/gestor/chat',       label: 'Mensagens',  icon: FiMessageCircle },
   { to: '/gestor/documentos', label: 'Documentos', icon: FiFileText },
   { to: '/gestor/incidentes', label: 'Incidentes', icon: FiAlertTriangle },
 ];

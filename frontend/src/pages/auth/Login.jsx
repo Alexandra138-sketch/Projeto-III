@@ -4,13 +4,15 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import styles from './Login.styles';
 
+/* Contas de demonstração — apenas para pré-preencher o formulário,
+   o login real é sempre feito contra a API/BD */
 const DEMO_ACCOUNTS = [
-  { role: 'Administrador', email: 'admin@cyberboxsecur.pt',      perfil: 'admin',   nome: 'Admin Demo' },
-  { role: 'Gestor',        email: 'joao.silva@cyberboxsecur.pt', perfil: 'gestor',  nome: 'João Silva' },
-  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt',     perfil: 'empresa', nome: 'TechCorp' },
+  { role: 'Administrador',   email: 'admin@cyberboxsecur.pt',      perfil: 'admin'   },
+  { role: 'Gestor',          email: 'joao.silva@cyberboxsecur.pt', perfil: 'gestor'  },
+  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt',       perfil: 'empresa' },
 ];
 
-const DEMO_PASSWORD = 'demo1234';
+const DEMO_PASSWORD = 'Admin@1234'; // password padrão do seed.js
 
 
 function MailIcon() {
@@ -68,17 +70,7 @@ function Login() {
     e.preventDefault();
     setErro('');
 
-    // Verificar se é uma conta demo
-    const demoUser = DEMO_ACCOUNTS.find(acc => acc.email === email);
-    if (demoUser && password === DEMO_PASSWORD) {
-      login({ nome: demoUser.nome, perfil: demoUser.perfil, email: demoUser.email }, 'demo-token');
-      if (demoUser.perfil === 'admin') navigate('/admin');
-      else if (demoUser.perfil === 'gestor') navigate('/gestor');
-      else navigate('/empresa');
-      return;
-    }
-
-    // Login real via API
+    // Login sempre via API real (BD)
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.utilizador, res.data.token);
@@ -87,7 +79,14 @@ function Login() {
       else if (perfil === 'gestor') navigate('/gestor');
       else navigate('/empresa');
     } catch (err) {
-      setErro('Email ou password incorretos');
+      const msg = err.response?.data?.erro;
+      if (msg === 'Utilizador não encontrado') {
+        setErro('Email não encontrado. Verifique o endereço.');
+      } else if (msg === 'Password incorreta') {
+        setErro('Password incorreta. Tente novamente.');
+      } else {
+        setErro('Não foi possível ligar ao servidor. Verifique se o backend está a correr.');
+      }
     }
   };
 
@@ -152,7 +151,7 @@ function Login() {
               <button
                 key={acc.email}
                 type="button"
-                onClick={() => { setEmail(acc.email); setPassword('demo1234'); }}
+                onClick={() => { setEmail(acc.email); setPassword(DEMO_PASSWORD); setErro(''); }}
                 style={styles.demoRow}
               >
                 <CircleUserIcon />

@@ -23,10 +23,7 @@ import GestorIncidentes from './pages/gestor/Incidentes';
 import EmpresaDashboard from './pages/empresa/Dashboard';
 import EmpresaDocumentos from './pages/empresa/Documentos';
 import EmpresaIncidentes from './pages/empresa/Incidentes';
-import Chat from './pages/Chat';
 import ClientePerfil from './pages/admin/ClientePerfil';
-
-// Dentro das rotas do admin:
 
 
 function App() {
@@ -49,7 +46,6 @@ function App() {
           <Route path="/admin/incidentes" element={<ProtectedRoute perfil="admin"><AdminIncidentes /></ProtectedRoute>} />
           <Route path="/admin/logs" element={<ProtectedRoute perfil="admin"><AdminLogs /></ProtectedRoute>} />
           <Route path="/admin/conteudo" element={<ProtectedRoute perfil="admin"><AdminConteudo /></ProtectedRoute>} />
-          <Route path="/admin/chat" element={<ProtectedRoute perfil="admin"><Chat /></ProtectedRoute>} />
           <Route path="/admin/clientes/:clienteId" element={<ClientePerfil />} />
 
           
@@ -57,7 +53,6 @@ function App() {
           <Route path="/gestor/clientes" element={<ProtectedRoute perfil="gestor"><GestorClientes /></ProtectedRoute>} />
           <Route path="/gestor/documentos" element={<ProtectedRoute perfil="gestor"><GestorDocumentos /></ProtectedRoute>} />
           <Route path="/gestor/incidentes" element={<ProtectedRoute perfil="gestor"><GestorIncidentes /></ProtectedRoute>} />
-          <Route path="/gestor/chat" element={<ProtectedRoute perfil="gestor"><Chat /></ProtectedRoute>} />
 
           <Route path="/empresa" element={<ProtectedRoute perfil="empresa"><EmpresaDashboard /></ProtectedRoute>} />
           <Route path="/empresa/documentos" element={<ProtectedRoute perfil="empresa"><EmpresaDocumentos /></ProtectedRoute>} />

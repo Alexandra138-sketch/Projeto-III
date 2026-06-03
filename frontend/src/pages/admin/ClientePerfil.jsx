@@ -11,7 +11,7 @@ import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
 import './ClientePerfil.css';
 
-const SOCKET_URL = 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /* Mapeamento de IDs de demonstração para IDs inteiros reais na BD */
 const DEMO_TO_DB_ID = { c1: 1, c2: 2, c3: 3, c4: 4 };

@@ -10,7 +10,7 @@ import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
 import '../admin/ClientePerfil.css';
 
-const SOCKET_URL = 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const CORES = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#ec4899'];
 function getCor(id) { return CORES[(parseInt(id, 10) - 1) % CORES.length]; }

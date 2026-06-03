@@ -4,10 +4,16 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import styles from './Login.styles';
 
+/* Contas de demonstração — apenas para pré-preencher o formulário,
+   o login real é sempre feito contra a API/BD */
 const DEMO_ACCOUNTS = [
-  { role: 'Administrador',   email: 'admin@cyberboxsecur.pt',      password: 'demo1234'  },
-  { role: 'Gestor',          email: 'joao.silva@cyberboxsecur.pt', password: 'demo1234' },
+  { role: 'Administrador',   email: 'admin@cyberboxsecur.pt',      perfil: 'admin'   },
+  { role: 'Gestor',          email: 'joao.silva@cyberboxsecur.pt', perfil: 'gestor'  },
+  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt',       perfil: 'empresa' },
 ];
+
+const DEMO_PASSWORD = 'Admin@1234'; // password padrão do seed.js
+
 
 function MailIcon() {
   return (
@@ -53,37 +59,35 @@ function CircleUserIcon() {
 }
 
 function Login() {
-  const [email, setEmail]               = useState('');
-  const [password, setPassword]         = useState('');
-  const [erro, setErro]                 = useState('');
-  const [loading, setLoading]           = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [erro, setErro] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     setErro('');
-    setLoading(true);
+
+    // Login sempre via API real (BD)
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.utilizador, res.data.token);
       const perfil = res.data.utilizador.perfil;
-      if (perfil === 'admin')        navigate('/admin');
-      else if (perfil === 'gestor')  navigate('/gestor');
-      else                           navigate('/empresa');
+      if (perfil === 'admin') navigate('/admin');
+      else if (perfil === 'gestor') navigate('/gestor');
+      else navigate('/empresa');
     } catch (err) {
-      const msg = err.response?.data?.erro || 'Email ou password incorretos';
-      setErro(msg);
-    } finally {
-      setLoading(false);
+      const msg = err.response?.data?.erro;
+      if (msg === 'Utilizador não encontrado') {
+        setErro('Email não encontrado. Verifique o endereço.');
+      } else if (msg === 'Password incorreta') {
+        setErro('Password incorreta. Tente novamente.');
+      } else {
+        setErro('Não foi possível ligar ao servidor. Verifique se o backend está a correr.');
+      }
     }
-  };
-
-  const preencherDemo = (acc) => {
-    setEmail(acc.email);
-    setPassword(acc.password);
-    setErro('');
   };
 
   return (
@@ -138,18 +142,16 @@ function Login() {
 
             {erro && <p style={styles.erro}>{erro}</p>}
 
-            <button type="submit" disabled={loading} style={{ ...styles.submitBtn, opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'A entrar…' : 'Entrar'}
-            </button>
+            <button type="submit" style={styles.submitBtn}>Entrar</button>
           </form>
 
           <div style={styles.demoSection}>
-            <p style={styles.demoLabel}>Acesso rápido (clica para preencher):</p>
+            <p style={styles.demoLabel}>Contas de demonstração:</p>
             {DEMO_ACCOUNTS.map(acc => (
               <button
                 key={acc.email}
                 type="button"
-                onClick={() => preencherDemo(acc)}
+                onClick={() => { setEmail(acc.email); setPassword(DEMO_PASSWORD); setErro(''); }}
                 style={styles.demoRow}
               >
                 <CircleUserIcon />
@@ -167,3 +169,4 @@ function Login() {
 }
 
 export default Login;
+

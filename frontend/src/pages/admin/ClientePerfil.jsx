@@ -5,15 +5,22 @@ import {
   MessageSquare, Download, CheckCircle, Send, Calendar, Tag,
   Clock, TrendingUp, ToggleLeft, ToggleRight, XCircle,
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
+import api from '../../api/axios';
+import './ClientePerfil.css';
 
-const CLIENTES_DB = [
-  { id: 'c1', nome: 'Tech Corp Portugal', email: 'seguranca@techcorp.pt', telefone: '+351 215 000 100', cor: '#3b82f6', ativo: true, criadoEm: '2024-05-20', gestorResponsavel: 'João Silva', responsavelSeguranca: { nome: 'Carlos Mendes', email: 'c.mendes@techcorp.pt', telefone: '+351 916 000 004' }, contatoPermanente: { nome: 'Sofia Lopes', email: 's.lopes@techcorp.pt', telefone: '+351 917 000 005' } },
-  { id: 'c2', nome: 'Retail Group SA', email: 'it@retailgroup.pt', telefone: '+351 218 000 200', cor: '#8b5cf6', ativo: true, criadoEm: '2024-03-08', gestorResponsavel: 'Ana Costa', responsavelSeguranca: { nome: 'Miguel Ferreira', email: 'm.ferreira@retailgroup.pt', telefone: '+351 918 000 006' }, contatoPermanente: { nome: 'Inês Pereira', email: 'i.pereira@retailgroup.pt', telefone: '+351 919 000 007' } },
-  { id: 'c3', nome: 'FinBank Portugal', email: 'ciso@finbank.pt', telefone: '+351 213 000 300', cor: '#10b981', ativo: true, criadoEm: '2024-05-20', gestorResponsavel: 'João Silva', responsavelSeguranca: { nome: 'Ricardo Nunes', email: 'r.nunes@finbank.pt', telefone: '+351 920 000 008' }, contatoPermanente: { nome: 'Beatriz Santos', email: 'b.santos@finbank.pt', telefone: '+351 921 000 009' } },
-  { id: 'c4', nome: 'MediSafe Clinic', email: 'admin@medisafe.pt', telefone: '+351 222 000 400', cor: '#f59e0b', ativo: false, criadoEm: '2024-07-01', gestorResponsavel: 'Ana Costa', responsavelSeguranca: { nome: 'Ana Rodrigues', email: 'a.rodrigues@medisafe.pt', telefone: '+351 922 000 010' }, contatoPermanente: { nome: 'Luís Faria', email: 'l.faria@medisafe.pt', telefone: '+351 923 000 011' } },
-];
+const SOCKET_URL = 'http://localhost:3000';
+
+/* Mapeamento de IDs de demonstração para IDs inteiros reais na BD */
+const DEMO_TO_DB_ID = { c1: 1, c2: 2, c3: 3, c4: 4 };
+
+/* Cor gerada a partir do ID do cliente */
+const CORES_PERFIL = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#ec4899'];
+function getCor(id) {
+  return CORES_PERFIL[(parseInt(id, 10) - 1) % CORES_PERFIL.length];
+}
 
 const DOCUMENTOS_DB = {
   c1: [
@@ -89,49 +96,190 @@ function ClientePerfil() {
   const navigate = useNavigate();
   const { utilizador } = useAuth();
 
-  const [clientes, setClientes] = useState(CLIENTES_DB);
-  const [mensagens, setMensagens] = useState(MENSAGENS_INICIAIS);
-  const [abaAtiva, setAbaAtiva] = useState('resumo');
+  /* ID inteiro real na BD (c1→1, c2→2, …) */
+  const dbClienteId = DEMO_TO_DB_ID[clienteId] ?? parseInt(clienteId, 10);
+
+  const [cliente, setCliente]           = useState(null);
+  const [clienteCarregando, setClienteCarregando] = useState(true);
+  const [msgs, setMsgs]                 = useState([]);
+  const [abaAtiva, setAbaAtiva]         = useState('resumo');
   const [novaMensagem, setNovaMensagem] = useState('');
   const [confirmarEstado, setConfirmarEstado] = useState(false);
-  const mensagensEndRef = useRef(null);
+  const [temMais, setTemMais]           = useState(true);
+  const [carregando, setCarregando]     = useState(false);
+  const [modoDemo, setModoDemo]         = useState(false);
 
-  const cliente = clientes.find((c) => c.id === clienteId);
-  const docs = DOCUMENTOS_DB[clienteId] || [];
-  const pentests = PENTESTS_DB[clienteId] || [];
-  const incidentes = INCIDENTES_DB[clienteId] || [];
-  const msgs = mensagens[clienteId] || [];
+  const mensagensEndRef       = useRef(null);
+  const mensagensContainerRef = useRef(null);
+  const socketRef             = useRef(null);
+  const carregandoRef         = useRef(false);
 
-  const totalFindings = pentests.reduce((s, p) => s + p.findings, 0);
-  const incAbertos = incidentes.filter((i) => i.estado === 'open' || i.estado === 'investigating').length;
+  /* Dados auxiliares (ainda em demo — ligar à BD em iteração futura) */
+  const docs       = DOCUMENTOS_DB[`c${dbClienteId}`] || [];
+  const pentests   = PENTESTS_DB[`c${dbClienteId}`]   || [];
+  const incidentes = INCIDENTES_DB[`c${dbClienteId}`] || [];
+
+  /* ── Buscar cliente da BD ── */
+  useEffect(() => {
+    setClienteCarregando(true);
+    api.get(`/clientes/${dbClienteId}`)
+      .then(({ data }) => setCliente(data))
+      .catch(() => setCliente(null))
+      .finally(() => setClienteCarregando(false));
+  }, [dbClienteId]);
+
+  const totalFindings  = pentests.reduce((s, p) => s + p.findings, 0);
+  const incAbertos     = incidentes.filter((i) => i.estado === 'open' || i.estado === 'investigating').length;
   const pentestsAtivos = pentests.filter((p) => p.estado === 'in_progress').length;
-  const docsAtivos = docs.filter((d) => d.estado === 'active').length;
+  const docsAtivos     = docs.filter((d) => d.estado === 'active').length;
 
+  /* ── Socket.IO ── */
+  useEffect(() => {
+    const socket = io(SOCKET_URL, {
+      auth: { token: localStorage.getItem('token') },
+    });
+    socketRef.current = socket;
+
+    socket.on('nova_mensagem', (msg) => {
+      if (String(msg.cliente_id) === String(dbClienteId)) {
+        setMsgs((prev) => [...prev, msg]);
+        setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
+    });
+
+    return () => socket.disconnect();
+  }, [dbClienteId]); // eslint-disable-line
+
+  /* ── Entrar/sair da sala ao mudar de aba ── */
   useEffect(() => {
     if (abaAtiva === 'comunicacao') {
-      setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      socketRef.current?.emit('entrar_chat', dbClienteId);
+      setMsgs([]);
+      setTemMais(true);
+      setModoDemo(false);
+      carregarMensagens(true);
+    } else {
+      socketRef.current?.emit('sair_chat', dbClienteId);
     }
-  }, [abaAtiva, msgs.length]);
+  }, [abaAtiva, dbClienteId]); // eslint-disable-line
 
-  const handleEnviarMensagem = () => {
+  /* ── Carregar mensagens (paginadas) ── */
+  const carregarMensagens = async (inicial = false, antes = null) => {
+    if (carregandoRef.current) return;
+    carregandoRef.current = true;
+    setCarregando(true);
+
+    try {
+      const params = { limite: 20 };
+      if (antes) params.antes = antes;
+      const { data } = await api.get(`/chat/${dbClienteId}`, { params });
+
+      if (data.length < 20) setTemMais(false);
+
+      if (inicial) {
+        setMsgs(data);
+        setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      } else {
+        const container = mensagensContainerRef.current;
+        const prevH = container?.scrollHeight || 0;
+        setMsgs((prev) => [...data, ...prev]);
+        setTimeout(() => {
+          if (container) container.scrollTop = container.scrollHeight - prevH;
+        }, 50);
+      }
+    } catch {
+      if (inicial) {
+        /* fallback demo */
+        const demoRaw = MENSAGENS_INICIAIS[clienteId] || [];
+        setMsgs(demoRaw.map((m) => ({
+          id: m.id,
+          conteudo: m.conteudo,
+          remetente_id: m.isMe ? (utilizador?.id ?? 1) : 99,
+          cliente_id: dbClienteId,
+          criado_em: m.timestamp,
+          remetente: { nome: m.remetente },
+        })));
+        setTemMais(false);
+        setModoDemo(true);
+        setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
+    } finally {
+      carregandoRef.current = false;
+      setCarregando(false);
+    }
+  };
+
+  /* ── Infinite scroll (carregar mensagens anteriores) ── */
+  const handleMsgScroll = () => {
+    const container = mensagensContainerRef.current;
+    if (!container || !temMais || carregandoRef.current) return;
+    if (container.scrollTop < 80) {
+      const primeira = msgs[0];
+      if (primeira?.id) carregarMensagens(false, primeira.id);
+    }
+  };
+
+  /* ── Enviar mensagem ── */
+  const handleEnviarMensagem = async () => {
     if (!novaMensagem.trim()) return;
-    setMensagens((prev) => ({
-      ...prev,
-      [clienteId]: [...(prev[clienteId] || []), {
-        id: `m${Date.now()}`,
-        remetente: utilizador?.nome || 'Admin',
-        isMe: true,
-        conteudo: novaMensagem.trim(),
-        timestamp: new Date().toISOString(),
-      }],
-    }));
+    const conteudo = novaMensagem.trim();
     setNovaMensagem('');
+
+    if (modoDemo) {
+      setMsgs((prev) => [...prev, {
+        id: `demo_${Date.now()}`,
+        conteudo,
+        remetente_id: utilizador?.id ?? 1,
+        cliente_id: dbClienteId,
+        criado_em: new Date().toISOString(),
+        remetente: { nome: utilizador?.nome || 'Admin' },
+      }]);
+      setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      return;
+    }
+
+    /* optimistic update */
+    const tmpId = `tmp_${Date.now()}`;
+    setMsgs((prev) => [...prev, {
+      id: tmpId,
+      conteudo,
+      remetente_id: utilizador?.id,
+      cliente_id: dbClienteId,
+      criado_em: new Date().toISOString(),
+      remetente: { nome: utilizador?.nome },
+      _temp: true,
+    }]);
+    setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+
+    try {
+      await api.post(`/chat/${dbClienteId}`, { conteudo });
+      setMsgs((prev) => prev.filter((m) => m.id !== tmpId));
+    } catch {
+      /* manter mensagem temporária em caso de erro */
+    }
   };
 
-  const handleToggleAtivo = () => {
-    setClientes((prev) => prev.map((c) => c.id === clienteId ? { ...c, ativo: !c.ativo } : c));
+  const handleToggleAtivo = async () => {
+    const novoEstado = cliente?.estado === 'Ativo' ? 'Inativo' : 'Ativo';
     setConfirmarEstado(false);
+    try {
+      const { data } = await api.put(`/clientes/update/${dbClienteId}`, { estado: novoEstado });
+      setCliente((prev) => ({ ...prev, estado: data.estado }));
+    } catch {
+      /* fallback local se a API falhar */
+      setCliente((prev) => ({ ...prev, estado: novoEstado }));
+    }
   };
+
+  if (clienteCarregando) {
+    return (
+      <AdminLayout>
+        <div className="text-center py-5 text-muted">
+          <p>A carregar cliente…</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!cliente) {
     return (
@@ -146,6 +294,15 @@ function ClientePerfil() {
     );
   }
 
+  /* Campos calculados a partir dos dados da BD */
+  const ativo    = cliente.estado === 'Ativo';
+  const cor      = getCor(cliente.id);
+  const criadoEm = cliente.created_at
+    ? new Date(cliente.created_at).toLocaleDateString('pt-PT')
+    : '—';
+  const respSeg  = cliente.responsavel_seguranca || null;
+  const contPerm = cliente.contato_permanente    || null;
+
   const abas = [
     { id: 'resumo', label: 'Resumo', Icone: FileText, count: null },
     { id: 'documentos', label: 'Documentos', Icone: FileText, count: docs.length },
@@ -155,10 +312,10 @@ function ClientePerfil() {
   ];
 
   const resumoVals = {
-    docs: docs.length,
+    docs:     docs.length,
     findings: totalFindings,
-    inc: incidentes.length,
-    msgs: msgs.length,
+    inc:      incidentes.length,
+    msgs:     msgs.length,
   };
 
   return (
@@ -168,12 +325,12 @@ function ClientePerfil() {
         <div className="modal-overlay" onClick={() => setConfirmarEstado(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h5>{cliente.ativo ? 'Desativar cliente?' : 'Ativar cliente?'}</h5>
+              <h5>{ativo ? 'Desativar cliente?' : 'Ativar cliente?'}</h5>
               <button className="modal-close" onClick={() => setConfirmarEstado(false)}>×</button>
             </div>
             <div className="modal-body">
               <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>
-                {cliente.ativo
+                {ativo
                   ? `"${cliente.nome}" ficará inativo e o acesso será suspenso.`
                   : `"${cliente.nome}" voltará a ter acesso ativo à plataforma.`}
               </p>
@@ -182,10 +339,10 @@ function ClientePerfil() {
               <button className="btn-cancelar" onClick={() => setConfirmarEstado(false)}>Cancelar</button>
               <button
                 className="btn-guardar"
-                style={{ background: cliente.ativo ? '#ef4444' : '#16a34a' }}
+                style={{ background: ativo ? '#ef4444' : '#16a34a' }}
                 onClick={handleToggleAtivo}
               >
-                {cliente.ativo ? 'Desativar' : 'Ativar'}
+                {ativo ? 'Desativar' : 'Ativar'}
               </button>
             </div>
           </div>
@@ -200,7 +357,7 @@ function ClientePerfil() {
         <div className="d-flex align-items-start gap-3 flex-wrap">
           <div
             className="perfil-avatar"
-            style={{ backgroundColor: cliente.ativo ? cliente.cor : '#94a3b8' }}
+            style={{ backgroundColor: ativo ? cor : '#94a3b8' }}
           >
             {cliente.nome.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
           </div>
@@ -208,23 +365,23 @@ function ClientePerfil() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
               <h4 className="perfil-nome">{cliente.nome}</h4>
-              <Pill bg={cliente.ativo ? '#dcfce7' : '#f1f5f9'} cor={cliente.ativo ? '#16a34a' : '#94a3b8'}>
-                {cliente.ativo ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                {' '}{cliente.ativo ? 'Cliente ativo' : 'Inativo'}
+              <Pill bg={ativo ? '#dcfce7' : '#f1f5f9'} cor={ativo ? '#16a34a' : '#94a3b8'}>
+                {ativo ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                {' '}{ativo ? 'Cliente ativo' : 'Inativo'}
               </Pill>
               <button
-                className={`btn-toggle-estado ${cliente.ativo ? 'desativar' : 'ativar'}`}
+                className={`btn-toggle-estado ${ativo ? 'desativar' : 'ativar'}`}
                 onClick={() => setConfirmarEstado(true)}
               >
-                {cliente.ativo ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
-                {cliente.ativo ? 'Desativar' : 'Ativar'}
+                {ativo ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
+                {ativo ? 'Desativar' : 'Ativar'}
               </button>
             </div>
 
             <div className="d-flex flex-wrap gap-3 mb-3">
               <span className="perfil-meta"><Mail size={12} /> {cliente.email}</span>
-              <span className="perfil-meta"><Phone size={12} /> {cliente.telefone}</span>
-              <span className="perfil-meta"><Calendar size={12} /> Cliente desde {cliente.criadoEm}</span>
+              {cliente.telefone && <span className="perfil-meta"><Phone size={12} /> {cliente.telefone}</span>}
+              <span className="perfil-meta"><Calendar size={12} /> Cliente desde {criadoEm}</span>
             </div>
 
             <div className="d-flex align-items-start flex-wrap gap-3">
@@ -246,26 +403,32 @@ function ClientePerfil() {
               <div className="perfil-divisor" />
 
               <div className="d-flex flex-wrap gap-2">
-                <div className="contacto-box contacto-box-seguranca">
-                  <div className="contacto-icon contacto-icon-seguranca">
-                    <Shield size={13} color="#2563eb" />
+                {/* Gestor responsável (vem da BD) */}
+                {cliente.gestor && (
+                  <div className="contacto-box contacto-box-seguranca">
+                    <div className="contacto-icon contacto-icon-seguranca">
+                      <Shield size={13} color="#2563eb" />
+                    </div>
+                    <div>
+                      <p className="contacto-titulo">Gestor Responsável</p>
+                      <p className="contacto-nome">{cliente.gestor?.nome || cliente.gestor_nome}</p>
+                      <p className="contacto-detalhe">{cliente.gestor?.email || '—'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="contacto-titulo">Resp. Segurança</p>
-                    <p className="contacto-nome">{cliente.responsavelSeguranca.nome}</p>
-                    <p className="contacto-detalhe">{cliente.responsavelSeguranca.email} · {cliente.responsavelSeguranca.telefone}</p>
+                )}
+                {/* Resp. de Segurança — campo extra (quando existir na BD) */}
+                {respSeg && (
+                  <div className="contacto-box contacto-box-permanente">
+                    <div className="contacto-icon contacto-icon-permanente">
+                      <User size={13} color="#16a34a" />
+                    </div>
+                    <div>
+                      <p className="contacto-titulo">Resp. Segurança</p>
+                      <p className="contacto-nome">{respSeg.nome}</p>
+                      <p className="contacto-detalhe">{respSeg.email} · {respSeg.telefone}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="contacto-box contacto-box-permanente">
-                  <div className="contacto-icon contacto-icon-permanente">
-                    <User size={13} color="#16a34a" />
-                  </div>
-                  <div>
-                    <p className="contacto-titulo">Contacto Permanente</p>
-                    <p className="contacto-nome">{cliente.contatoPermanente.nome}</p>
-                    <p className="contacto-detalhe">{cliente.contatoPermanente.email} · {cliente.contatoPermanente.telefone}</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -487,58 +650,79 @@ function ClientePerfil() {
           )}
 
           {abaAtiva === 'comunicacao' && (
-            <div className="chat-wrapper">
-              <div className="chat-mensagens">
-                {msgs.length === 0 ? (
-                  <div className="chat-vazio">
-                    <MessageSquare size={40} color="#e2e8f0" className="mb-3" />
+            <div className="cp-chat-wrapper">
+              <div
+                className="cp-chat-mensagens"
+                ref={mensagensContainerRef}
+                onScroll={handleMsgScroll}
+              >
+                {carregando && (
+                  <p className="cp-chat-carregando">A carregar mensagens anteriores…</p>
+                )}
+                {!temMais && msgs.length > 0 && (
+                  <p className="cp-chat-inicio">― Início da conversa ―</p>
+                )}
+                {msgs.length === 0 && !carregando ? (
+                  <div className="cp-chat-vazio">
+                    <MessageSquare size={40} color="#e2e8f0" />
                     <p>Ainda não há mensagens com este cliente.</p>
-                    <p>Inicie a conversa abaixo.</p>
+                    <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Inicie a conversa abaixo.</p>
                   </div>
-                ) : msgs.map((msg) => (
-                  <div key={msg.id} className={`mensagem-row ${msg.isMe ? 'minha' : ''}`}>
-                    <div className="mensagem-avatar" style={{ background: msg.isMe ? '#2563eb' : '#94a3b8' }}>
-                      {msg.remetente.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className={`mensagem-bubble-wrapper ${msg.isMe ? 'minha' : ''}`}>
-                      <div className={`mensagem-bubble ${msg.isMe ? 'minha' : 'deles'}`}>
-                        {msg.conteudo}
+                ) : msgs.map((msg) => {
+                  const euEnviei = String(msg.remetente_id) === String(utilizador?.id);
+                  const nomeRem  = msg.remetente?.nome || 'Desconhecido';
+                  const iniciais = nomeRem.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+                  const hora     = new Date(msg.criado_em || msg.createdAt || Date.now())
+                    .toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+                  return (
+                    <div key={msg.id} className={`cp-mensagem-row${euEnviei ? ' minha' : ''}`}>
+                      {!euEnviei && (
+                        <div className="cp-mensagem-avatar">{iniciais}</div>
+                      )}
+                      <div className={`cp-mensagem-body${euEnviei ? ' minha' : ''}`}>
+                        <div className={`cp-mensagem-bubble${euEnviei ? ' minha' : ''}${msg._temp ? ' temp' : ''}`}>
+                          {msg.conteudo}
+                        </div>
+                        <div className={`cp-mensagem-meta${euEnviei ? ' minha' : ''}`}>
+                          {!euEnviei && <span>{nomeRem} · </span>}
+                          <span>{hora}</span>
+                          {euEnviei && !msg._temp && <span> ✓</span>}
+                        </div>
                       </div>
-                      <div className={`mensagem-info ${msg.isMe ? 'mensagem-info-right' : ''}`}>
-                        <span>{msg.remetente}</span>
-                        <span>·</span>
-                        <span>{timeAgo(msg.timestamp)}</span>
-                      </div>
+                      {euEnviei && (
+                        <div className="cp-mensagem-avatar eu">
+                          {(utilizador?.nome || 'A').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={mensagensEndRef} />
               </div>
-              <div className="chat-input-area">
-                <div className="chat-input-row">
-                  <div className="chat-input-box">
-                    <textarea
-                      rows={2}
-                      value={novaMensagem}
-                      onChange={(e) => setNovaMensagem(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleEnviarMensagem();
-                        }
-                      }}
-                      placeholder="Escreva uma mensagem para o cliente..."
-                    />
-                  </div>
-                  <button
-                    className={`chat-send-btn ${novaMensagem.trim() ? 'ativo' : 'inativo'}`}
-                    onClick={handleEnviarMensagem}
-                    disabled={!novaMensagem.trim()}
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
-                <p className="chat-hint">Enter para enviar · Shift+Enter para nova linha</p>
+
+              <div className="cp-chat-input-area">
+                <textarea
+                  className="cp-chat-input"
+                  rows={1}
+                  value={novaMensagem}
+                  onChange={(e) => setNovaMensagem(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleEnviarMensagem();
+                    }
+                  }}
+                  placeholder="Escreva uma mensagem para o cliente…"
+                />
+                <button
+                  className={`cp-chat-enviar${novaMensagem.trim() ? ' ativo' : ''}`}
+                  onClick={handleEnviarMensagem}
+                  disabled={!novaMensagem.trim()}
+                >
+                  <Send size={16} />
+                </button>
+                <span className="cp-chat-hint">Enter para enviar · Shift+Enter para nova linha</span>
               </div>
             </div>
           )}

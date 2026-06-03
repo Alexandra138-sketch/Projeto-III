@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import {
   FiSearch, FiX, FiMail, FiPhone, FiUser,
   FiShield, FiFileText, FiAlertTriangle,
-  FiMessageCircle,
 } from 'react-icons/fi';
 
 /* ── Dados de demonstração ── */
@@ -53,7 +51,7 @@ const CLIENTES_INICIAIS = [
 
 /* ── Modal de detalhe ── */
 
-function ModalCliente({ cliente, onClose, onChat }) {
+function ModalCliente({ cliente, onClose }) {
   if (!cliente) return null;
 
   return (
@@ -156,20 +154,6 @@ function ModalCliente({ cliente, onClose, onChat }) {
           <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
             Cliente desde {cliente.criadoEm}
           </span>
-          <button
-            onClick={() => onChat(cliente.id)}
-            style={{
-              background: '#eff6ff',
-              color: '#2563eb',
-              border: '1px solid #bfdbfe',
-              borderRadius: 8, padding: '6px 16px',
-              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            <FiMessageCircle size={14} />
-            Abrir Chat
-          </button>
         </div>
       </div>
     </div>
@@ -179,7 +163,6 @@ function ModalCliente({ cliente, onClose, onChat }) {
 /* ── Componente principal ── */
 
 function GestorClientes() {
-  const navigate = useNavigate();
   const [clientes]      = useState(CLIENTES_INICIAIS);
   const [pesquisa, setPesquisa]       = useState('');
   const [selecionado, setSelecionado] = useState(null);
@@ -283,19 +266,6 @@ function GestorClientes() {
                     </div>
                   ))}
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); navigate(`/gestor/chat?cliente=${c.id}`); }}
-                  style={{
-                    background: '#eff6ff', color: '#2563eb',
-                    border: '1px solid #bfdbfe', borderRadius: 8,
-                    padding: '5px 13px', fontSize: '0.78rem',
-                    fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                  }}
-                >
-                  <FiMessageCircle size={13} />
-                  Chat
-                </button>
               </div>
             </div>
           </div>
@@ -313,7 +283,6 @@ function GestorClientes() {
       <ModalCliente
         cliente={selecionado}
         onClose={() => setSelecionado(null)}
-        onChat={(id) => navigate(`/gestor/chat?cliente=${id}`)}
       />
 
     </AdminLayout>

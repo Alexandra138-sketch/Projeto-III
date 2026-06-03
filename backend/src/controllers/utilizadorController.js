@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { Utilizador } = require('../models');
+const { Utilizador, Cliente } = require('../models');
 
 const utilizador_list = async (req, res) => {
   try {
@@ -37,7 +37,21 @@ const utilizador_create = async (req, res) => {
     if (existe) return res.status(400).json({ erro: 'Já existe um utilizador com este e-mail.' });
 
     const hash = await bcrypt.hash(password, 10);
-    const novo = await Utilizador.create({ nome, email, password: hash, telefone, perfil: perfil || 'empresa' });
+    const perfilFinal = perfil || 'empresa';
+    const novo = await Utilizador.create({ nome, email, password: hash, telefone, perfil: perfilFinal });
+
+    /* Se for empresa, criar também o registo de cliente e ligar os dois */
+    if (perfilFinal === 'empresa') {
+      const cliente = await Cliente.create({
+        nome,
+        email,
+        telefone: telefone || null,
+        estado: 'Ativo',
+        utilizador_id: novo.id,
+      });
+      /* Guardar o id do cliente no utilizador (se a coluna existir) — ignorar erro caso não exista */
+      try { await novo.update({ cliente_id: cliente.id }); } catch (_) {}
+    }
 
     res.status(201).json({
       id: novo.id,

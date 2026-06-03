@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import {
   FiPlus, FiSearch, FiEye, FiEdit2, FiToggleLeft, FiToggleRight,
-  FiX, FiCheck, FiUser, FiMail, FiPhone, FiShield,
+  FiX, FiCheck, FiUser, FiMail, FiPhone, FiShield, FiInfo,
 } from 'react-icons/fi';
 
 /* ── helpers ── */
@@ -249,11 +249,25 @@ function FormModal({ utilizador, onClose, onSaved }) {
               background: '#f8fafc', outline: 'none',
             }}
           >
-            <option value="admin">Admin</option>
+            <option value="admin">Administrador</option>
             <option value="gestor">Gestor</option>
-            <option value="empresa">Empresa</option>
+            <option value="empresa">Empresa / Cliente</option>
           </select>
         </label>
+
+        {/* aviso quando perfil = empresa */}
+        {form.perfil === 'empresa' && !isEdit && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            padding: '0.65rem 0.9rem', borderRadius: 8,
+            background: '#eff6ff', border: '1px solid #bfdbfe',
+          }}>
+            <FiInfo size={14} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }} />
+            <p style={{ margin: 0, fontSize: 12, color: '#1d4ed8', lineHeight: 1.5 }}>
+              Será criada automaticamente uma <strong>empresa cliente</strong> com o nome, email e telefone indicados. O utilizador poderá entrar na área de empresa.
+            </p>
+          </div>
+        )}
 
         {/* password gerada automaticamente — só ao criar */}
         {!isEdit && (

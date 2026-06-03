@@ -18,6 +18,7 @@ import AdminLogs from './pages/admin/Logs';
 import AdminConteudo from './pages/admin/Conteudo';
 import GestorDashboard from './pages/gestor/Dashboard';
 import GestorClientes from './pages/gestor/Clientes';
+import GestorClientePerfil from './pages/gestor/ClientePerfil';
 import GestorDocumentos from './pages/gestor/Documentos';
 import GestorIncidentes from './pages/gestor/Incidentes';
 import EmpresaDashboard from './pages/empresa/Dashboard';
@@ -51,6 +52,7 @@ function App() {
           
           <Route path="/gestor" element={<ProtectedRoute perfil="gestor"><GestorDashboard /></ProtectedRoute>} />
           <Route path="/gestor/clientes" element={<ProtectedRoute perfil="gestor"><GestorClientes /></ProtectedRoute>} />
+          <Route path="/gestor/clientes/:clienteId" element={<ProtectedRoute perfil="gestor"><GestorClientePerfil /></ProtectedRoute>} />
           <Route path="/gestor/documentos" element={<ProtectedRoute perfil="gestor"><GestorDocumentos /></ProtectedRoute>} />
           <Route path="/gestor/incidentes" element={<ProtectedRoute perfil="gestor"><GestorIncidentes /></ProtectedRoute>} />
 

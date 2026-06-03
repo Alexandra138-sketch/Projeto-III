@@ -3,6 +3,12 @@ const sequelize = require('../config/database');
 
 const cliente_list = async (req, res) => {
   try {
+    /* Se for gestor, mostrar apenas os seus clientes atribuídos */
+    const isGestor = req.utilizador?.perfil === 'gestor';
+    const whereClause = isGestor
+      ? `WHERE c.gestor_id = ${parseInt(req.utilizador.id, 10)}`
+      : '';
+
     const [clientes] = await sequelize.query(`
       SELECT
         c.id,
@@ -39,6 +45,7 @@ const cliente_list = async (req, res) => {
         FROM mensagens
         GROUP BY cliente_id
       ) msg ON msg.cliente_id = c.id
+      ${whereClause}
       ORDER BY c.nome
     `);
     res.json(clientes);

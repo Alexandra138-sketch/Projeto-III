@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Users, Mail, Phone, FileText, Shield,
+  Search, Users, Mail, Phone, FileText,
   AlertTriangle, MessageSquare, ChevronRight,
-  CheckCircle, XCircle, Loader,
+  CheckCircle, XCircle, Loader, UserCog, X,
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
@@ -14,22 +14,118 @@ function getCor(id) {
   return CORES[(parseInt(id, 10) - 1) % CORES.length];
 }
 
+/* ── Modal para atribuir gestor ── */
+function ModalAtribuirGestor({ cliente, gestores, onClose, onGuardar }) {
+  const [gestorId, setGestorId] = useState(cliente.gestor_id || '');
+  const [a_guardar, setAGuardar] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setAGuardar(true);
+    await onGuardar(cliente.id, gestorId || null);
+    setAGuardar(false);
+  };
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 1050, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Cabeçalho */}
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h5 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Atribuir Gestor</h5>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>{cliente.nome}</p>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Corpo */}
+        <form onSubmit={handleSubmit}>
+          <div style={{ padding: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
+              Gestor Responsável
+            </label>
+            <select
+              value={gestorId}
+              onChange={(e) => setGestorId(e.target.value)}
+              style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#f8fafc' }}
+            >
+              <option value="">— Sem gestor atribuído —</option>
+              {gestores.map((g) => (
+                <option key={g.id} value={g.id}>{g.nome} ({g.email})</option>
+              ))}
+            </select>
+
+            {/* Gestor atual */}
+            {cliente.gestor_nome && (
+              <p style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: '#64748b' }}>
+                Atual: <strong style={{ color: '#2563eb' }}>{cliente.gestor_nome}</strong>
+              </p>
+            )}
+          </div>
+
+          {/* Rodapé */}
+          <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" onClick={onClose}
+              style={{ padding: '0.5rem 1.1rem', borderRadius: 8, border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={a_guardar}
+              style={{ padding: '0.5rem 1.3rem', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: a_guardar ? 0.7 : 1 }}>
+              {a_guardar ? 'A guardar…' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AdminClientes() {
   const navigate = useNavigate();
 
-  const [clientes, setClientes]         = useState([]);
-  const [carregando, setCarregando]     = useState(true);
-  const [erro, setErro]                 = useState('');
-  const [pesquisa, setPesquisa]         = useState('');
-  const [filtroAtivo, setFiltroAtivo]   = useState('all');
+  const [clientes, setClientes]           = useState([]);
+  const [gestores, setGestores]           = useState([]);
+  const [carregando, setCarregando]       = useState(true);
+  const [erro, setErro]                   = useState('');
+  const [pesquisa, setPesquisa]           = useState('');
+  const [filtroAtivo, setFiltroAtivo]     = useState('all');
+  const [modalGestor, setModalGestor]     = useState(null); // cliente a editar
 
-  /* ── Buscar clientes da BD ── */
+  /* ── Buscar clientes e gestores da BD ── */
   useEffect(() => {
-    api.get('/clientes')
-      .then(({ data }) => setClientes(data))
-      .catch(() => setErro('Não foi possível carregar os clientes.'))
+    Promise.all([api.get('/clientes'), api.get('/utilizadores')])
+      .then(([c, u]) => {
+        setClientes(c.data);
+        setGestores(u.data.filter((u) => u.perfil === 'gestor'));
+      })
+      .catch(() => setErro('Não foi possível carregar os dados.'))
       .finally(() => setCarregando(false));
   }, []);
+
+  /* ── Atribuir gestor ── */
+  const handleAtribuirGestor = async (clienteId, gestorId) => {
+    try {
+      await api.put(`/clientes/update/${clienteId}`, { gestor_id: gestorId });
+      // Atualizar localmente
+      const gestor = gestores.find((g) => String(g.id) === String(gestorId));
+      setClientes((prev) => prev.map((c) =>
+        c.id === clienteId
+          ? { ...c, gestor_id: gestorId, gestor_nome: gestor?.nome || null }
+          : c
+      ));
+      setModalGestor(null);
+    } catch (err) {
+      console.error('Erro ao atribuir gestor:', err);
+    }
+  };
 
   /* ── Filtros ── */
   const filtrados = clientes.filter((c) => {
@@ -165,14 +261,22 @@ function AdminClientes() {
                   </div>
                 </div>
 
-                {/* Gestor + seta */}
+                {/* Gestor + botão atribuir + seta */}
                 <div className="d-none d-lg-flex flex-column align-items-end gap-1" style={{ flexShrink: 0, minWidth: 180 }}>
-                  {c.gestor_nome && (
-                    <div className="text-end">
-                      <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Gestor responsável</p>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2563eb', margin: 0 }}>{c.gestor_nome}</p>
-                    </div>
-                  )}
+                  <div className="text-end">
+                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Gestor responsável</p>
+                    {c.gestor_nome
+                      ? <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2563eb', margin: 0 }}>{c.gestor_nome}</p>
+                      : <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>Não atribuído</p>
+                    }
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setModalGestor(c); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0.25rem 0.65rem', borderRadius: 6, border: '1.5px solid #dbeafe', background: '#eff6ff', color: '#2563eb', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                    title="Atribuir / alterar gestor"
+                  >
+                    <UserCog size={13} /> Atribuir gestor
+                  </button>
                   {c.created_at && (
                     <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>
                       Desde {new Date(c.created_at).toLocaleDateString('pt-PT')}
@@ -185,6 +289,16 @@ function AdminClientes() {
             </button>
           );
         })
+      )}
+
+      {/* Modal atribuir gestor */}
+      {modalGestor && (
+        <ModalAtribuirGestor
+          cliente={modalGestor}
+          gestores={gestores}
+          onClose={() => setModalGestor(null)}
+          onGuardar={handleAtribuirGestor}
+        />
       )}
 
     </AdminLayout>

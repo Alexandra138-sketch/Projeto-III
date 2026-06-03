@@ -4,16 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import styles from './Login.styles';
 
-/* Contas de demonstração — apenas para pré-preencher o formulário,
-   o login real é sempre feito contra a API/BD */
-const DEMO_ACCOUNTS = [
-  { role: 'Administrador',   email: 'admin@cyberboxsecur.pt',      perfil: 'admin'   },
-  { role: 'Gestor',          email: 'joao.silva@cyberboxsecur.pt', perfil: 'gestor'  },
-  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt',       perfil: 'empresa' },
-];
-
-const DEMO_PASSWORD = 'Admin@1234'; // password padrão do seed.js
-
 
 function MailIcon() {
   return (
@@ -48,15 +38,6 @@ function EyeIcon({ open }) {
   );
 }
 
-function CircleUserIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8">
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="9" r="3" />
-      <path d="M6.168 18.849A4 4 0 0 1 10 16h4a4 4 0 0 1 3.834 2.855" />
-    </svg>
-  );
-}
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -144,22 +125,6 @@ function Login() {
 
             <button type="submit" style={styles.submitBtn}>Entrar</button>
           </form>
-
-          <div style={styles.demoSection}>
-            <p style={styles.demoLabel}>Contas de demonstração:</p>
-            {DEMO_ACCOUNTS.map(acc => (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => { setEmail(acc.email); setPassword(DEMO_PASSWORD); setErro(''); }}
-                style={styles.demoRow}
-              >
-                <CircleUserIcon />
-                <span style={styles.demoRole}>{acc.role}</span>
-                <span style={styles.demoEmail}>{acc.email}</span>
-              </button>
-            ))}
-          </div>
 
           <a href="/" style={styles.backLink}>← Voltar ao site</a>
         </div>

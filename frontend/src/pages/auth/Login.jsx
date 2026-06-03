@@ -5,13 +5,9 @@ import api from '../../api/axios';
 import styles from './Login.styles';
 
 const DEMO_ACCOUNTS = [
-  { role: 'Administrador', email: 'admin@cyberboxsecur.pt',      perfil: 'admin',   nome: 'Admin Demo' },
-  { role: 'Gestor',        email: 'joao.silva@cyberboxsecur.pt', perfil: 'gestor',  nome: 'João Silva' },
-  { role: 'Empresa Cliente', email: 'seguranca@techcorp.pt',     perfil: 'empresa', nome: 'TechCorp' },
+  { role: 'Administrador',   email: 'admin@cyberboxsecur.pt',      password: 'demo1234'  },
+  { role: 'Gestor',          email: 'joao.silva@cyberboxsecur.pt', password: 'demo1234' },
 ];
-
-const DEMO_PASSWORD = 'demo1234';
-
 
 function MailIcon() {
   return (
@@ -57,38 +53,37 @@ function CircleUserIcon() {
 }
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [erro, setErro] = useState('');
+  const [email, setEmail]               = useState('');
+  const [password, setPassword]         = useState('');
+  const [erro, setErro]                 = useState('');
+  const [loading, setLoading]           = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setErro('');
-
-    // Verificar se é uma conta demo
-    const demoUser = DEMO_ACCOUNTS.find(acc => acc.email === email);
-    if (demoUser && password === DEMO_PASSWORD) {
-      login({ nome: demoUser.nome, perfil: demoUser.perfil, email: demoUser.email }, 'demo-token');
-      if (demoUser.perfil === 'admin') navigate('/admin');
-      else if (demoUser.perfil === 'gestor') navigate('/gestor');
-      else navigate('/empresa');
-      return;
-    }
-
-    // Login real via API
+    setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.utilizador, res.data.token);
       const perfil = res.data.utilizador.perfil;
-      if (perfil === 'admin') navigate('/admin');
-      else if (perfil === 'gestor') navigate('/gestor');
-      else navigate('/empresa');
+      if (perfil === 'admin')        navigate('/admin');
+      else if (perfil === 'gestor')  navigate('/gestor');
+      else                           navigate('/empresa');
     } catch (err) {
-      setErro('Email ou password incorretos');
+      const msg = err.response?.data?.erro || 'Email ou password incorretos';
+      setErro(msg);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const preencherDemo = (acc) => {
+    setEmail(acc.email);
+    setPassword(acc.password);
+    setErro('');
   };
 
   return (
@@ -143,16 +138,18 @@ function Login() {
 
             {erro && <p style={styles.erro}>{erro}</p>}
 
-            <button type="submit" style={styles.submitBtn}>Entrar</button>
+            <button type="submit" disabled={loading} style={{ ...styles.submitBtn, opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'A entrar…' : 'Entrar'}
+            </button>
           </form>
 
           <div style={styles.demoSection}>
-            <p style={styles.demoLabel}>Contas de demonstração:</p>
+            <p style={styles.demoLabel}>Acesso rápido (clica para preencher):</p>
             {DEMO_ACCOUNTS.map(acc => (
               <button
                 key={acc.email}
                 type="button"
-                onClick={() => { setEmail(acc.email); setPassword('demo1234'); }}
+                onClick={() => preencherDemo(acc)}
                 style={styles.demoRow}
               >
                 <CircleUserIcon />
@@ -170,4 +167,3 @@ function Login() {
 }
 
 export default Login;
-

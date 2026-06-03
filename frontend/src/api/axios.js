@@ -6,7 +6,8 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
+  // 'demo-token' não é um JWT real — não enviar ao backend
+  if (token && token !== 'demo-token') {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

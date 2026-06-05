@@ -9,7 +9,6 @@ import { io } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
-import './ClientePerfil.css';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

@@ -63,16 +63,6 @@ const Incidente = sequelize.define('Incidente', {
     type: DataTypes.INTEGER,
   },
 
-  // Data em que o incidente ocorreu (pode ser diferente da data de registo)
-  data_ocorrencia: {
-    type: DataTypes.DATE,
-  },
-
-  // Data em que o incidente foi resolvido
-  data_resolucao: {
-    type: DataTypes.DATE,
-  },
-
 }, {
   tableName: 'incidentes',  // nome exato da tabela na BD
   timestamps: true,          // cria created_at e updated_at automaticamente

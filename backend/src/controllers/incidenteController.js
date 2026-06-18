@@ -131,8 +131,6 @@ const incidente_create = async (req, res) => {
       cliente_id,
       responsavel_id,
       nis2_notificado,
-      data_ocorrencia,
-      data_resolucao,
     } = req.body;
 
     // Campos obrigatórios: título e cliente
@@ -146,12 +144,9 @@ const incidente_create = async (req, res) => {
       severidade: severidade || 'Médio',
       estado: estado || 'Aberto',
       cliente_id,
-      // Quem está autenticado é quem reportou o incidente
       reportado_por: req.utilizador.id,
       responsavel_id,
       nis2_notificado: nis2_notificado || false,
-      data_ocorrencia,
-      data_resolucao,
     });
 
     res.status(201).json(novoIncidente);
@@ -171,12 +166,6 @@ const incidente_update = async (req, res) => {
     const incidente = await Incidente.findByPk(id);
     if (!incidente) {
       return res.status(404).json({ erro: 'Incidente não encontrado.' });
-    }
-
-    // Se o estado mudar para "Resolvido" e não houver data de resolução,
-    // registar automaticamente a data de hoje
-    if (req.body.estado === 'Resolvido' && !incidente.data_resolucao && !req.body.data_resolucao) {
-      req.body.data_resolucao = new Date();
     }
 
     await incidente.update(req.body);

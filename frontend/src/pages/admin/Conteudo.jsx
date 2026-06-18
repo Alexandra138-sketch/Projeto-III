@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
+import api from '../../api/axios';
 
 const TABS = [
   { key: 'principal', label: 'Página Principal', icon: 'bi-stars' },
@@ -76,20 +77,8 @@ const NOTICIAS_HERO_INICIAL = {
     'Mantenha-se informado sobre as últimas tendências, ameaças e boas práticas em segurança digital e conformidade regulamentar.',
 };
 
-const ARTIGOS_INICIAIS = [
-  {
-    id: 1,
-    categoria: 'NIS2 & Compliance',
-    titulo: 'NIS2: O que muda para as empresas portuguesas em 2025',
-    resumo:
-      'A Diretiva NIS2 trouxe novas obrigações para entidades essenciais e importantes. Saiba o que precisa de fazer para estar em conformidade.',
-    dataPublicacao: '2025-03-10',
-    tempoLeitura: '5 min',
-    imagem:
-      'https://images.unsplash.com/photo-1655721760780-09a9111e7d33?w=800&q=80',
-    publicado: true,
-  },
-];
+// Começa vazio — preenchido pela API
+const ARTIGOS_INICIAIS = [];
 
 const ARTIGO_VAZIO = {
   categoria: '',
@@ -143,6 +132,67 @@ function Conteudo() {
 
   const [aGuardar, setAGuardar] = useState(false);
   const [guardado, setGuardado] = useState(false);
+
+  // IDs dos registos da BD para a página principal (para guardar via API)
+  const [heroId,    setHeroId]    = useState(null);
+  const [servicosId, setServicosId] = useState(null);
+
+  // Mensagens recebidas pelo formulário de contacto
+  const [mensagens,        setMensagens]        = useState([]);
+  const [carregandoMsgs,   setCarregandoMsgs]   = useState(false);
+
+  // ── Carregar conteúdo da página principal da BD ──
+  useEffect(() => {
+    api.get('/conteudo/admin')
+      .then(({ data }) => {
+        if (!Array.isArray(data)) return;
+        // Filtrar registos da página 'principal'
+        const principal = data.filter(c => c.pagina === 'principal');
+        principal.forEach(c => {
+          if (c.seccao === 'hero') {
+            setHero({ titulo: c.titulo || '', subtitulo: c.subtitulo || '' });
+            setHeroId(c.id);
+          }
+          if (c.seccao === 'servicos_header') {
+            setServicosHeader({ titulo: c.titulo || '', subtitulo: c.subtitulo || '' });
+            setServicosId(c.id);
+          }
+        });
+      })
+      .catch(() => {}); // se falhar, usa os valores iniciais locais
+  }, []);
+
+  // ── Carregar artigos da BD quando a aba de notícias está activa ──
+  useEffect(() => {
+    if (tabAtiva !== 'noticias') return;
+    api.get('/noticias')
+      .then(({ data }) => {
+        if (!Array.isArray(data)) return;
+        // Mapear campos da BD para os campos usados no formulário
+        const mapeados = data.map(n => ({
+          id:             n.id,
+          categoria:      n.categoria      || '',
+          titulo:         n.titulo         || '',
+          resumo:         n.resumo         || '',
+          dataPublicacao: n.created_at     ? n.created_at.slice(0, 10) : '',
+          tempoLeitura:   n.tempo_leitura  || '',
+          imagem:         n.imagem_url     || '',
+          publicado:      Boolean(n.ativo),
+        }));
+        setArtigos(mapeados);
+      })
+      .catch(() => {});
+  }, [tabAtiva]);
+
+  // ── Carregar mensagens recebidas quando a aba de contactos está activa ──
+  useEffect(() => {
+    if (tabAtiva !== 'contactos') return;
+    setCarregandoMsgs(true);
+    api.get('/contactos')
+      .then(({ data }) => setMensagens(Array.isArray(data) ? data : []))
+      .catch(() => setMensagens([]))
+      .finally(() => setCarregandoMsgs(false));
+  }, [tabAtiva]);
 
   // --- Gestão de Serviços ---
   const [servicos, setServicos] = useState(SERVICOS_INICIAIS);
@@ -253,26 +303,57 @@ function Conteudo() {
     leitor.readAsDataURL(ficheiro);
   };
 
-  const guardarArtigo = (e) => {
+  const guardarArtigo = async (e) => {
     e.preventDefault();
     if (!formArtigo.titulo.trim() || !formArtigo.resumo.trim()) return;
 
-    if (artigoEmEdicao) {
-      setArtigos((prev) =>
-        prev.map((a) => (a.id === artigoEmEdicao.id ? { ...a, ...formArtigo } : a))
-      );
-    } else {
-      const novoId = artigos.length > 0 ? Math.max(...artigos.map((a) => a.id)) + 1 : 1;
-      setArtigos((prev) => [...prev, { id: novoId, ...formArtigo }]);
+    // Mapear campos do formulário para os campos esperados pela BD
+    const dadosApi = {
+      titulo:       formArtigo.titulo,
+      resumo:       formArtigo.resumo,
+      categoria:    formArtigo.categoria,
+      imagem_url:   formArtigo.imagem,
+      tempo_leitura: formArtigo.tempoLeitura,
+      ativo:        formArtigo.publicado,
+    };
+
+    try {
+      if (artigoEmEdicao) {
+        // Editar artigo existente
+        const { data } = await api.put(`/noticias/update/${artigoEmEdicao.id}`, dadosApi);
+        setArtigos(prev => prev.map(a => a.id === data.id ? {
+          ...a, ...formArtigo, id: data.id,
+        } : a));
+      } else {
+        // Criar novo artigo
+        const { data } = await api.post('/noticias/create', dadosApi);
+        setArtigos(prev => [...prev, {
+          id:             data.id,
+          categoria:      data.categoria      || '',
+          titulo:         data.titulo         || '',
+          resumo:         data.resumo         || '',
+          dataPublicacao: data.created_at     ? data.created_at.slice(0, 10) : '',
+          tempoLeitura:   data.tempo_leitura  || '',
+          imagem:         data.imagem_url     || '',
+          publicado:      Boolean(data.ativo),
+        }]);
+      }
+      fecharModalArtigo();
+    } catch {
+      alert('Erro ao guardar o artigo. Verifica a ligação ao servidor.');
     }
-    fecharModalArtigo();
   };
 
   const confirmarEliminarArtigo = (artigo) => setArtigoAEliminar(artigo);
   const cancelarEliminarArtigo = () => setArtigoAEliminar(null);
-  const eliminarArtigo = () => {
-    setArtigos((prev) => prev.filter((a) => a.id !== artigoAEliminar.id));
-    setArtigoAEliminar(null);
+  const eliminarArtigo = async () => {
+    try {
+      await api.delete(`/noticias/delete/${artigoAEliminar.id}`);
+      setArtigos(prev => prev.filter(a => a.id !== artigoAEliminar.id));
+      setArtigoAEliminar(null);
+    } catch {
+      alert('Erro ao eliminar o artigo.');
+    }
   };
 
   // --- Contactos ---
@@ -292,6 +373,27 @@ function Conteudo() {
     setContactosFormulario((prev) => ({ ...prev, [campo]: e.target.value }));
   };
 
+  // ── Marcar mensagem recebida como lida/não lida ──
+  const toggleLido = async (id) => {
+    try {
+      const { data } = await api.put(`/contactos/lido/${id}`);
+      setMensagens(prev => prev.map(m => m.id === data.id ? data : m));
+    } catch {
+      alert('Erro ao atualizar mensagem.');
+    }
+  };
+
+  // ── Eliminar mensagem recebida ──
+  const eliminarMensagem = async (id) => {
+    if (!window.confirm('Eliminar esta mensagem de contacto?')) return;
+    try {
+      await api.delete(`/contactos/delete/${id}`);
+      setMensagens(prev => prev.filter(m => m.id !== id));
+    } catch {
+      alert('Erro ao eliminar mensagem.');
+    }
+  };
+
   const handleHeroChange = (campo) => (e) => {
     setHero((prev) => ({ ...prev, [campo]: e.target.value }));
   };
@@ -300,15 +402,22 @@ function Conteudo() {
     setServicosHeader((prev) => ({ ...prev, [campo]: e.target.value }));
   };
 
-  const handleGuardarTodas = () => {
+  const handleGuardarTodas = async () => {
     setAGuardar(true);
     setGuardado(false);
-    // Simulação de pedido ao servidor — substituir por chamada API real
-    setTimeout(() => {
-      setAGuardar(false);
+    try {
+      // Guardar hero e servicos_header na BD se tivermos os IDs
+      const promessas = [];
+      if (heroId)     promessas.push(api.put(`/conteudo/update/${heroId}`,     hero));
+      if (servicosId) promessas.push(api.put(`/conteudo/update/${servicosId}`, servicosHeader));
+      await Promise.all(promessas);
       setGuardado(true);
       setTimeout(() => setGuardado(false), 2500);
-    }, 800);
+    } catch {
+      alert('Erro ao guardar. Verifica a ligação ao servidor.');
+    } finally {
+      setAGuardar(false);
+    }
   };
 
   return (
@@ -890,6 +999,96 @@ function Conteudo() {
                     onChange={handleContactosFormularioChange('mensagemSucesso')}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* ── Mensagens Recebidas (da BD) ── */}
+            <div className="card shadow-sm border-0">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center gap-3 mb-1">
+                  <span
+                    className="d-inline-flex align-items-center justify-content-center rounded-3"
+                    style={{ width: 40, height: 40, backgroundColor: '#fef9c3', color: '#a16207' }}
+                  >
+                    <i className="bi bi-inbox fs-5"></i>
+                  </span>
+                  <div>
+                    <h5 className="fw-bold mb-0">
+                      Mensagens Recebidas
+                      {mensagens.filter(m => !m.lido).length > 0 && (
+                        <span
+                          className="badge rounded-pill ms-2"
+                          style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '12px' }}
+                        >
+                          {mensagens.filter(m => !m.lido).length} novas
+                        </span>
+                      )}
+                    </h5>
+                  </div>
+                </div>
+                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
+                  Mensagens enviadas pelo formulário de contacto do site
+                </p>
+
+                {carregandoMsgs ? (
+                  <p className="text-secondary">A carregar mensagens…</p>
+                ) : mensagens.length === 0 ? (
+                  <p className="text-center text-secondary py-3">Ainda não há mensagens recebidas.</p>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {mensagens.map(msg => (
+                      <div
+                        key={msg.id}
+                        className="rounded-3 p-3"
+                        style={{
+                          backgroundColor: msg.lido ? '#f8fafc' : '#eff6ff',
+                          border: msg.lido ? '1px solid #e2e8f0' : '1px solid #bfdbfe',
+                        }}
+                      >
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
+                              <i className={`bi bi-envelope${msg.lido ? '' : '-fill'}`} style={{ color: msg.lido ? '#94a3b8' : '#2563eb' }}></i>
+                              <span className="fw-semibold">{msg.nome}</span>
+                              <span className="text-secondary small">{msg.email}</span>
+                              {!msg.lido && (
+                                <span className="badge rounded-pill" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8', fontSize: '11px' }}>
+                                  Não lida
+                                </span>
+                              )}
+                            </div>
+                            {msg.assunto && (
+                              <p className="fw-medium mb-1 small" style={{ color: '#374151' }}>{msg.assunto}</p>
+                            )}
+                            <p className="mb-1 small" style={{ color: '#4a5565', lineHeight: 1.5 }}>{msg.mensagem}</p>
+                            <p className="text-secondary" style={{ fontSize: '12px', margin: 0 }}>
+                              {new Date(msg.created_at).toLocaleString('pt-PT')}
+                              {msg.telefone && ` · ${msg.telefone}`}
+                            </p>
+                          </div>
+                          <div className="d-flex gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              className="btn btn-link p-0 text-decoration-none"
+                              title={msg.lido ? 'Marcar como não lida' : 'Marcar como lida'}
+                              onClick={() => toggleLido(msg.id)}
+                            >
+                              <i className={`bi bi-${msg.lido ? 'eye-slash' : 'check2-circle'}`} style={{ color: '#2563eb' }}></i>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-link p-0 text-decoration-none"
+                              title="Eliminar mensagem"
+                              onClick={() => eliminarMensagem(msg.id)}
+                            >
+                              <i className="bi bi-trash text-danger"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

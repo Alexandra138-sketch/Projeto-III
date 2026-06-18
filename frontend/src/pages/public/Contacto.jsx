@@ -3,6 +3,7 @@ import { FiMail, FiPhone, FiMapPin, FiClock, FiSend, FiCheckCircle } from 'react
 import { FaShieldAlt } from 'react-icons/fa';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import api from '../../api/axios';
 import '../../App.css';
 
 const INFO = [
@@ -25,16 +26,38 @@ const SERVICOS_OPCOES = [
 const FORM_INICIAL = { nome: '', empresa: '', email: '', telefone: '', servico: '', assunto: '', mensagem: '' };
 
 export default function Contacto() {
-  const [form, setForm] = useState(FORM_INICIAL);
+  const [form,    setForm]    = useState(FORM_INICIAL);
   const [enviado, setEnviado] = useState(false);
+  const [erro,    setErro]    = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setEnviado(true);
+    setErro('');
+    setLoading(true);
+    try {
+      // Combinar assunto com serviço de interesse, se preenchido
+      const assuntoFinal = form.servico
+        ? `[${form.servico}] ${form.assunto}`
+        : form.assunto;
+
+      await api.post('/contactos', {
+        nome:     form.nome,
+        email:    form.email,
+        telefone: form.telefone,
+        assunto:  assuntoFinal,
+        mensagem: form.mensagem,
+      });
+      setEnviado(true);
+    } catch {
+      setErro('Erro ao enviar a mensagem. Tenta novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -237,22 +260,27 @@ export default function Contacto() {
                       value={form.mensagem}
                       onChange={handleChange}
                       className="form-control"
-                      style={{ borderRadius: '10px', fontSize: '14px', resize: 'none' }}
-                      placeholder="Descreva as suas necessidades de segurança..."
+                      style={{ borderRadius: '10px', fontSize: '14px', eResize: 'vertical' }}
+                      placeholder="Descreva como podemos ajudar..."
                     />
                   </div>
 
-                  <button type="submit" className="btn-gradient w-100 justify-content-center">
-                    <FiSend size={16} /> Enviar Mensagem
-                  </button>
+                  {erro && (
+                    <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '1rem' }}>{erro}</p>
+                  )}
 
-                  <p className="text-center mt-3 small" style={{ color: '#9ca3af' }}>
-                    Os seus dados são tratados de acordo com o RGPD. Não partilhamos informações com terceiros.
-                  </p>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                    style={{ background: 'linear-gradient(90deg, #9810fa 0%, #155dfc 100%)', color: '#fff', borderRadius: '10px', padding: '12px', fontSize: '15px' }}
+                  >
+                    <FiSend size={16} />
+                    {loading ? 'A enviar...' : 'Enviar Mensagem'}
+                  </button>
                 </form>
               )}
             </div>
-
           </div>
         </div>
       </section>

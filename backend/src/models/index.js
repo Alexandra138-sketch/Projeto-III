@@ -1,9 +1,12 @@
-const Utilizador = require('./Utilizador');
-const Cliente    = require('./Cliente');
-const Incidente  = require('./Incidente');
-const Documento  = require('./Documento');
-const Servico    = require('./Servico');
-const Mensagem   = require('./Mensagem');
+const Utilizador     = require('./Utilizador');
+const Cliente        = require('./Cliente');
+const Incidente      = require('./Incidente');
+const Documento      = require('./Documento');
+const Servico        = require('./Servico');
+const Mensagem       = require('./Mensagem');
+const Noticia        = require('./Noticia');
+const Contacto       = require('./Contacto');
+const ConteudoPagina = require('./ConteudoPagina');
 
 /* ── Associações ── */
 
@@ -20,7 +23,13 @@ Incidente.belongsTo(Utilizador, { as: 'responsavel', foreignKey: 'responsavel_id
 Documento.belongsTo(Cliente,    { as: 'cliente',  foreignKey: 'cliente_id' });
 Documento.belongsTo(Utilizador, { as: 'criador',  foreignKey: 'criado_por' });
 
+// Notícia foi criada por um admin (Utilizador)
+Noticia.belongsTo(Utilizador, { as: 'autor', foreignKey: 'criado_por' });
+
 // Mensagem pertence a um remetente (Utilizador) — já definido em Mensagem.js
 // (não redefinir aqui para evitar duplicação)
 
-module.exports = { Utilizador, Cliente, Incidente, Documento, Servico, Mensagem };
+module.exports = {
+  Utilizador, Cliente, Incidente, Documento, Servico, Mensagem,
+  Noticia, Contacto, ConteudoPagina,
+};

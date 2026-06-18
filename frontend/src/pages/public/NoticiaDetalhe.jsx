@@ -1,27 +1,57 @@
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiCalendar, FiClock, FiTag } from 'react-icons/fi';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { NOTICIAS } from './Noticias';
+import api from '../../api/axios';
 import '../../App.css';
 
 export default function NoticiaDetalhe() {
   const { articleId } = useParams();
-  const article = NOTICIAS.find(a => String(a.id) === articleId);
+  const navigate      = useNavigate();
 
-  if (!article) return <Navigate to="/noticias" replace />;
+  const [article,     setArticle]     = useState(null);
+  const [relacionadas, setRelacionadas] = useState([]);
+  const [carregando,  setCarregando]  = useState(true);
 
-  const relacionadas = NOTICIAS.filter(a => a.id !== article.id).slice(0, 3);
+  useEffect(() => {
+    // Buscar o artigo completo
+    api.get(`/noticias/publico/${articleId}`)
+      .then(({ data }) => setArticle(data))
+      .catch(() => navigate('/noticias', { replace: true }))
+      .finally(() => setCarregando(false));
+
+    // Buscar outros artigos para "Últimas Publicações"
+    api.get('/noticias/publico')
+      .then(({ data }) => {
+        const outros = Array.isArray(data)
+          ? data.filter(n => String(n.id) !== articleId).slice(0, 3)
+          : [];
+        setRelacionadas(outros);
+      })
+      .catch(() => setRelacionadas([]));
+  }, [articleId]); // eslint-disable-line
+
+  if (carregando) {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Navbar />
+        <div style={{ textAlign: 'center', padding: '5rem', color: '#94a3b8' }}>A carregar artigo…</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!article) return null;
 
   return (
     <div className="d-flex flex-column min-vh-100" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       <Navbar />
 
-      {/* ── HERO ── */}
+      {/* ── CABEÇALHO ── */}
       <section style={{ paddingTop: '48px' }}>
         <div className="container" style={{ maxWidth: '960px' }}>
 
-          {/* Breadcrumb */}
           <Link
             to="/noticias"
             className="d-inline-flex align-items-center gap-2 text-decoration-none mb-4"
@@ -30,152 +60,114 @@ export default function NoticiaDetalhe() {
             <FiArrowLeft size={16} /> Voltar às notícias
           </Link>
 
-          {/* Cabeçalho */}
           <div className="mb-4">
             <div className="d-flex align-items-center gap-3 flex-wrap mb-3">
-              <span
-                className="d-inline-flex align-items-center gap-1"
-                style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '12px', fontWeight: '600', padding: '4px 12px', borderRadius: '999px' }}
-              >
-                <FiTag size={12} /> {article.category}
-              </span>
+              {article.categoria && (
+                <span
+                  className="d-inline-flex align-items-center gap-1"
+                  style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '12px', fontWeight: '600', padding: '4px 12px', borderRadius: '999px' }}
+                >
+                  <FiTag size={12} /> {article.categoria}
+                </span>
+              )}
               <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '14px', color: '#9ca3af' }}>
                 <span className="d-flex align-items-center gap-1">
                   <FiCalendar size={14} />
-                  {new Date(article.date).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(article.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
-                <span className="d-flex align-items-center gap-1">
-                  <FiClock size={14} /> {article.readTime}
-                </span>
+                {article.tempo_leitura && (
+                  <span className="d-flex align-items-center gap-1">
+                    <FiClock size={14} /> {article.tempo_leitura}
+                  </span>
+                )}
               </div>
             </div>
 
             <h1 className="fw-bold mb-4" style={{ color: '#101828', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.2 }}>
-              {article.title}
+              {article.titulo}
             </h1>
-            <p style={{ fontSize: '18px', color: '#4a5565', lineHeight: 1.7 }}>
-              {article.excerpt}
-            </p>
+            {article.resumo && (
+              <p style={{ fontSize: '18px', color: '#4a5565', lineHeight: 1.7 }}>{article.resumo}</p>
+            )}
           </div>
 
-          {/* Imagem de destaque */}
-          <div className="overflow-hidden mb-5" style={{ borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
-            <img
-              src={article.imageUrl}
-              alt={article.title}
-              style={{ width: '100%', height: '400px', objectFit: 'cover', display: 'block' }}
-            />
-          </div>
+          {article.imagem_url && (
+            <div className="overflow-hidden mb-5" style={{ borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
+              <img
+                src={article.imagem_url}
+                alt={article.titulo}
+                style={{ width: '100%', height: '400px', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── CONTEÚDO ── */}
       <section style={{ padding: '48px 0' }}>
         <div className="container" style={{ maxWidth: '720px' }}>
-          <div style={{ color: '#374151', lineHeight: 1.85, fontSize: '16px' }}>
-            <p>
-              A segurança digital é uma prioridade crescente no panorama empresarial atual.
-              Com o aumento das ameaças cibernéticas e a evolução constante das tecnologias,
-              as organizações devem manter-se atualizadas sobre as melhores práticas e
-              regulamentações em vigor.
-            </p>
-
-            <h2 className="fw-bold mt-5 mb-3" style={{ color: '#101828', fontSize: '22px' }}>
-              Contexto e Importância
-            </h2>
-            <p>
-              A implementação de medidas robustas de cibersegurança não é apenas uma questão
-              técnica, mas também um imperativo de conformidade regulamentar. As organizações
-              devem compreender os requisitos específicos do seu sector e implementar controlos
-              adequados para proteger os seus ativos digitais.
-            </p>
-
-            <div
-              className="my-5 p-4"
-              style={{ background: '#f5f3ff', borderLeft: '4px solid #7c3aed', borderRadius: '0 8px 8px 0' }}
-            >
-              <p className="mb-0" style={{ color: '#4c1d95', fontWeight: '500' }}>
-                <strong>Nota Importante:</strong> Este artigo fornece informação geral sobre
-                cibersegurança e conformidade. Para orientações específicas adaptadas à sua
-                organização, contacte os nossos especialistas.
-              </p>
+          {article.conteudo ? (
+            /* Renderizar o conteúdo — suporta texto com parágrafos separados por \n */
+            <div style={{ color: '#374151', lineHeight: 1.85, fontSize: '16px' }}>
+              {article.conteudo.split('\n').map((paragrafo, i) =>
+                paragrafo.trim() ? <p key={i}>{paragrafo}</p> : null
+              )}
             </div>
-
-            <h2 className="fw-bold mt-5 mb-3" style={{ color: '#101828', fontSize: '22px' }}>
-              Principais Considerações
-            </h2>
-            <p>Ao abordar questões de segurança digital, é fundamental considerar vários aspetos:</p>
-            <ul style={{ paddingLeft: '24px', lineHeight: 2 }}>
-              <li>Avaliação contínua de riscos e vulnerabilidades</li>
-              <li>Implementação de controlos técnicos e organizacionais</li>
-              <li>Formação e sensibilização dos colaboradores</li>
-              <li>Monitorização e resposta a incidentes</li>
-              <li>Conformidade com regulamentações aplicáveis (NIS2, RGPD, etc.)</li>
-            </ul>
-
-            <h2 className="fw-bold mt-5 mb-3" style={{ color: '#101828', fontSize: '22px' }}>
-              Próximos Passos
-            </h2>
-            <p>
-              A CyberBoxSecur está preparada para ajudar a sua organização a navegar no
-              complexo panorama da cibersegurança. Os nossos serviços especializados incluem
-              auditorias de segurança, testes de penetração, consultoria de conformidade e
-              muito mais.
-            </p>
-            <p>
-              Entre em contacto connosco para descobrir como podemos fortalecer a postura de
-              segurança da sua organização e garantir a conformidade com as regulamentações
-              europeias mais recentes.
-            </p>
-          </div>
+          ) : (
+            <div style={{ color: '#374151', lineHeight: 1.85, fontSize: '16px' }}>
+              <p>
+                A segurança digital é uma prioridade crescente no panorama empresarial atual.
+                Com o aumento das ameaças cibernéticas e a evolução constante das tecnologias,
+                as organizações devem manter-se atualizadas sobre as melhores práticas.
+              </p>
+              <div className="my-5 p-4" style={{ background: '#f5f3ff', borderLeft: '4px solid #7c3aed', borderRadius: '0 8px 8px 0' }}>
+                <p className="mb-0" style={{ color: '#4c1d95', fontWeight: '500' }}>
+                  <strong>Nota:</strong> Para orientações específicas adaptadas à sua organização, contacte os nossos especialistas.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── ÚLTIMAS PUBLICAÇÕES ── */}
-      <section style={{ padding: '64px 0', background: '#f9fafb' }}>
-        <div className="container">
-          <h2 className="fw-bold text-center mb-5" style={{ color: '#101828', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}>
-            Últimas Publicações
-          </h2>
-          <div className="row g-4">
-            {relacionadas.map(rel => (
-              <div className="col-12 col-md-4" key={rel.id}>
-                <Link to={`/noticias/${rel.id}`} className="d-block text-decoration-none h-100">
-                  <div
-                    className="h-100 overflow-hidden"
-                    style={{ borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff', transition: 'box-shadow 0.2s' }}
-                  >
-                    <div style={{ height: '192px', overflow: 'hidden' }}>
-                      <img
-                        src={rel.imageUrl}
-                        alt={rel.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s' }}
-                      />
+      {relacionadas.length > 0 && (
+        <section style={{ padding: '64px 0', background: '#f9fafb' }}>
+          <div className="container">
+            <h2 className="fw-bold text-center mb-5" style={{ color: '#101828', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}>
+              Últimas Publicações
+            </h2>
+            <div className="row g-4">
+              {relacionadas.map(rel => (
+                <div className="col-12 col-md-4" key={rel.id}>
+                  <Link to={`/noticias/${rel.id}`} className="d-block text-decoration-none h-100">
+                    <div className="h-100 overflow-hidden" style={{ borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
+                      <div style={{ height: '192px', overflow: 'hidden' }}>
+                        <img
+                          src={rel.imagem_url || 'https://images.unsplash.com/photo-1599949104055-2d04026aee1e?w=600&q=80'}
+                          alt={rel.titulo}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      </div>
+                      <div className="p-4">
+                        {rel.categoria && (
+                          <span style={{ display: 'inline-block', background: '#f3e8ff', color: '#7c3aed', fontSize: '12px', fontWeight: '600', padding: '3px 10px', borderRadius: '999px', marginBottom: '10px' }}>
+                            {rel.categoria}
+                          </span>
+                        )}
+                        <h5 className="fw-semibold mb-2" style={{ color: '#101828', fontSize: '15px', lineHeight: 1.4 }}>
+                          {rel.titulo}
+                        </h5>
+                        <p className="small mb-0" style={{ color: '#4a5565', lineHeight: 1.6 }}>{rel.resumo}</p>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <span style={{
-                        display: 'inline-block',
-                        background: '#f3e8ff', color: '#7c3aed',
-                        fontSize: '12px', fontWeight: '600',
-                        padding: '3px 10px', borderRadius: '999px',
-                        marginBottom: '10px',
-                      }}>
-                        {rel.category}
-                      </span>
-                      <h5 className="fw-semibold mb-2" style={{ color: '#101828', fontSize: '15px', lineHeight: 1.4 }}>
-                        {rel.title}
-                      </h5>
-                      <p className="small mb-0" style={{ color: '#4a5565', lineHeight: 1.6 }}>
-                        {rel.excerpt}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <Footer />
     </div>

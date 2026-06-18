@@ -72,20 +72,22 @@ function Analises() {
 
   useEffect(() => {
     setCarregando(true);
-    Promise.all([
+    // allSettled garante que se uma chamada falhar, as outras ainda carregam
+    Promise.allSettled([
       api.get('/incidentes'),
       api.get('/clientes'),
       api.get('/documentos'),
       api.get('/servicos'),
     ])
       .then(([incRes, cliRes, docRes, servRes]) => {
-        setIncidentes(Array.isArray(incRes.data) ? incRes.data : []);
-        setClientes(Array.isArray(cliRes.data) ? cliRes.data : []);
-        setDocumentos(Array.isArray(docRes.data) ? docRes.data : []);
-        setServicos(Array.isArray(servRes.data) ? servRes.data : []);
-      })
-      .catch(() => {
-        setErro('Não foi possível carregar os dados de análises.');
+        if (incRes.status === 'fulfilled') setIncidentes(Array.isArray(incRes.value.data) ? incRes.value.data : []);
+        if (cliRes.status === 'fulfilled') setClientes(Array.isArray(cliRes.value.data) ? cliRes.value.data : []);
+        if (docRes.status === 'fulfilled') setDocumentos(Array.isArray(docRes.value.data) ? docRes.value.data : []);
+        if (servRes.status === 'fulfilled') setServicos(Array.isArray(servRes.value.data) ? servRes.value.data : []);
+
+        // Só mostrar erro se TODAS as chamadas falharam
+        const todasFalharam = [incRes, cliRes, docRes, servRes].every(r => r.status === 'rejected');
+        if (todasFalharam) setErro('Não foi possível carregar os dados de análises.');
       })
       .finally(() => {
         setCarregando(false);

@@ -18,10 +18,11 @@ const ADMIN_LINKS = [
 ];
 
 const GESTOR_LINKS = [
-  { to: '/gestor',            label: 'Dashboard',  icon: FiGrid,          end: true },
-  { to: '/gestor/clientes',   label: 'Clientes',   icon: FiBriefcase },
-  { to: '/gestor/documentos', label: 'Documentos', icon: FiFileText },
-  { to: '/gestor/incidentes', label: 'Incidentes', icon: FiAlertTriangle },
+  { to: '/gestor',            label: 'Dashboard',           icon: FiGrid,          end: true },
+  { to: '/gestor/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/gestor/clientes',   label: 'Clientes',            icon: FiBriefcase },
+  { to: '/gestor/documentos', label: 'Documentos',          icon: FiFileText },
+  { to: '/gestor/incidentes', label: 'Incidentes',          icon: FiAlertTriangle },
 ];
 
 const EMPRESA_LINKS = [

@@ -21,6 +21,7 @@ import GestorClientes from './pages/gestor/Clientes';
 import GestorClientePerfil from './pages/gestor/ClientePerfil';
 import GestorDocumentos from './pages/gestor/Documentos';
 import GestorIncidentes from './pages/gestor/Incidentes';
+import GestorAnalises from './pages/gestor/Analises';
 import EmpresaDashboard from './pages/empresa/Dashboard';
 import EmpresaDocumentos from './pages/empresa/Documentos';
 import EmpresaIncidentes from './pages/empresa/Incidentes';
@@ -55,6 +56,7 @@ function App() {
           <Route path="/gestor/clientes/:clienteId" element={<ProtectedRoute perfil="gestor"><GestorClientePerfil /></ProtectedRoute>} />
           <Route path="/gestor/documentos" element={<ProtectedRoute perfil="gestor"><GestorDocumentos /></ProtectedRoute>} />
           <Route path="/gestor/incidentes" element={<ProtectedRoute perfil="gestor"><GestorIncidentes /></ProtectedRoute>} />
+          <Route path="/gestor/analises" element={<ProtectedRoute perfil="gestor"><GestorAnalises /></ProtectedRoute>} />
 
           <Route path="/empresa" element={<ProtectedRoute perfil="empresa"><EmpresaDashboard /></ProtectedRoute>} />
           <Route path="/empresa/documentos" element={<ProtectedRoute perfil="empresa"><EmpresaDocumentos /></ProtectedRoute>} />

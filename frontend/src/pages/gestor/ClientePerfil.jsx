@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Mail, Phone, MessageSquare, Send,
-  FileText, AlertTriangle, Loader, CheckCircle, XCircle,
+  FileText, AlertTriangle, Loader, CheckCircle, XCircle, Shield, Download,
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
@@ -21,25 +21,37 @@ function GestorClientePerfil() {
 
   const dbClienteId = parseInt(clienteId, 10);
 
-  const [cliente,    setCliente]    = useState(null);
-  const [carregando, setCarregando] = useState(true);
-  const [abaAtiva,   setAbaAtiva]   = useState('comunicacao');
-  const [msgs,       setMsgs]       = useState([]);
+  const [cliente,      setCliente]      = useState(null);
+  const [carregando,   setCarregando]   = useState(true);
+  const [abaAtiva,     setAbaAtiva]     = useState('resumo');
+  const [msgs,         setMsgs]         = useState([]);
   const [novaMensagem, setNovaMensagem] = useState('');
-  const [temMais,    setTemMais]    = useState(true);
-  const [msgLoading, setMsgLoading] = useState(false);
+  const [temMais,      setTemMais]      = useState(true);
+  const [msgLoading,   setMsgLoading]   = useState(false);
+  const [docs,         setDocs]         = useState([]);
+  const [incidentes,   setIncidentes]   = useState([]);
 
   const mensagensEndRef       = useRef(null);
   const mensagensContainerRef = useRef(null);
   const socketRef             = useRef(null);
   const carregandoRef         = useRef(false);
 
-  /* ── Buscar cliente ── */
+  /* ── Buscar cliente, documentos e incidentes ── */
   useEffect(() => {
     api.get(`/clientes/${dbClienteId}`)
       .then(({ data }) => setCliente(data))
       .catch(() => setCliente(null))
       .finally(() => setCarregando(false));
+
+    // Buscar documentos e filtrar pelo cliente atual
+    api.get('/documentos')
+      .then(({ data }) => setDocs(Array.isArray(data) ? data.filter(d => d.cliente_id === dbClienteId) : []))
+      .catch(() => setDocs([]));
+
+    // Buscar incidentes deste cliente usando o query param
+    api.get(`/incidentes?cliente_id=${dbClienteId}`)
+      .then(({ data }) => setIncidentes(Array.isArray(data) ? data : []))
+      .catch(() => setIncidentes([]));
   }, [dbClienteId]);
 
   /* ── Socket.IO ── */
@@ -167,9 +179,14 @@ function GestorClientePerfil() {
   const ativo = cliente.estado === 'Ativo';
   const cor   = getCor(cliente.id);
 
+  const pentests = docs.filter(d => d.tipo === 'Pentest');
+
   const abas = [
-    { id: 'comunicacao', label: 'Comunicação', Icone: MessageSquare },
-    { id: 'resumo',      label: 'Resumo',      Icone: FileText      },
+    { id: 'resumo',      label: 'Resumo',      Icone: FileText,      count: null              },
+    { id: 'documentos',  label: 'Documentos',  Icone: FileText,      count: docs.length       },
+    { id: 'pentests',    label: 'Pentests',    Icone: Shield,        count: pentests.length   },
+    { id: 'incidentes',  label: 'Incidentes',  Icone: AlertTriangle, count: incidentes.length },
+    { id: 'comunicacao', label: 'Comunicação', Icone: MessageSquare, count: null              },
   ];
 
   return (
@@ -226,18 +243,105 @@ function GestorClientePerfil() {
       {/* Abas */}
       <div className="dash-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="abas-wrapper">
-          {abas.map(({ id, label, Icone }) => (
+          {abas.map(({ id, label, Icone, count }) => (
             <button
               key={id}
               className={`aba-btn ${abaAtiva === id ? 'ativa' : ''}`}
               onClick={() => setAbaAtiva(id)}
             >
               <Icone size={15} /> {label}
+              {count !== null && (
+                <span className={`aba-count ${abaAtiva === id ? 'ativa' : 'inativa'}`}>{count}</span>
+              )}
             </button>
           ))}
         </div>
 
         <div className="aba-content">
+
+          {/* ── Documentos ── */}
+          {abaAtiva === 'documentos' && (
+            <div style={{ padding: '1rem 0' }}>
+              {docs.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  Sem documentos para este cliente.
+                </p>
+              ) : docs.map((doc) => (
+                <div key={doc.id} className="resumo-recente-item" style={{ marginBottom: '0.75rem', padding: '1rem', background: '#f8fafc', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{doc.titulo}</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+                      {doc.tipo} · v{doc.versao} · {doc.estado}
+                    </p>
+                  </div>
+                  {doc.ficheiro && (
+                    <a href={doc.ficheiro} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>
+                      <Download size={16} />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Pentests ── */}
+          {abaAtiva === 'pentests' && (
+            <div style={{ padding: '1rem 0' }}>
+              {pentests.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  Sem pentests para este cliente.
+                </p>
+              ) : pentests.map((doc) => (
+                <div key={doc.id} style={{ marginBottom: '0.75rem', padding: '1rem', background: '#f5f3ff', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{doc.titulo}</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+                      v{doc.versao} · {doc.estado}
+                      {doc.descricao && ` · ${doc.descricao}`}
+                    </p>
+                  </div>
+                  {doc.ficheiro && (
+                    <a href={doc.ficheiro} target="_blank" rel="noreferrer" style={{ color: '#7c3aed' }}>
+                      <Download size={16} />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Incidentes ── */}
+          {abaAtiva === 'incidentes' && (
+            <div style={{ padding: '1rem 0' }}>
+              {incidentes.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  Sem incidentes para este cliente.
+                </p>
+              ) : incidentes.map((inc) => {
+                const sevCores = {
+                  Crítico: { bg: '#fee2e2', cor: '#dc2626' },
+                  Alto:    { bg: '#ffedd5', cor: '#c2410c' },
+                  Médio:   { bg: '#fef9c3', cor: '#ca8a04' },
+                  Baixo:   { bg: '#dcfce7', cor: '#16a34a' },
+                };
+                const { bg, cor: c } = sevCores[inc.severidade] || { bg: '#f1f5f9', cor: '#64748b' };
+                return (
+                  <div key={inc.id} style={{ marginBottom: '0.75rem', padding: '1rem', background: '#f8fafc', borderRadius: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{inc.titulo}</p>
+                      <span style={{ background: bg, color: c, fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
+                        {inc.severidade}
+                      </span>
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+                      {inc.estado}
+                      {inc.data_ocorrencia && ` · ${new Date(inc.data_ocorrencia).toLocaleDateString('pt-PT')}`}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* ── Chat ── */}
           {abaAtiva === 'comunicacao' && (

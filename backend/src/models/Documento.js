@@ -15,16 +15,16 @@ const Documento = sequelize.define('Documento', {
     type: DataTypes.TEXT,
   },
   tipo: {
-    type: DataTypes.ENUM('Política', 'Pentest', 'Auditoria', 'Contrato', 'Relatório'),
-    allowNull: false,
+    type: DataTypes.STRING,
+    allowNull: false, // valores possíveis: 'Política', 'Pentest', 'Auditoria', 'Contrato', 'Relatório'
   },
   versao: {
     type: DataTypes.STRING,
     defaultValue: 'v1.0',
   },
   estado: {
-    type: DataTypes.ENUM('Ativo', 'Em Revisão', 'Expirado'),
-    defaultValue: 'Ativo',
+    type: DataTypes.STRING,
+    defaultValue: 'Ativo', // valores possíveis: 'Ativo', 'Em Revisão', 'Expirado'
   },
   ficheiro: {
     type: DataTypes.STRING,

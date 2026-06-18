@@ -24,13 +24,13 @@ const Utilizador = sequelize.define('Utilizador', {
     type: DataTypes.STRING,
   },
   perfil: {
-    type: DataTypes.ENUM('admin', 'gestor', 'empresa'),
+    type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'empresa',
+    defaultValue: 'empresa', // valores possíveis: 'admin', 'gestor', 'empresa'
   },
   estado: {
-    type: DataTypes.ENUM('Ativo', 'Inativo'),
-    defaultValue: 'Ativo',
+    type: DataTypes.STRING,
+    defaultValue: 'Ativo', // valores possíveis: 'Ativo', 'Inativo'
   },
   foto: {
     type: DataTypes.STRING,

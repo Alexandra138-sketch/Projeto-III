@@ -63,7 +63,7 @@ function getCreatedAt(item) {
   return item.created_at || item.createdAt || item.data_criacao || item.createdAt;
 }
 
-const CHART_HEIGHT = 220;
+const CHART_HEIGHT = 250;
 
 function Analises() {
   const [incidentes, setIncidentes] = useState([]);
@@ -239,32 +239,43 @@ function Analises() {
             <div className="col-12 col-lg-6">
               <div className="dash-card chart-card">
                 <h5>Incidentes por Estado</h5>
-                <div className="chart-wrap">
+                <div className="chart-wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
                     <BarChart 
-                      data={incidentesPorEstado} 
-                      margin={{ top: 10, right: 10, left: -10, bottom: 40 }}
-                      layout="vertical"
+                      data={incidentesPorEstado}
+                      margin={{ top: 15, right: 10, left: 10, bottom: 35 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                      <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                      <defs>
+                        {incidentesPorEstado.map((entry, idx) => (
+                          <linearGradient key={`barGrad-${idx}`} id={`barGrad-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={entry.cor} stopOpacity={0.9} />
+                            <stop offset="100%" stopColor={entry.cor} stopOpacity={0.6} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 11 }} 
+                        angle={-20}
+                        textAnchor="end"
+                        height={50}
+                      />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px' }}
                         formatter={(value) => [value, 'Quantidade']}
                       />
                       <Bar 
                         dataKey="value" 
-                        fill="#2563eb" 
-                        radius={[0, 8, 8, 0]}
+                        radius={[8, 8, 0, 0]}
                         animationDuration={800}
                         animationEasing="ease-out"
-                        activeBar={{ fillOpacity: 0.9 }}
                       >
-                        {incidentesPorEstado.map((entry) => (
-                          <Cell key={entry.name} fill={entry.cor} />
+                        {incidentesPorEstado.map((entry, idx) => (
+                          <Cell key={entry.name} fill={`url(#barGrad-${idx})`} />
                         ))}
-                        <LabelList dataKey="value" position="right" style={{ fontSize: 12, fill: '#111', fontWeight: 600 }} />
+                        <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>

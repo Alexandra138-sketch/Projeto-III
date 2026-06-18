@@ -405,6 +405,18 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* Igualar altura dos cartões de gráfico e garantir alinhamento */
+.chart-card {
+  display: flex;
+  flex-direction: column;
+}
+.chart-card .chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 340px; /* garante que ambos os cartões tenham altura suficiente */
+}
 /* ── Página de Incidentes ── */
 
 .incidentes-header {

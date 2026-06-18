@@ -36,6 +36,7 @@ const documento_create = async (req, res) => {
     await registar_log(req.utilizador?.id, 'Criou documento', `Documento "${novo.titulo}"`);
     res.status(201).json(novo);
   } catch (err) {
+    console.error('[documento_create]', err);
     res.status(500).json({ erro: err.message });
   }
 };
@@ -61,6 +62,7 @@ const documento_delete = async (req, res) => {
     await registar_log(req.utilizador?.id, 'Eliminou documento', `Documento "${titulo}"`);
     res.json({ mensagem: 'Eliminado com sucesso' });
   } catch (err) {
+    console.error('[documento_delete]', err);
     res.status(500).json({ erro: err.message });
   }
 };

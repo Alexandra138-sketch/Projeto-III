@@ -6,7 +6,9 @@ const fs = require('fs');
 const { documento_list, documento_detail, documento_create, documento_update, documento_delete } = require('../controllers/documentoController');
 const { verificarToken } = require('../middleware/auth');
 
-const uploadsDir = path.join(process.cwd(), 'uploads');
+const uploadsDir = process.env.NODE_ENV === 'production'
+  ? path.join('/tmp', 'uploads')
+  : path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({

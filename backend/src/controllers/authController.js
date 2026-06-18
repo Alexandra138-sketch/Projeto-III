@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Utilizador } = require('../models');
+const { registar_log } = require('./logController');
 require('dotenv').config();
 
 const login = async (req, res) => {
@@ -18,6 +19,7 @@ const login = async (req, res) => {
       { expiresIn: '8h' }
     );
 
+    await registar_log(utilizador.id, 'Iniciou sessão', `Perfil: ${utilizador.perfil}`);
     res.json({ token, utilizador: { id: utilizador.id, nome: utilizador.nome, email: utilizador.email, perfil: utilizador.perfil } });
   } catch (err) {
     res.status(500).json({ erro: err.message });

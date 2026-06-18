@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 const Utilizador     = require('./Utilizador');
 const Cliente        = require('./Cliente');
 const Incidente      = require('./Incidente');
@@ -7,6 +8,15 @@ const Mensagem       = require('./Mensagem');
 const Noticia        = require('./Noticia');
 const Contacto       = require('./Contacto');
 const ConteudoPagina = require('./ConteudoPagina');
+=======
+const Utilizador    = require('./Utilizador');
+const Cliente       = require('./Cliente');
+const Incidente     = require('./Incidente');
+const Documento     = require('./Documento');
+const Servico       = require('./Servico');
+const Mensagem      = require('./Mensagem');
+const LogAtividade  = require('./LogAtividade');
+>>>>>>> Stashed changes
 
 /* ── Associações ── */
 
@@ -29,7 +39,14 @@ Noticia.belongsTo(Utilizador, { as: 'autor', foreignKey: 'criado_por' });
 // Mensagem pertence a um remetente (Utilizador) — já definido em Mensagem.js
 // (não redefinir aqui para evitar duplicação)
 
+<<<<<<< Updated upstream
 module.exports = {
   Utilizador, Cliente, Incidente, Documento, Servico, Mensagem,
   Noticia, Contacto, ConteudoPagina,
 };
+=======
+// Log pertence a um utilizador
+LogAtividade.belongsTo(Utilizador, { as: 'utilizador', foreignKey: 'utilizador_id' });
+
+module.exports = { Utilizador, Cliente, Incidente, Documento, Servico, Mensagem, LogAtividade };
+>>>>>>> Stashed changes

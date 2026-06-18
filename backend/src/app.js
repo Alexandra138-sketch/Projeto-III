@@ -40,6 +40,7 @@ io.on('connection', (socket) => {
 /* ── Middleware ── */
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', require('express').static(require('path').join(process.cwd(), 'uploads')));
 
 /* ── Rotas ── */
 app.use('/auth',        require('./routes/authRoutes'));
@@ -49,9 +50,13 @@ app.use('/incidentes',  require('./routes/incidenteRoutes'));
 app.use('/documentos',  require('./routes/documentoRoutes'));
 app.use('/clientes',    require('./routes/clienteRoutes'));
 app.use('/chat',        require('./routes/chatRoutes'));
+<<<<<<< Updated upstream
 app.use('/noticias',    require('./routes/noticiaRoutes'));
 app.use('/contactos',   require('./routes/contactoRoutes'));
 app.use('/conteudo',    require('./routes/conteudoRoutes'));
+=======
+app.use('/logs',        require('./routes/logRoutes'));
+>>>>>>> Stashed changes
 
 /* ── Arranque ── */
 const PORT = process.env.PORT || 3000;

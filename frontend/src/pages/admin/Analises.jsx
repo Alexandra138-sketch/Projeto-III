@@ -14,6 +14,7 @@ import {
   Cell,
   BarChart,
   Bar,
+  LabelList,
   Legend,
 } from 'recharts';
 
@@ -61,6 +62,8 @@ function buildLastMonths(count = 6) {
 function getCreatedAt(item) {
   return item.created_at || item.createdAt || item.data_criacao || item.createdAt;
 }
+
+const CHART_HEIGHT = 220;
 
 function Analises() {
   const [incidentes, setIncidentes] = useState([]);
@@ -111,7 +114,9 @@ function Analises() {
       const chave = inc.estado || 'Outro';
       mapa[chave] = (mapa[chave] || 0) + 1;
     });
-    return Object.entries(mapa).map(([name, value]) => ({ name, value, cor: ESTADO_CORES[name] || '#64748b' }));
+    return Object.entries(mapa)
+      .map(([name, value]) => ({ name, value, cor: ESTADO_CORES[name] || '#64748b' }))
+      .sort((a, b) => b.value - a.value);
   }, [incidentes]);
 
   const incidentesPorMes = useMemo(() => {
@@ -198,53 +203,72 @@ function Analises() {
         <>
           <div className="row g-4 mb-4">
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
+              <div className="dash-card chart-card">
                 <h5>Incidentes por Severidade</h5>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={incidentesPorSeveridade}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      innerRadius={50}
-                    >
-                      {incidentesPorSeveridade.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [value, name]} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pie-legend">
-                  {incidentesPorSeveridade.map((item) => (
-                    <div className="pie-legend-item" key={item.name}>
-                      <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
-                      {item.name}: {item.value}
-                    </div>
-                  ))}
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                    <PieChart>
+                      <Pie
+                        data={incidentesPorSeveridade}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={75}
+                        innerRadius={40}
+                      >
+                        {incidentesPorSeveridade.map((entry) => (
+                          <Cell key={entry.name} fill={entry.cor} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [value, name]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="pie-legend">
+                    {incidentesPorSeveridade.map((item) => (
+                      <div className="pie-legend-item" key={item.name}>
+                        <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
+                        {item.name}: {item.value}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
+              <div className="dash-card chart-card">
                 <h5>Incidentes por Estado</h5>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={incidentesPorEstado} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]}>
-                      {incidentesPorEstado.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                    <BarChart 
+                      data={incidentesPorEstado} 
+                      margin={{ top: 10, right: 10, left: -10, bottom: 40 }}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                        formatter={(value) => [value, 'Quantidade']}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#2563eb" 
+                        radius={[0, 8, 8, 0]}
+                        animationDuration={800}
+                        animationEasing="ease-out"
+                        activeBar={{ fillOpacity: 0.9 }}
+                      >
+                        {incidentesPorEstado.map((entry) => (
+                          <Cell key={entry.name} fill={entry.cor} />
+                        ))}
+                        <LabelList dataKey="value" position="right" style={{ fontSize: 12, fill: '#111', fontWeight: 600 }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>

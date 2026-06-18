@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   FiGrid, FiBarChart2, FiUsers, FiBriefcase, FiFileText,
-  FiAlertTriangle, FiActivity, FiGlobe, FiLogOut, FiShield,
+  FiAlertTriangle, FiActivity, FiGlobe, FiLogOut, FiShield, FiLayers,
 } from 'react-icons/fi';
 import './layout.css';
 
@@ -26,9 +26,11 @@ const GESTOR_LINKS = [
 ];
 
 const EMPRESA_LINKS = [
-  { to: '/empresa', label: 'Dashboard', icon: FiGrid, end: true },
-  { to: '/empresa/documentos', label: 'Os Meus Documentos', icon: FiFileText },
-  { to: '/empresa/incidentes', label: 'Incidentes', icon: FiAlertTriangle },
+  { to: '/empresa',            label: 'Dashboard',           icon: FiGrid,          end: true },
+  { to: '/empresa/ambiente',   label: 'Ambiente',            icon: FiLayers },
+  { to: '/empresa/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/empresa/incidentes', label: 'Incidentes',          icon: FiAlertTriangle },
+  { to: '/empresa/documentos', label: 'Os Meus Documentos',  icon: FiFileText },
 ];
 
 const ROLE_LABELS = {

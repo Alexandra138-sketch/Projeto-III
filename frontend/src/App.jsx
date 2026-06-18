@@ -25,6 +25,8 @@ import GestorAnalises from './pages/gestor/Analises';
 import EmpresaDashboard from './pages/empresa/Dashboard';
 import EmpresaDocumentos from './pages/empresa/Documentos';
 import EmpresaIncidentes from './pages/empresa/Incidentes';
+import EmpresaAnalises from './pages/empresa/Analises';
+import EmpresaAmbiente from './pages/empresa/Ambiente';
 import ClientePerfil from './pages/admin/ClientePerfil';
 
 
@@ -61,6 +63,8 @@ function App() {
           <Route path="/empresa" element={<ProtectedRoute perfil="empresa"><EmpresaDashboard /></ProtectedRoute>} />
           <Route path="/empresa/documentos" element={<ProtectedRoute perfil="empresa"><EmpresaDocumentos /></ProtectedRoute>} />
           <Route path="/empresa/incidentes" element={<ProtectedRoute perfil="empresa"><EmpresaIncidentes /></ProtectedRoute>} />
+          <Route path="/empresa/analises" element={<ProtectedRoute perfil="empresa"><EmpresaAnalises /></ProtectedRoute>} />
+          <Route path="/empresa/ambiente" element={<ProtectedRoute perfil="empresa"><EmpresaAmbiente /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -4,10 +4,11 @@
 //  Middleware é código que corre ENTRE a chegada do pedido
 //  e o controller que vai tratar esse pedido.
 //
-//  Neste ficheiro temos três verificações:
+//  Neste ficheiro temos quatro verificações:
 //    1. verificarToken  — o utilizador está autenticado?
 //    2. apenasAdmin     — só o admin pode aceder
 //    3. adminOuGestor   — admin e gestor podem aceder
+//    4. apenasEmpresa   — só contas de empresa podem aceder
 // ─────────────────────────────────────────────────────────────
 
 const jwt = require('jsonwebtoken');
@@ -64,4 +65,14 @@ const adminOuGestor = (req, res, next) => {
   next();
 };
 
-module.exports = { verificarToken, apenasAdmin, adminOuGestor };
+// ── 4. Apenas Empresa ─────────────────────────────────────────
+// Só permite acesso a utilizadores com perfil 'empresa'
+// Usado nas rotas exclusivas para clientes (portal de empresa)
+const apenasEmpresa = (req, res, next) => {
+  if (req.utilizador.perfil !== 'empresa') {
+    return res.status(403).json({ erro: 'Acesso negado. Apenas contas de empresa.' });
+  }
+  next();
+};
+
+module.exports = { verificarToken, apenasAdmin, adminOuGestor, apenasEmpresa };

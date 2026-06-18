@@ -4,10 +4,13 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [utilizador, setUtilizador] = useState(null);
+  // Enquanto true, ainda não terminámos de verificar o localStorage
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     const u = localStorage.getItem('utilizador');
     if (u) setUtilizador(JSON.parse(u));
+    setCarregando(false); // só agora sabemos se há sessão ou não
   }, []);
 
   const login = (dados, token) => {
@@ -23,7 +26,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ utilizador, login, logout }}>
+    <AuthContext.Provider value={{ utilizador, carregando, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

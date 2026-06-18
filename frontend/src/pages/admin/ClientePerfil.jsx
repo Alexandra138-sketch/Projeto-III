@@ -64,16 +64,16 @@ const MENSAGENS_INICIAIS = {
 };
 
 const DOC_TIPO = { policy: 'Política', report: 'Relatório', contract: 'Contrato', audit: 'Auditoria', pentest: 'Pentest' };
-const DOC_EST = { active: { label: 'Ativo', bg: '#dcfce7', cor: '#16a34a' }, expired: { label: 'Expirado', bg: '#fee2e2', cor: '#dc2626' }, pending_review: { label: 'Em revisão', bg: '#fef9c3', cor: '#ca8a04' } };
-const SEV_CFG = { critical: { label: 'Crítico', dot: 'findings-bar-seg-critical', bg: '#fee2e2', cor: '#dc2626' }, high: { label: 'Alto', dot: 'findings-bar-seg-high', bg: '#ffedd5', cor: '#c2410c' }, medium: { label: 'Médio', dot: 'findings-bar-seg-medium', bg: '#fef9c3', cor: '#ca8a04' }, low: { label: 'Baixo', dot: 'findings-bar-seg-low', bg: '#dcfce7', cor: '#16a34a' } };
-const INC_EST = { open: { label: 'Aberto', bg: '#fee2e2', cor: '#dc2626' }, investigating: { label: 'A investigar', bg: '#fef9c3', cor: '#ca8a04' }, resolved: { label: 'Resolvido', bg: '#dcfce7', cor: '#16a34a' }, closed: { label: 'Fechado', bg: '#f1f5f9', cor: '#64748b' } };
+const DOC_EST = { 'Ativo': { label: 'Ativo', bg: '#dcfce7', cor: '#16a34a' }, 'Expirado': { label: 'Expirado', bg: '#fee2e2', cor: '#dc2626' }, 'Em Revisão': { label: 'Em revisão', bg: '#fef9c3', cor: '#ca8a04' } };
+const SEV_CFG = { 'Crítico': { label: 'Crítico', dot: 'findings-bar-seg-critical', bg: '#fee2e2', cor: '#dc2626' }, 'Alto': { label: 'Alto', dot: 'findings-bar-seg-high', bg: '#ffedd5', cor: '#c2410c' }, 'Médio': { label: 'Médio', dot: 'findings-bar-seg-medium', bg: '#fef9c3', cor: '#ca8a04' }, 'Baixo': { label: 'Baixo', dot: 'findings-bar-seg-low', bg: '#dcfce7', cor: '#16a34a' } };
+const INC_EST = { 'Aberto': { label: 'Aberto', bg: '#fee2e2', cor: '#dc2626' }, 'A Investigar': { label: 'A investigar', bg: '#fef9c3', cor: '#ca8a04' }, 'Resolvido': { label: 'Resolvido', bg: '#dcfce7', cor: '#16a34a' }, 'Fechado': { label: 'Fechado', bg: '#f1f5f9', cor: '#64748b' } };
 const PT_TIPO = { internal: 'Interno', external: 'Externo', web: 'Web', mobile: 'Mobile', social: 'Eng. Social' };
 const PT_EST = { scheduled: { label: 'Agendado', bg: '#dbeafe', cor: '#2563eb' }, in_progress: { label: 'Em curso', bg: '#fef9c3', cor: '#ca8a04' }, completed: { label: 'Concluído', bg: '#dcfce7', cor: '#16a34a' }, report_sent: { label: 'Relatório enviado', bg: '#ede9fe', cor: '#7c3aed' } };
 
 const RESUMO_KPIS = [
-  { key: 'docs', label: 'Total de documentos', sub: (d, p, i, m) => `${d.filter(x => x.estado === 'active').length} ativos`, cardClass: 'resumo-kpi-azul', valClass: 'resumo-kpi-val-azul', Icone: FileText },
+  { key: 'docs', label: 'Total de documentos', sub: (d, p, i, m) => `${d.filter(x => x.estado === 'Ativo').length} ativos`, cardClass: 'resumo-kpi-azul', valClass: 'resumo-kpi-val-azul', Icone: FileText },
   { key: 'findings', label: 'Findings totais', sub: (d, p, i, m) => `${p.filter(x => x.critical > 0).length} com críticos`, cardClass: 'resumo-kpi-roxo', valClass: 'resumo-kpi-val-roxo', Icone: Shield },
-  { key: 'inc', label: 'Incidentes totais', sub: (d, p, i, m) => `${i.filter(x => x.estado === 'open' || x.estado === 'investigating').length} abertos`, cardClass: 'resumo-kpi-laranja', valClass: 'resumo-kpi-val-laranja', Icone: AlertTriangle },
+  { key: 'inc', label: 'Incidentes totais', sub: (d, p, i, m) => `${i.filter(x => x.estado === 'Aberto' || x.estado === 'A Investigar').length} abertos`, cardClass: 'resumo-kpi-laranja', valClass: 'resumo-kpi-val-laranja', Icone: AlertTriangle },
   { key: 'msgs', label: 'Mensagens trocadas', sub: (d, p, i, m) => 'no histórico', cardClass: 'resumo-kpi-verde', valClass: 'resumo-kpi-val-verde', Icone: MessageSquare },
 ];
 
@@ -104,19 +104,34 @@ function ClientePerfil() {
   const [abaAtiva, setAbaAtiva]         = useState('resumo');
   const [novaMensagem, setNovaMensagem] = useState('');
   const [confirmarEstado, setConfirmarEstado] = useState(false);
+  const [contaModal, setContaModal]           = useState(false);
+  const [contaId, setContaId]                 = useState('');
+  const [utilizadoresEmpresa, setUtilizadoresEmpresa] = useState([]);
   const [temMais, setTemMais]           = useState(true);
   const [carregando, setCarregando]     = useState(false);
   const [modoDemo, setModoDemo]         = useState(false);
+  const [docs, setDocs]                 = useState([]);
+  const [incidentes, setIncidentes]     = useState([]);
 
   const mensagensEndRef       = useRef(null);
   const mensagensContainerRef = useRef(null);
   const socketRef             = useRef(null);
   const carregandoRef         = useRef(false);
 
-  /* Dados auxiliares (ainda em demo — ligar à BD em iteração futura) */
-  const docs       = DOCUMENTOS_DB[`c${dbClienteId}`] || [];
-  const pentests   = PENTESTS_DB[`c${dbClienteId}`]   || [];
-  const incidentes = INCIDENTES_DB[`c${dbClienteId}`] || [];
+  /* Pentests — ainda em demo */
+  const pentests = PENTESTS_DB[`c${dbClienteId}`] || [];
+
+  /* Buscar incidentes e documentos reais da BD */
+  useEffect(() => {
+    if (!dbClienteId) return;
+    Promise.allSettled([
+      api.get('/incidentes', { params: { cliente_id: dbClienteId } }),
+      api.get('/documentos', { params: { cliente_id: dbClienteId } }),
+    ]).then(([incRes, docRes]) => {
+      if (incRes.status === 'fulfilled') setIncidentes(Array.isArray(incRes.value.data) ? incRes.value.data : []);
+      if (docRes.status === 'fulfilled') setDocs(Array.isArray(docRes.value.data) ? docRes.value.data : []);
+    });
+  }, [dbClienteId]);
 
   /* ── Buscar cliente da BD ── */
   useEffect(() => {
@@ -128,9 +143,9 @@ function ClientePerfil() {
   }, [dbClienteId]);
 
   const totalFindings  = pentests.reduce((s, p) => s + p.findings, 0);
-  const incAbertos     = incidentes.filter((i) => i.estado === 'open' || i.estado === 'investigating').length;
+  const incAbertos     = incidentes.filter((i) => i.estado === 'Aberto' || i.estado === 'A Investigar').length;
   const pentestsAtivos = pentests.filter((p) => p.estado === 'in_progress').length;
-  const docsAtivos     = docs.filter((d) => d.estado === 'active').length;
+  const docsAtivos     = docs.filter((d) => d.estado === 'Ativo').length;
 
   /* ── Socket.IO ── */
   useEffect(() => {
@@ -258,6 +273,26 @@ function ClientePerfil() {
     }
   };
 
+  const abrirContaModal = () => {
+    setContaId(cliente?.utilizador?.id || '');
+    api.get('/utilizadores').then(({ data }) => {
+      setUtilizadoresEmpresa(data.filter((u) => u.perfil === 'empresa'));
+    });
+    setContaModal(true);
+  };
+
+  const handleVincularConta = async () => {
+    try {
+      const { data } = await api.put(`/clientes/update/${dbClienteId}`, {
+        utilizador_id: contaId || null,
+      });
+      setCliente((prev) => ({ ...prev, utilizador_id: data.utilizador_id, utilizador: utilizadoresEmpresa.find((u) => String(u.id) === String(contaId)) || null }));
+      setContaModal(false);
+    } catch {
+      /* manter modal aberto em caso de erro */
+    }
+  };
+
   const handleToggleAtivo = async () => {
     const novoEstado = cliente?.estado === 'Ativo' ? 'Inativo' : 'Ativo';
     setConfirmarEstado(false);
@@ -319,6 +354,36 @@ function ClientePerfil() {
 
   return (
     <AdminLayout>
+
+      {contaModal && (
+        <div className="modal-overlay" onClick={() => setContaModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h5>Vincular Conta de Empresa</h5>
+              <button className="modal-close" onClick={() => setContaModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                Seleciona o utilizador com perfil <strong>empresa</strong> que terá acesso ao portal desta empresa.
+              </p>
+              <select
+                className="form-select"
+                value={contaId}
+                onChange={(e) => setContaId(e.target.value)}
+              >
+                <option value="">— Sem conta vinculada —</option>
+                {utilizadoresEmpresa.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nome} ({u.email})</option>
+                ))}
+              </select>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancelar" onClick={() => setContaModal(false)}>Cancelar</button>
+              <button className="btn-guardar" onClick={handleVincularConta}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmarEstado && (
         <div className="modal-overlay" onClick={() => setConfirmarEstado(false)}>
@@ -415,6 +480,29 @@ function ClientePerfil() {
                     </div>
                   </div>
                 )}
+                {/* Conta de acesso empresa */}
+                <div className="contacto-box contacto-box-permanente">
+                  <div className="contacto-icon contacto-icon-permanente">
+                    <User size={13} color="#16a34a" />
+                  </div>
+                  <div>
+                    <p className="contacto-titulo">Conta de Acesso</p>
+                    {cliente.utilizador
+                      ? <>
+                          <p className="contacto-nome">{cliente.utilizador.nome}</p>
+                          <p className="contacto-detalhe">{cliente.utilizador.email}</p>
+                        </>
+                      : <p className="contacto-detalhe" style={{ color: '#ef4444' }}>Sem conta vinculada</p>
+                    }
+                    <button
+                      onClick={abrirContaModal}
+                      style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#2563eb', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    >
+                      {cliente.utilizador ? 'Alterar conta' : 'Vincular conta'}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Resp. de Segurança — campo extra (quando existir na BD) */}
                 {respSeg && (
                   <div className="contacto-box contacto-box-permanente">
@@ -473,13 +561,13 @@ function ClientePerfil() {
                   {docs.length === 0
                     ? <p className="text-center text-muted py-3">Sem documentos.</p>
                     : docs.slice(0, 3).map((doc) => {
-                        const est = DOC_EST[doc.estado] || DOC_EST.active;
+                        const est = DOC_EST[doc.estado] || DOC_EST['Ativo'];
                         return (
                           <div key={doc.id} className="resumo-recente-item">
                             <FileText size={15} color="#3b82f6" />
                             <div className="flex-grow-1" style={{ minWidth: 0 }}>
                               <p className="incidente-nome text-truncate">{doc.titulo}</p>
-                              <p className="incidente-data">v{doc.versao} · {doc.atualizado}</p>
+                              <p className="incidente-data">v{doc.versao} · {doc.updated_at ? new Date(doc.updated_at).toLocaleDateString('pt-PT') : '—'}</p>
                             </div>
                             <Pill bg={est.bg} cor={est.cor}>{est.label}</Pill>
                           </div>
@@ -492,14 +580,14 @@ function ClientePerfil() {
                   {incidentes.length === 0
                     ? <p className="text-center text-muted py-3">Sem incidentes.</p>
                     : incidentes.slice(0, 3).map((inc) => {
-                        const sev = SEV_CFG[inc.severidade] || SEV_CFG.medium;
-                        const est = INC_EST[inc.estado] || INC_EST.open;
+                        const sev = SEV_CFG[inc.severidade] || SEV_CFG['Médio'];
+                        const est = INC_EST[inc.estado] || INC_EST['Aberto'];
                         return (
                           <div key={inc.id} className="resumo-recente-item">
                             <div className={`incidente-dot ${sev.dot}`} />
                             <div className="flex-grow-1" style={{ minWidth: 0 }}>
                               <p className="incidente-nome text-truncate">{inc.titulo}</p>
-                              <p className="incidente-data">{inc.reportado}</p>
+                              <p className="incidente-data">{inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}</p>
                             </div>
                             <Pill bg={est.bg} cor={est.cor}>{est.label}</Pill>
                           </div>
@@ -519,7 +607,7 @@ function ClientePerfil() {
                   <p>Sem documentos associados a este cliente.</p>
                 </div>
               ) : docs.map((doc) => {
-                const est = DOC_EST[doc.estado] || DOC_EST.active;
+                const est = DOC_EST[doc.estado] || DOC_EST['Ativo'];
                 return (
                   <div key={doc.id} className="perfil-item">
                     <div className="d-flex align-items-start gap-3">
@@ -535,7 +623,7 @@ function ClientePerfil() {
                         <p className="incidente-data mb-2">{doc.descricao}</p>
                         <div className="d-flex flex-wrap gap-3">
                           <span className="perfil-item-meta"><Tag size={11} /> v{doc.versao}</span>
-                          <span className="perfil-item-meta"><Clock size={11} /> {doc.atualizado}</span>
+                          <span className="perfil-item-meta"><Clock size={11} /> {doc.updated_at ? new Date(doc.updated_at).toLocaleDateString('pt-PT') : '—'}</span>
                           <span className="perfil-item-meta">{doc.tamanho}</span>
                         </div>
                       </div>
@@ -621,8 +709,8 @@ function ClientePerfil() {
                   <p>Sem incidentes registados para este cliente.</p>
                 </div>
               ) : incidentes.map((inc) => {
-                const sev = SEV_CFG[inc.severidade] || SEV_CFG.medium;
-                const est = INC_EST[inc.estado] || INC_EST.open;
+                const sev = SEV_CFG[inc.severidade] || SEV_CFG['Médio'];
+                const est = INC_EST[inc.estado] || INC_EST['Aberto'];
                 return (
                   <div key={inc.id} className="perfil-item">
                     <div className="d-flex align-items-start gap-3">
@@ -632,13 +720,12 @@ function ClientePerfil() {
                           <p className="perfil-item-titulo">{inc.titulo}</p>
                           <Pill bg={sev.bg} cor={sev.cor}>{sev.label}</Pill>
                           <Pill bg={est.bg} cor={est.cor}>{est.label}</Pill>
-                          {inc.nis2 && <Pill bg="#e0e7ff" cor="#4338ca"><Shield size={10} /> NIS2</Pill>}
+                          {inc.nis2_notificado && <Pill bg="#e0e7ff" cor="#4338ca"><Shield size={10} /> NIS2</Pill>}
                         </div>
                         <p className="incidente-data mb-2">{inc.descricao}</p>
                         <div className="d-flex flex-wrap gap-3">
-                          <span className="perfil-item-meta"><Calendar size={11} /> Reportado: {inc.reportado}</span>
-                          {inc.resolvido && <span className="perfil-item-meta" style={{ color: '#16a34a' }}><CheckCircle size={11} /> Resolvido: {inc.resolvido}</span>}
-                          <span className="perfil-item-meta"><User size={11} /> {inc.reportadoPor}</span>
+                          <span className="perfil-item-meta"><Calendar size={11} /> Reportado: {inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}</span>
+                          <span className="perfil-item-meta"><User size={11} /> {inc.reportador?.nome || '—'}</span>
                         </div>
                       </div>
                     </div>

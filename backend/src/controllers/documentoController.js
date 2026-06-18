@@ -3,11 +3,17 @@ const { registar_log } = require('./logController');
 
 const documento_list = async (req, res) => {
   try {
+    const where = {};
+    if (req.query.cliente_id) {
+      where.cliente_id = req.query.cliente_id;
+    }
     const documentos = await Documento.findAll({
+      where,
       include: [
         { model: Cliente, as: 'cliente', attributes: ['id', 'nome'] },
         { model: Utilizador, as: 'criador', attributes: ['id', 'nome'] },
       ],
+      order: [['created_at', 'DESC']],
     });
     res.json(documentos);
   } catch (err) {

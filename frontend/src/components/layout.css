@@ -415,7 +415,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  min-height: 340px; /* garante que ambos os cartões tenham altura suficiente */
+  min-height: 300px; /* reduzido para igualar os gráficos mais pequenos */
 }
 /* ── Página de Incidentes ── */
 

@@ -63,7 +63,7 @@ function getCreatedAt(item) {
   return item.created_at || item.createdAt || item.data_criacao || item.createdAt;
 }
 
-const CHART_HEIGHT = 260;
+const CHART_HEIGHT = 220;
 
 function Analises() {
   const [incidentes, setIncidentes] = useState([]);
@@ -206,7 +206,7 @@ function Analises() {
               <div className="dash-card chart-card">
                 <h5>Incidentes por Severidade</h5>
                 <div className="chart-wrap">
-                  <ResponsiveContainer width="100%" height={260}>
+                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
                     <PieChart>
                       <Pie
                         data={incidentesPorSeveridade}
@@ -214,8 +214,8 @@ function Analises() {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={90}
-                        innerRadius={50}
+                        outerRadius={75}
+                        innerRadius={40}
                       >
                         {incidentesPorSeveridade.map((entry) => (
                           <Cell key={entry.name} fill={entry.cor} />
@@ -241,16 +241,30 @@ function Analises() {
                 <h5>Incidentes por Estado</h5>
                 <div className="chart-wrap">
                   <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <BarChart data={incidentesPorEstado} margin={{ top: 10, right: 10, left: -10, bottom: 40 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12, angle: -20, textAnchor: 'end' }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]}>
+                    <BarChart 
+                      data={incidentesPorEstado} 
+                      margin={{ top: 10, right: 10, left: -10, bottom: 40 }}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                        formatter={(value) => [value, 'Quantidade']}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#2563eb" 
+                        radius={[0, 8, 8, 0]}
+                        animationDuration={800}
+                        animationEasing="ease-out"
+                        activeBar={{ fillOpacity: 0.9 }}
+                      >
                         {incidentesPorEstado.map((entry) => (
                           <Cell key={entry.name} fill={entry.cor} />
                         ))}
-                        <LabelList dataKey="value" position="top" style={{ fontSize: 12, fill: '#111' }} />
+                        <LabelList dataKey="value" position="right" style={{ fontSize: 12, fill: '#111', fontWeight: 600 }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>

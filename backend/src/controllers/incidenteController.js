@@ -28,24 +28,27 @@ const incidente_list = async (req, res) => {
     // Construir o filtro dinamicamente
     const filtro = {};
 
-    // Se foi passado ?cliente_id=X no URL, filtrar por esse cliente
-    if (req.query.cliente_id) {
-      filtro.cliente_id = req.query.cliente_id;
-    }
-
     // Se for gestor, limitar aos clientes que lhe pertencem
-    // Para isso, primeiro buscamos os IDs dos seus clientes
     if (perfil === 'gestor') {
       const clientesDoGestor = await Cliente.findAll({
         where: { gestor_id: req.utilizador.id },
-        attributes: ['id'], // só precisamos do id
+        attributes: ['id'],
       });
-
-      // Extrair só os IDs numa lista: [1, 2, 5, ...]
       const idsClientes = clientesDoGestor.map((c) => c.id);
 
-      // Op.in é o equivalente SQL de: WHERE cliente_id IN (1, 2, 5)
-      filtro.cliente_id = { [Op.in]: idsClientes };
+      if (req.query.cliente_id) {
+        const requestedId = parseInt(req.query.cliente_id, 10);
+        if (idsClientes.includes(requestedId)) {
+          filtro.cliente_id = requestedId;
+        } else {
+          return res.status(403).json({ erro: 'Não tens permissão para ver incidentes deste cliente.' });
+        }
+      } else {
+        filtro.cliente_id = { [Op.in]: idsClientes };
+      }
+    } else if (req.query.cliente_id) {
+      // Admin: filtrar por cliente_id se passado
+      filtro.cliente_id = req.query.cliente_id;
     }
 
     const incidentes = await Incidente.findAll({

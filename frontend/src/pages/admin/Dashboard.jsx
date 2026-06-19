@@ -1,80 +1,97 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
+import api from '../../api/axios';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 
-/* ── Dados de demonstração ── */
+const CORES = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#ec4899'];
+function getCor(id) { return CORES[(parseInt(id, 10) - 1) % CORES.length]; }
 
-const STATS = [
-  { numero: 12, label: 'Utilizadores Ativos' },
-  { numero: 4,  label: 'Incidentes Abertos'  },
-  { numero: 3,  label: 'Pentests Ativos'     },
-  { numero: 27, label: 'Documentos'          },
-];
-
-const INCIDENTES_SEVERIDADE = [
-  { name: 'Crítico', value: 2, cor: '#ef4444' },
-  { name: 'Alto',    value: 2, cor: '#f97316' },
-  { name: 'Médio',   value: 1, cor: '#3b82f6' },
-  { name: 'Baixo',   value: 1, cor: '#22c55e' },
-];
-
-const PENTESTS_BAR = [
-  { cliente: 'TechCorp',    findings: 12, resolvidos: 1 },
-  { cliente: 'RetailGroup', findings: 7,  resolvidos: 0 },
-  { cliente: 'FinBank',     findings: 9,  resolvidos: 0 },
-  { cliente: 'MediSafe',    findings: 15, resolvidos: 1 },
-];
-
-const INCIDENTES_RECENTES = [
-  { id: 1, nome: 'Ransomware - Servidores de Ficheiros', data: '2025-02-10', estado: 'resolvido'  },
-  { id: 2, nome: 'Phishing Campaign - Executivos',      data: '2025-03-10', estado: 'investigar' },
-  { id: 3, nome: 'SQL Injection - Portal Cliente',      data: '2025-04-01', estado: 'critico'    },
-  { id: 4, nome: 'Acesso Não Autorizado - VPN',         data: '2025-04-15', estado: 'aberto'     },
-];
-
-const CLIENTES = [
-  { id: 1, nome: 'Tech Corp Portugal', email: 'seguranca@techcorp.pt', cor: '#3b82f6', ativo: true  },
-  { id: 2, nome: 'Retail Group SA',    email: 'it@retailgroup.pt',     cor: '#8b5cf6', ativo: true  },
-  { id: 3, nome: 'FinBank Portugal',   email: 'ciso@finbank.pt',       cor: '#10b981', ativo: true  },
-  { id: 4, nome: 'MediSafe Clinic',    email: 'admin@medisafe.pt',     cor: '#f59e0b', ativo: false },
-];
-
-const BADGE_CLASS = {
-  resolvido:  'badge-status badge-resolvido',
-  investigar: 'badge-status badge-investigar',
-  critico:    'badge-status badge-critico',
-  aberto:     'badge-status badge-aberto',
+const SEV_CORES = {
+  Crítico: '#ef4444',
+  Alto:    '#f97316',
+  Médio:   '#3b82f6',
+  Baixo:   '#22c55e',
 };
 
-const BADGE_LABEL = {
-  resolvido:  'Resolvido',
-  investigar: 'A Investigar',
-  critico:    'Crítico',
-  aberto:     'Aberto',
+const EST_CFG = {
+  'Aberto':       { bg: '#fee2e2', cor: '#dc2626' },
+  'A Investigar': { bg: '#fef9c3', cor: '#ca8a04' },
+  'Resolvido':    { bg: '#dcfce7', cor: '#16a34a' },
+  'Fechado':      { bg: '#f1f5f9', cor: '#64748b' },
 };
-
-/* ── Componente ── */
 
 function Dashboard() {
   const { utilizador } = useAuth();
   const primeiroNome = utilizador?.nome?.split(' ')[0] || 'Admin';
 
+  const [clientes,    setClientes]    = useState([]);
+  const [incidentes,  setIncidentes]  = useState([]);
+  const [documentos,  setDocumentos]  = useState([]);
+  const [utilizadores, setUtilizadores] = useState([]);
+  const [carregando,  setCarregando]  = useState(true);
+
+  useEffect(() => {
+    Promise.allSettled([
+      api.get('/clientes'),
+      api.get('/incidentes'),
+      api.get('/documentos'),
+      api.get('/utilizadores'),
+    ]).then(([c, i, d, u]) => {
+      if (c.status === 'fulfilled') setClientes(Array.isArray(c.value.data) ? c.value.data : []);
+      if (i.status === 'fulfilled') setIncidentes(Array.isArray(i.value.data) ? i.value.data : []);
+      if (d.status === 'fulfilled') setDocumentos(Array.isArray(d.value.data) ? d.value.data : []);
+      if (u.status === 'fulfilled') setUtilizadores(Array.isArray(u.value.data) ? u.value.data : []);
+    }).finally(() => setCarregando(false));
+  }, []);
+
+  const incAbertos = incidentes.filter((i) => i.estado === 'Aberto' || i.estado === 'A Investigar').length;
+
+  const stats = [
+    { numero: utilizadores.length, label: 'Utilizadores' },
+    { numero: incAbertos,          label: 'Incidentes Abertos' },
+    { numero: clientes.length,     label: 'Clientes' },
+    { numero: documentos.length,   label: 'Documentos' },
+  ];
+
+  // Pie: incidentes por severidade
+  const sevMap = {};
+  incidentes.forEach((inc) => {
+    const k = inc.severidade || 'Outro';
+    sevMap[k] = (sevMap[k] || 0) + 1;
+  });
+  const incPorSev = Object.entries(sevMap).map(([name, value]) => ({
+    name, value, cor: SEV_CORES[name] || '#64748b',
+  }));
+
+  // Bar: incidentes por cliente (top 5)
+  const cliMap = {};
+  incidentes.forEach((inc) => {
+    const nome = inc.cliente?.nome || `Cliente ${inc.cliente_id}`;
+    cliMap[nome] = (cliMap[nome] || 0) + 1;
+  });
+  const incPorCli = Object.entries(cliMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([cliente, total]) => ({ cliente, total }));
+
+  const incRecentes = [...incidentes].slice(0, 4);
+
   return (
     <AdminLayout>
 
-      {/* Banner de boas-vindas + estatísticas */}
       <div className="dash-banner">
         <h4>Olá, {primeiroNome} 👋</h4>
         <p>Aqui está o resumo das atividades e clientes.</p>
         <div className="row g-3">
-          {STATS.map((s) => (
+          {stats.map((s) => (
             <div className="col-6 col-md-3" key={s.label}>
               <div className="stat-card">
-                <div className="stat-number">{s.numero}</div>
+                <div className="stat-number">{carregando ? '…' : s.numero}</div>
                 <div className="stat-label">{s.label}</div>
               </div>
             </div>
@@ -82,95 +99,107 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Gráficos */}
       <div className="row g-4 mb-4">
 
-        {/* Pie chart */}
         <div className="col-12 col-md-6">
           <div className="dash-card">
             <h5>Incidentes por Severidade</h5>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={INCIDENTES_SEVERIDADE} cx="50%" cy="50%" outerRadius={90} dataKey="value">
-                  {INCIDENTES_SEVERIDADE.map((entry) => (
-                    <Cell key={entry.name} fill={entry.cor} />
+            {incPorSev.length === 0 ? (
+              <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={incPorSev} cx="50%" cy="50%" outerRadius={90} dataKey="value">
+                      {incPorSev.map((entry) => (
+                        <Cell key={entry.name} fill={entry.cor} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [value, name]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pie-legend">
+                  {incPorSev.map((item) => (
+                    <div className="pie-legend-item" key={item.name}>
+                      <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
+                      {item.name}: {item.value}
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip formatter={(value, name) => [value, name]} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="pie-legend">
-              {INCIDENTES_SEVERIDADE.map((item) => (
-                <div className="pie-legend-item" key={item.name}>
-                  <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
-                  {item.name}: {item.value}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Bar chart */}
         <div className="col-12 col-md-6">
           <div className="dash-card">
-            <h5>Findings de Pentests por Cliente</h5>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={PENTESTS_BAR} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="cliente" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="findings"   name="Findings"   fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="resolvidos" name="Resolvidos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <h5>Incidentes por Cliente</h5>
+            {incPorCli.length === 0 ? (
+              <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={incPorCli} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="cliente" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="total" name="Incidentes" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
       </div>
 
-      {/* Incidentes Recentes + Clientes */}
       <div className="row g-4">
 
-        {/* Incidentes recentes */}
         <div className="col-12 col-md-6">
           <div className="dash-card">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="mb-0">Incidentes Recentes</h5>
               <Link to="/admin/incidentes" className="ver-todos-link">Ver todos →</Link>
             </div>
-            {INCIDENTES_RECENTES.map((inc) => (
-              <div className="incidente-row" key={inc.id}>
-                <div>
-                  <p className="incidente-nome">{inc.nome}</p>
-                  <p className="incidente-data">{inc.data}</p>
+            {incRecentes.length === 0 ? (
+              <p style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem' }}>Sem incidentes</p>
+            ) : incRecentes.map((inc) => {
+              const cfg = EST_CFG[inc.estado] || { bg: '#f1f5f9', cor: '#64748b' };
+              return (
+                <div className="incidente-row" key={inc.id}>
+                  <div>
+                    <p className="incidente-nome">{inc.titulo}</p>
+                    <p className="incidente-data">
+                      {inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}
+                    </p>
+                  </div>
+                  <span style={{ background: cfg.bg, color: cfg.cor, fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
+                    {inc.estado}
+                  </span>
                 </div>
-                <span className={BADGE_CLASS[inc.estado]}>{BADGE_LABEL[inc.estado]}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Clientes */}
         <div className="col-12 col-md-6">
           <div className="dash-card">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="mb-0">Clientes</h5>
               <Link to="/admin/clientes" className="ver-todos-link">Ver todos →</Link>
             </div>
-            {CLIENTES.map((c) => (
+            {clientes.slice(0, 4).map((c) => (
               <div className="cliente-row" key={c.id}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="cliente-avatar" style={{ backgroundColor: c.cor }}>
-                    {c.nome[0]}
+                  <div className="cliente-avatar" style={{ backgroundColor: getCor(c.id) }}>
+                    {c.nome?.[0] || '?'}
                   </div>
                   <div>
                     <p className="cliente-nome">{c.nome}</p>
                     <p className="cliente-email">{c.email}</p>
                   </div>
                 </div>
-                <span className={c.ativo ? 'badge-ativo' : 'badge-inativo'}>
-                  {c.ativo ? '● Ativo' : '○ Inativo'}
+                <span className={c.estado === 'Ativo' ? 'badge-ativo' : 'badge-inativo'}>
+                  {c.estado === 'Ativo' ? '● Ativo' : '○ Inativo'}
                 </span>
               </div>
             ))}

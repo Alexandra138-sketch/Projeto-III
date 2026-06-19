@@ -43,9 +43,9 @@ function GestorClientePerfil() {
       .catch(() => setCliente(null))
       .finally(() => setCarregando(false));
 
-    // Buscar documentos e filtrar pelo cliente atual
-    api.get('/documentos')
-      .then(({ data }) => setDocs(Array.isArray(data) ? data.filter(d => d.cliente_id === dbClienteId) : []))
+    // Buscar documentos deste cliente
+    api.get('/documentos', { params: { cliente_id: dbClienteId } })
+      .then(({ data }) => setDocs(Array.isArray(data) ? data : []))
       .catch(() => setDocs([]));
 
     // Buscar incidentes deste cliente usando o query param

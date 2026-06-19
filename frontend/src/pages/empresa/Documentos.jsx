@@ -14,7 +14,6 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
-import { FiDownload, FiFile } from 'react-icons/fi';
 
 // URL base do backend para construir links de download
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -128,7 +127,7 @@ function Documentos() {
 
                 {/* Ícone e tipo */}
                 <div className="d-flex align-items-center gap-2 mb-2">
-                  <FiFile size={20} style={{ color: '#2563eb' }} />
+                  📄
                   <span className={BADGE_TIPO[doc.tipo] || 'badge bg-secondary'}>
                     {doc.tipo || 'Outro'}
                   </span>
@@ -171,7 +170,7 @@ function Documentos() {
                     rel="noreferrer"
                     className="btn btn-sm btn-outline-primary mt-3 d-flex align-items-center gap-1 justify-content-center"
                   >
-                    <FiDownload size={14} />
+                    ⬇
                     Descarregar
                   </a>
                 ) : (

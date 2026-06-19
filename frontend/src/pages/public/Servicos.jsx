@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom';
-import { FaCrosshairs, FaShieldAlt, FaFileAlt, FaDesktop, FaChalkboardTeacher, FaCloud } from 'react-icons/fa';
-import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import '../../App.css';
 
 const SERVICOS = [
   {
-    icon: <FaCrosshairs size={28} color="#fff" />,
+    icon: 🎯,
     iconBg: 'linear-gradient(135deg, #2b7fff 0%, #155dfc 100%)',
     titulo: 'Testes de Penetração (Pentesting)',
     descricao: 'Simulação de ataques reais para identificar vulnerabilidades na sua infraestrutura antes que os atacantes o façam.',
@@ -15,7 +13,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: <FaShieldAlt size={28} color="#fff" />,
+    icon: 🛡,
     iconBg: 'linear-gradient(135deg, #f6339a 0%, #e60076 100%)',
     titulo: 'Gestão de Incidentes NIS2',
     descricao: 'Resposta rápida a incidentes de segurança com notificação às autoridades dentro dos prazos NIS2 (24h/72h).',
@@ -23,7 +21,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: <FaFileAlt size={28} color="#fff" />,
+    icon: 📄,
     iconBg: 'linear-gradient(135deg, #ad46ff 0%, #9810fa 100%)',
     titulo: 'Auditoria de Conformidade NIS2',
     descricao: 'Avaliação completa do estado de conformidade com a Diretiva NIS2 e elaboração de planos de ação.',
@@ -31,7 +29,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: <FaDesktop size={28} color="#fff" />,
+    icon: 🖥,
     iconBg: 'linear-gradient(135deg, #2b7fff 0%, #155dfc 100%)',
     titulo: 'SIEM & Monitorização Contínua',
     descricao: 'Monitorização contínua de eventos de segurança com correlação avançada de ameaças.',
@@ -39,7 +37,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: <FaChalkboardTeacher size={28} color="#fff" />,
+    icon: 📚,
     iconBg: 'linear-gradient(135deg, #00b8db 0%, #0092b8 100%)',
     titulo: 'Formação e Consciencialização',
     descricao: 'Programas de formação personalizados para aumentar a maturidade de segurança das suas equipas.',
@@ -47,7 +45,7 @@ const SERVICOS = [
     nis2: false,
   },
   {
-    icon: <FaCloud size={28} color="#fff" />,
+    icon: ☁,
     iconBg: 'linear-gradient(135deg, #ad46ff 0%, #9810fa 100%)',
     titulo: 'Segurança Cloud & DevSecOps',
     descricao: 'Proteção de ambientes cloud e integração de segurança no ciclo de desenvolvimento de software.',
@@ -200,7 +198,7 @@ export default function Servicos() {
                 <div className="d-flex flex-column gap-3">
                   {NIS2_CHECKLIST.map(item => (
                     <div key={item} className="d-flex align-items-center gap-3">
-                      <FiCheckCircle size={18} style={{ color: '#9810fa', flexShrink: 0 }} />
+                      ✅
                       <span className="small" style={{ color: '#4a5565' }}>{item}</span>
                     </div>
                   ))}
@@ -232,7 +230,7 @@ export default function Servicos() {
             Contacte-nos para uma avaliação gratuita da sua postura de segurança.
           </p>
           <Link to="/contacto" className="btn-gradient">
-            Contactar Agora <FiArrowRight size={16} />
+            Contactar Agora →
           </Link>
         </div>
       </section>

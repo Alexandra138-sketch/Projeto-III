@@ -1,6 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiHome, FiBell, FiLogOut } from 'react-icons/fi';
 import './layout.css';
 
 const PAGE_TITLES = {
@@ -35,10 +34,7 @@ function AdminTopbar() {
   const pageTitle = PAGE_TITLES[location.pathname] || 'Painel';
   const areaLabel = `CyberBoxSecur — ${AREA_LABELS[utilizador?.perfil] || 'Painel'}`;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
     <header className="admin-topbar">
@@ -49,19 +45,16 @@ function AdminTopbar() {
 
       <div className="d-flex align-items-center gap-2">
         <button className="topbar-btn" title="Página Inicial" onClick={() => navigate('/')}>
-          <FiHome size={17} />
+          🏠
         </button>
 
         <div className="topbar-bell">
-          <button className="topbar-btn" title="Notificações">
-            <FiBell size={17} />
-          </button>
+          <button className="topbar-btn" title="Notificações">🔔</button>
           <span className="notif-badge">2</span>
         </div>
 
         <button className="topbar-btn logout" title="Sair" onClick={handleLogout}>
-          <FiLogOut size={15} />
-          <span>Sair</span>
+          <span>↩ Sair</span>
         </button>
       </div>
     </header>

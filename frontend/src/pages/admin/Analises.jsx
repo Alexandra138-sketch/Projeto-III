@@ -1,43 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  LabelList,
-  Legend,
-} from 'recharts';
 
 const MES_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const SEVERIDADE_CORES = {
-  Crítico: '#ef4444',
-  Alto: '#f97316',
-  Médio: '#3b82f6',
-  Baixo: '#22c55e',
-};
-const ESTADO_CORES = {
-  Aberto: '#2563eb',
-  'A Investigar': '#f59e0b',
-  Resolvido: '#16a34a',
-  Fechado: '#64748b',
-};
-const DOCUMENTO_TIPOS_CORES = {
-  Política: '#6366f1',
-  Pentest: '#22c55e',
-  Auditoria: '#f59e0b',
-  Contrato: '#ec4899',
-  Relatório: '#14b8a6',
-};
 
 function formatMonthLabel(date) {
   return `${MES_LABELS[date.getMonth()]} ${date.getFullYear()}`;
@@ -60,63 +25,62 @@ function buildLastMonths(count = 6) {
 }
 
 function getCreatedAt(item) {
-  return item.created_at || item.createdAt || item.data_criacao || item.createdAt;
+  return item.created_at || item.createdAt;
 }
 
-const CHART_HEIGHT = 250;
+/* Barra de progresso Bootstrap */
+function BarraProgresso({ label, valor, total, cor }) {
+  const pct = total > 0 ? Math.round((valor / total) * 100) : 0;
+  return (
+    <div className="mb-3">
+      <div className="d-flex justify-content-between mb-1">
+        <span className="small fw-semibold">{label}</span>
+        <span className="small text-muted">{valor} ({pct}%)</span>
+      </div>
+      <div className="progress" style={{ height: 14 }}>
+        <div className={`progress-bar ${cor}`} style={{ width: `${pct}%` }}></div>
+      </div>
+    </div>
+  );
+}
 
 function Analises() {
   const [incidentes, setIncidentes] = useState([]);
-  const [clientes, setClientes] = useState([]);
+  const [clientes,   setClientes]   = useState([]);
   const [documentos, setDocumentos] = useState([]);
-  const [servicos, setServicos] = useState([]);
+  const [servicos,   setServicos]   = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState('');
+  const [erro,       setErro]       = useState('');
 
   useEffect(() => {
     setCarregando(true);
-    // allSettled garante que se uma chamada falhar, as outras ainda carregam
     Promise.allSettled([
       api.get('/incidentes'),
       api.get('/clientes'),
       api.get('/documentos'),
       api.get('/servicos'),
-    ])
-      .then(([incRes, cliRes, docRes, servRes]) => {
-        if (incRes.status === 'fulfilled') setIncidentes(Array.isArray(incRes.value.data) ? incRes.value.data : []);
-        if (cliRes.status === 'fulfilled') setClientes(Array.isArray(cliRes.value.data) ? cliRes.value.data : []);
-        if (docRes.status === 'fulfilled') setDocumentos(Array.isArray(docRes.value.data) ? docRes.value.data : []);
-        if (servRes.status === 'fulfilled') setServicos(Array.isArray(servRes.value.data) ? servRes.value.data : []);
-
-        // Só mostrar erro se TODAS as chamadas falharam
-        const todasFalharam = [incRes, cliRes, docRes, servRes].every(r => r.status === 'rejected');
-        if (todasFalharam) setErro('Não foi possível carregar os dados de análises.');
-      })
-      .finally(() => {
-        setCarregando(false);
-      });
+    ]).then(([incRes, cliRes, docRes, servRes]) => {
+      if (incRes.status  === 'fulfilled') setIncidentes(Array.isArray(incRes.value.data)  ? incRes.value.data  : []);
+      if (cliRes.status  === 'fulfilled') setClientes(Array.isArray(cliRes.value.data)    ? cliRes.value.data  : []);
+      if (docRes.status  === 'fulfilled') setDocumentos(Array.isArray(docRes.value.data)  ? docRes.value.data  : []);
+      if (servRes.status === 'fulfilled') setServicos(Array.isArray(servRes.value.data)   ? servRes.value.data : []);
+      const todasFalharam = [incRes, cliRes, docRes, servRes].every(r => r.status === 'rejected');
+      if (todasFalharam) setErro('Não foi possível carregar os dados de análises.');
+    }).finally(() => setCarregando(false));
   }, []);
 
   const mesesUltimosSeis = useMemo(() => buildLastMonths(6), []);
 
   const incidentesPorSeveridade = useMemo(() => {
     const mapa = {};
-    incidentes.forEach((inc) => {
-      const chave = inc.severidade || 'Outro';
-      mapa[chave] = (mapa[chave] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({ name, value, cor: SEVERIDADE_CORES[name] || '#64748b' }));
+    incidentes.forEach((inc) => { const c = inc.severidade || 'Outro'; mapa[c] = (mapa[c] || 0) + 1; });
+    return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [incidentes]);
 
   const incidentesPorEstado = useMemo(() => {
     const mapa = {};
-    incidentes.forEach((inc) => {
-      const chave = inc.estado || 'Outro';
-      mapa[chave] = (mapa[chave] || 0) + 1;
-    });
-    return Object.entries(mapa)
-      .map(([name, value]) => ({ name, value, cor: ESTADO_CORES[name] || '#64748b' }))
-      .sort((a, b) => b.value - a.value);
+    incidentes.forEach((inc) => { const c = inc.estado || 'Outro'; mapa[c] = (mapa[c] || 0) + 1; });
+    return Object.entries(mapa).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [incidentes]);
 
   const incidentesPorMes = useMemo(() => {
@@ -132,247 +96,168 @@ function Analises() {
 
   const documentosPorTipo = useMemo(() => {
     const mapa = {};
-    documentos.forEach((doc) => {
-      const tipo = doc.tipo || 'Outro';
-      mapa[tipo] = (mapa[tipo] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({ name, value, cor: DOCUMENTO_TIPOS_CORES[name] || '#64748b' }));
+    documentos.forEach((doc) => { const t = doc.tipo || 'Outro'; mapa[t] = (mapa[t] || 0) + 1; });
+    return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [documentos]);
 
-  const clientesPorEstado = useMemo(() => {
-    const mapa = { Ativo: 0, Inativo: 0 };
-    clientes.forEach((cliente) => {
-      const estado = cliente.estado || 'Inativo';
-      mapa[estado] = (mapa[estado] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({ name, value, cor: name === 'Ativo' ? '#22c55e' : '#94a3b8' }));
-  }, [clientes]);
+  const totalSev = incidentesPorSeveridade.reduce((s, i) => s + i.value, 0);
+  const totalEst = incidentesPorEstado.reduce((s, i) => s + i.value, 0);
+  const totalDoc = documentosPorTipo.reduce((s, d) => s + d.value, 0);
 
-  const servicosStatus = useMemo(() => {
-    const ativo = servicos.filter((s) => s.ativo).length;
-    const inativo = servicos.length - ativo;
-    return [
-      { name: 'Ativos', value: ativo, cor: '#3b82f6' },
-      { name: 'Inativos', value: inativo, cor: '#94a3b8' },
-    ];
-  }, [servicos]);
-
-  const totalIncidentes = incidentes.length;
-  const totalClientes = clientes.length;
-  const totalDocumentos = documentos.length;
-  const totalServicos = servicos.length;
+  const SEV_CORES  = { 'Crítico': 'bg-danger', 'Alto': 'bg-warning', 'Médio': 'bg-primary', 'Baixo': 'bg-success' };
+  const EST_CORES  = { 'Aberto': 'bg-primary', 'A Investigar': 'bg-warning', 'Resolvido': 'bg-success', 'Fechado': 'bg-secondary' };
+  const DOC_CORES  = { 'Política': 'bg-primary', 'Pentest': 'bg-success', 'Auditoria': 'bg-warning', 'Contrato': 'bg-danger', 'Relatório': 'bg-info' };
 
   return (
     <AdminLayout>
-      <div className="dash-banner">
-        <h4>Análises &amp; Gráficos</h4>
-        <p>Resumo visual dos indicadores mais importantes da plataforma.</p>
-        <div className="row g-3">
-          <div className="col-6 col-md-3">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : totalIncidentes}</div>
-              <div className="stat-label">Incidentes</div>
-            </div>
-          </div>
-          <div className="col-6 col-md-3">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : totalClientes}</div>
-              <div className="stat-label">Clientes</div>
-            </div>
-          </div>
-          <div className="col-6 col-md-3">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : totalDocumentos}</div>
-              <div className="stat-label">Documentos</div>
-            </div>
-          </div>
-          <div className="col-6 col-md-3">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : totalServicos}</div>
-              <div className="stat-label">Serviços</div>
-            </div>
+
+      {/* Banner */}
+      <div className="card bg-primary text-white mb-4">
+        <div className="card-body">
+          <h4 className="fw-bold mb-1">Análises &amp; Gráficos</h4>
+          <p className="mb-3 opacity-75">Resumo visual dos indicadores mais importantes da plataforma.</p>
+          <div className="row g-3">
+            {[
+              { label: 'Incidentes', valor: incidentes.length },
+              { label: 'Clientes',   valor: clientes.length   },
+              { label: 'Documentos', valor: documentos.length  },
+              { label: 'Serviços',   valor: servicos.length    },
+            ].map((s) => (
+              <div key={s.label} className="col-6 col-md-3">
+                <div className="card bg-white bg-opacity-25 text-white border-0">
+                  <div className="card-body text-center py-3">
+                    <h3 className="fw-bold mb-1">{carregando ? '…' : s.valor}</h3>
+                    <p className="mb-0 small">{s.label}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {erro ? (
-        <div className="dash-card" style={{ textAlign: 'center', color: '#ef4444' }}>
-          {erro}
+        <div className="alert alert-danger">{erro}</div>
+      ) : carregando ? (
+        <div className="text-center py-5 text-muted">
+          <div className="spinner-border mb-3" role="status"></div>
+          <p>A carregar dados…</p>
         </div>
       ) : (
         <>
           <div className="row g-4 mb-4">
+
+            {/* Incidentes por Severidade */}
             <div className="col-12 col-lg-6">
-              <div className="dash-card chart-card">
-                <h5>Incidentes por Severidade</h5>
-                <div className="chart-wrap">
-                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <PieChart>
-                      <Pie
-                        data={incidentesPorSeveridade}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={75}
-                        innerRadius={40}
-                      >
-                        {incidentesPorSeveridade.map((entry) => (
-                          <Cell key={entry.name} fill={entry.cor} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value, name) => [value, name]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="pie-legend">
-                    {incidentesPorSeveridade.map((item) => (
-                      <div className="pie-legend-item" key={item.name}>
-                        <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
-                        {item.name}: {item.value}
-                      </div>
-                    ))}
-                  </div>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Incidentes por Severidade</div>
+                <div className="card-body">
+                  {incidentesPorSeveridade.length === 0
+                    ? <p className="text-muted text-center py-3">Sem dados.</p>
+                    : incidentesPorSeveridade.map((item) => (
+                        <BarraProgresso key={item.name} label={item.name} valor={item.value} total={totalSev} cor={SEV_CORES[item.name] || 'bg-secondary'} />
+                      ))
+                  }
                 </div>
               </div>
             </div>
 
+            {/* Incidentes por Estado */}
             <div className="col-12 col-lg-6">
-              <div className="dash-card chart-card">
-                <h5>Incidentes por Estado</h5>
-                <div className="chart-wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <BarChart 
-                      data={incidentesPorEstado}
-                      margin={{ top: 15, right: 10, left: 10, bottom: 35 }}
-                    >
-                      <defs>
-                        {incidentesPorEstado.map((entry, idx) => (
-                          <linearGradient key={`barGrad-${idx}`} id={`barGrad-${idx}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={entry.cor} stopOpacity={0.9} />
-                            <stop offset="100%" stopColor={entry.cor} stopOpacity={0.6} />
-                          </linearGradient>
-                        ))}
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fontSize: 11 }} 
-                        angle={-20}
-                        textAnchor="end"
-                        height={50}
-                      />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px' }}
-                        formatter={(value) => [value, 'Quantidade']}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        radius={[8, 8, 0, 0]}
-                        animationDuration={800}
-                        animationEasing="ease-out"
-                      >
-                        {incidentesPorEstado.map((entry, idx) => (
-                          <Cell key={entry.name} fill={`url(#barGrad-${idx})`} />
-                        ))}
-                        <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Incidentes por Estado</div>
+                <div className="card-body">
+                  {incidentesPorEstado.length === 0
+                    ? <p className="text-muted text-center py-3">Sem dados.</p>
+                    : incidentesPorEstado.map((item) => (
+                        <BarraProgresso key={item.name} label={item.name} valor={item.value} total={totalEst} cor={EST_CORES[item.name] || 'bg-secondary'} />
+                      ))
+                  }
                 </div>
               </div>
             </div>
+
           </div>
 
           <div className="row g-4 mb-4">
+
+            {/* Incidentes por mês */}
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Incidentes nos últimos 6 meses</h5>
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={incidentesPorMes} margin={{ top: 10, right: 15, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="quantidade" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Incidentes nos últimos 6 meses</div>
+                <div className="card-body p-0">
+                  <table className="table table-sm table-hover mb-0">
+                    <thead className="table-light">
+                      <tr><th>Mês</th><th className="text-center">Incidentes</th></tr>
+                    </thead>
+                    <tbody>
+                      {incidentesPorMes.map((m) => (
+                        <tr key={m.month}>
+                          <td>{m.month}</td>
+                          <td className="text-center">
+                            <span className={`badge ${m.quantidade > 0 ? 'bg-danger' : 'bg-secondary'}`}>{m.quantidade}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
+            {/* Documentos por Tipo */}
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Documentos por Tipo</h5>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={documentosPorTipo}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {documentosPorTipo.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [value, name]} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Documentos por Tipo</div>
+                <div className="card-body">
+                  {documentosPorTipo.length === 0
+                    ? <p className="text-muted text-center py-3">Sem dados.</p>
+                    : documentosPorTipo.map((item) => (
+                        <BarraProgresso key={item.name} label={item.name} valor={item.value} total={totalDoc} cor={DOC_CORES[item.name] || 'bg-secondary'} />
+                      ))
+                  }
+                </div>
               </div>
             </div>
+
           </div>
 
           <div className="row g-4">
+
+            {/* Clientes por Estado */}
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Clientes por Estado</h5>
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={clientesPorEstado} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#22c55e" radius={[6, 6, 0, 0]}>
-                      {clientesPorEstado.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Clientes por Estado</div>
+                <div className="card-body">
+                  {[
+                    { label: 'Ativos',   valor: clientes.filter(c => c.estado === 'Ativo').length,   cor: 'bg-success' },
+                    { label: 'Inativos', valor: clientes.filter(c => c.estado !== 'Ativo').length,   cor: 'bg-secondary' },
+                  ].map((item) => (
+                    <BarraProgresso key={item.label} label={item.label} valor={item.valor} total={clientes.length || 1} cor={item.cor} />
+                  ))}
+                </div>
               </div>
             </div>
 
+            {/* Serviços Ativos / Inativos */}
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Serviços Ativos / Inativos</h5>
-                <ResponsiveContainer width="100%" height={240}>
-                  <PieChart>
-                    <Pie
-                      data={servicosStatus}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      innerRadius={40}
-                    >
-                      {servicosStatus.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [value, name]} />
-                    <Legend verticalAlign="bottom" height={36} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Serviços Ativos / Inativos</div>
+                <div className="card-body">
+                  {[
+                    { label: 'Ativos',   valor: servicos.filter(s => s.ativo).length,  cor: 'bg-primary' },
+                    { label: 'Inativos', valor: servicos.filter(s => !s.ativo).length, cor: 'bg-secondary' },
+                  ].map((item) => (
+                    <BarraProgresso key={item.label} label={item.label} valor={item.valor} total={servicos.length || 1} cor={item.cor} />
+                  ))}
+                </div>
               </div>
             </div>
+
           </div>
         </>
       )}
+
     </AdminLayout>
   );
 }

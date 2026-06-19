@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiCalendar, FiClock } from 'react-icons/fi';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import api from '../../api/axios';
@@ -133,16 +132,16 @@ export default function Noticias() {
                     <p className="mb-4" style={{ color: '#4a5565', lineHeight: 1.7 }}>{destaque.resumo}</p>
                     <div className="d-flex gap-4 mb-4" style={{ color: '#9ca3af', fontSize: '14px' }}>
                       <span className="d-flex align-items-center gap-2">
-                        <FiCalendar size={16} /> {new Date(destaque.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        📅 {new Date(destaque.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
                       {destaque.tempo_leitura && (
                         <span className="d-flex align-items-center gap-2">
-                          <FiClock size={16} /> {destaque.tempo_leitura}
+                          🕐 {destaque.tempo_leitura}
                         </span>
                       )}
                     </div>
                     <span className="d-inline-flex align-items-center gap-2 fw-semibold" style={{ color: '#9810fa' }}>
-                      Ler artigo <FiArrowRight size={18} />
+                      Ler artigo →
                     </span>
                   </div>
                 </div>

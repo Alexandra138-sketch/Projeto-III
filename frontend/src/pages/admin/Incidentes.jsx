@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Plus, Search, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 
@@ -12,20 +11,23 @@ const INCIDENTES_INICIAIS = [
   { id: 'i6', title: 'SQL Injection - Portal Cliente', description: 'Tentativa de injeção SQL detetada no portal de clientes. Acesso a dados sensíveis potencialmente comprometido.', severity: 'critical', status: 'open', reportedBy: 'Miguel Ferreira', reportedAt: '2025-04-01', resolvedAt: '', nis2Reported: true },
 ];
 
-const SEV = {
-  critical: { label: 'Crítico',  dot: '#ef4444', bg: '#fee2e2', cor: '#dc2626' },
-  high:     { label: 'Alto',     dot: '#f97316', bg: '#ffedd5', cor: '#c2410c' },
-  medium:   { label: 'Médio',    dot: '#f59e0b', bg: '#fef9c3', cor: '#ca8a04' },
-  low:      { label: 'Baixo',    dot: '#22c55e', bg: '#dcfce7', cor: '#16a34a' },
+const SEV_BADGE = {
+  critical: 'badge bg-danger',
+  high:     'badge bg-warning text-dark',
+  medium:   'badge bg-primary',
+  low:      'badge bg-success',
 };
+const SEV_LABEL = { critical: 'Crítico', high: 'Alto', medium: 'Médio', low: 'Baixo' };
 
-const STA = {
-  open:          { label: 'Aberto',        bg: '#dbeafe', cor: '#2563eb' },
-  investigating: { label: 'Investigando',  bg: '#fef9c3', cor: '#ca8a04' },
-  resolved:      { label: 'Resolvido',     bg: '#dcfce7', cor: '#16a34a' },
-  closed:        { label: 'Fechado',       bg: '#f1f5f9', cor: '#64748b' },
+const STA_BADGE = {
+  open:          'badge bg-primary',
+  investigating: 'badge bg-warning text-dark',
+  resolved:      'badge bg-success',
+  closed:        'badge bg-secondary',
 };
+const STA_LABEL = { open: 'Aberto', investigating: 'Investigando', resolved: 'Resolvido', closed: 'Fechado' };
 
+/* ── Modal ── */
 function ModalIncidente({ incidente, onClose, onGuardar }) {
   const { utilizador } = useAuth();
   const [form, setForm] = useState({
@@ -45,72 +47,103 @@ function ModalIncidente({ incidente, onClose, onGuardar }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h5>{incidente?.id ? 'Editar Incidente' : 'Reportar Incidente'}</h5>
-          <button className="modal-close" onClick={onClose}>×</button>
+    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">{incidente?.id ? 'Editar Incidente' : 'Reportar Incidente'}</h5>
+            <button type="button" className="btn-close" onClick={onClose}></button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="modal-body">
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Título *</label>
+                <input
+                  required
+                  type="text"
+                  className="form-control"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                />
+              </div>
+
+              <div className="row g-3 mb-3">
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">Severidade</label>
+                  <select className="form-select" value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
+                    <option value="critical">Crítico</option>
+                    <option value="high">Alto</option>
+                    <option value="medium">Médio</option>
+                    <option value="low">Baixo</option>
+                  </select>
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">Estado</label>
+                  <select className="form-select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                    <option value="open">Aberto</option>
+                    <option value="investigating">Investigando</option>
+                    <option value="resolved">Resolvido</option>
+                    <option value="closed">Fechado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Descrição *</label>
+                <textarea
+                  required
+                  rows={4}
+                  className="form-control"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              </div>
+
+              <div className="form-check mb-3">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="nis2"
+                  checked={form.nis2Reported}
+                  onChange={(e) => setForm({ ...form, nis2Reported: e.target.checked })}
+                />
+                <label className="form-check-label" htmlFor="nis2">
+                  Notificado às autoridades NIS2 (CNCS/ENISA)
+                </label>
+              </div>
+
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+              <button type="submit" className="btn btn-primary">
+                {incidente?.id ? 'Guardar' : 'Reportar Incidente'}
+              </button>
+            </div>
+          </form>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            <div className="mb-3">
-              <label className="form-label">Título *</label>
-              <input required className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            </div>
-            <div className="row g-3 mb-3">
-              <div className="col-6">
-                <label className="form-label">Severidade</label>
-                <select className="form-select" value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
-                  <option value="critical">Crítico</option>
-                  <option value="high">Alto</option>
-                  <option value="medium">Médio</option>
-                  <option value="low">Baixo</option>
-                </select>
-              </div>
-              <div className="col-6">
-                <label className="form-label">Estado</label>
-                <select className="form-select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  <option value="open">Aberto</option>
-                  <option value="investigating">Investigando</option>
-                  <option value="resolved">Resolvido</option>
-                  <option value="closed">Fechado</option>
-                </select>
-              </div>
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Descrição *</label>
-              <textarea required rows={4} className="form-textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </div>
-            <div className="nis2-checkbox mb-3" onClick={() => setForm({ ...form, nis2Reported: !form.nis2Reported })}>
-              <input type="checkbox" id="nis2" checked={form.nis2Reported} onChange={(e) => setForm({ ...form, nis2Reported: e.target.checked })} onClick={(e) => e.stopPropagation()} />
-              <label htmlFor="nis2"><Shield size={14} /> Notificado às autoridades NIS2 (CNCS/ENISA)</label>
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn-cancelar" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-guardar">{incidente?.id ? 'Guardar' : 'Reportar Incidente'}</button>
-          </div>
-        </form>
       </div>
     </div>
   );
 }
 
+/* ── Componente principal ── */
 function AdminIncidentes() {
   const [incidentes, setIncidentes] = useState(INCIDENTES_INICIAIS);
-  const [pesquisa, setPesquisa] = useState('');
-  const [filtroSev, setFiltroSev] = useState('all');
-  const [filtroEstado, setFiltroEstado] = useState('all');
-  const [modal, setModal] = useState(undefined);
+  const [pesquisa, setPesquisa]     = useState('');
+  const [filtroSev, setFiltroSev]   = useState('all');
+  const [filtroEst, setFiltroEst]   = useState('all');
+  const [modal, setModal]           = useState(undefined);
 
   const totalAbertos  = incidentes.filter((i) => i.status === 'open').length;
   const totalCriticos = incidentes.filter((i) => i.severity === 'critical' && i.status !== 'closed').length;
   const totalNis2     = incidentes.filter((i) => i.nis2Reported).length;
 
   const filtrados = incidentes.filter((i) => {
-    const matchP = i.title.toLowerCase().includes(pesquisa.toLowerCase()) || i.description.toLowerCase().includes(pesquisa.toLowerCase());
-    const matchS = filtroSev    === 'all' || i.severity === filtroSev;
-    const matchE = filtroEstado === 'all' || i.status   === filtroEstado;
+    const matchP = i.title.toLowerCase().includes(pesquisa.toLowerCase()) ||
+                   i.description.toLowerCase().includes(pesquisa.toLowerCase());
+    const matchS = filtroSev === 'all' || i.severity === filtroSev;
+    const matchE = filtroEst === 'all' || i.status   === filtroEst;
     return matchP && matchS && matchE;
   });
 
@@ -125,103 +158,130 @@ function AdminIncidentes() {
 
   return (
     <AdminLayout>
+
       {/* Cabeçalho */}
-      <div className="incidentes-header">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="incidentes-titulo">Gestão de Incidentes</h4>
-          <p className="incidentes-subtitulo">{incidentes.length} incidentes · {totalAbertos} abertos · {totalCriticos} críticos</p>
+          <h4 className="fw-bold mb-1">Gestão de Incidentes</h4>
+          <p className="text-muted mb-0">
+            {incidentes.length} incidentes · {totalAbertos} abertos · {totalCriticos} críticos
+          </p>
         </div>
-        <button className="btn-gradient" onClick={() => setModal(null)}>
-          <Plus size={16} /> Reportar Incidente
+        <button className="btn btn-primary" onClick={() => setModal(null)}>
+          + Reportar Incidente
         </button>
       </div>
 
       {/* Cards de resumo */}
-      <div className="resumo-cards">
-        <div className="resumo-card card-aberto">
-          <p className="resumo-numero">{totalAbertos}</p>
-          <p className="resumo-label">Abertos</p>
-        </div>
-        <div className="resumo-card card-critico">
-          <p className="resumo-numero">{totalCriticos}</p>
-          <p className="resumo-label">Críticos Ativos</p>
-        </div>
-        <div className="resumo-card card-nis2">
-          <p className="resumo-numero">{totalNis2}</p>
-          <p className="resumo-label">Notificados NIS2</p>
-        </div>
-        <div className="resumo-card card-total">
-          <p className="resumo-numero">{incidentes.length}</p>
-          <p className="resumo-label">Total</p>
-        </div>
+      <div className="row g-3 mb-4">
+        {[
+          { numero: totalAbertos,       label: 'Abertos',          bg: 'bg-primary' },
+          { numero: totalCriticos,      label: 'Críticos Ativos',  bg: 'bg-danger'  },
+          { numero: totalNis2,          label: 'Notificados NIS2', bg: 'bg-warning' },
+          { numero: incidentes.length,  label: 'Total',            bg: 'bg-secondary' },
+        ].map(({ numero, label, bg }) => (
+          <div key={label} className="col-6 col-md-3">
+            <div className={`card text-white ${bg}`}>
+              <div className="card-body text-center py-3">
+                <h3 className="fw-bold mb-1">{numero}</h3>
+                <p className="mb-0 small">{label}</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Filtros */}
-      <div className="dash-card filtros-bar">
-        <div className="d-flex flex-wrap gap-2 align-items-center">
-          <div className="pesquisa-wrapper">
-            <Search size={15} />
-            <input placeholder="Pesquisar incidentes..." value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} />
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="row g-2 align-items-center">
+            <div className="col-md-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="🔍 Pesquisar incidentes..."
+                value={pesquisa}
+                onChange={(e) => setPesquisa(e.target.value)}
+              />
+            </div>
+            <div className="col-md-3">
+              <select className="form-select" value={filtroSev} onChange={(e) => setFiltroSev(e.target.value)}>
+                <option value="all">Todas as severidades</option>
+                <option value="critical">Crítico</option>
+                <option value="high">Alto</option>
+                <option value="medium">Médio</option>
+                <option value="low">Baixo</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <select className="form-select" value={filtroEst} onChange={(e) => setFiltroEst(e.target.value)}>
+                <option value="all">Todos os estados</option>
+                <option value="open">Aberto</option>
+                <option value="investigating">Investigando</option>
+                <option value="resolved">Resolvido</option>
+                <option value="closed">Fechado</option>
+              </select>
+            </div>
+            <div className="col-md-2 text-end">
+              <span className="text-muted small">{filtrados.length} resultado(s)</span>
+            </div>
           </div>
-          <select value={filtroSev} onChange={(e) => setFiltroSev(e.target.value)}>
-            <option value="all">Todas severidades</option>
-            <option value="critical">Crítico</option>
-            <option value="high">Alto</option>
-            <option value="medium">Médio</option>
-            <option value="low">Baixo</option>
-          </select>
-          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-            <option value="all">Todos os estados</option>
-            <option value="open">Aberto</option>
-            <option value="investigating">Investigando</option>
-            <option value="resolved">Resolvido</option>
-            <option value="closed">Fechado</option>
-          </select>
-          <span className="filtros-count ms-auto">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
-      {/* Lista */}
-      {filtrados.map((inc) => {
-        const sev = SEV[inc.severity] || SEV.medium;
-        const sta = STA[inc.status]   || STA.open;
-        return (
-          <div key={inc.id} className="dash-card incidente-card">
-            <div className="d-flex align-items-start gap-3">
-              <div className="incidente-dot" style={{ backgroundColor: sev.dot }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
-                  <p className="incidente-nome">{inc.title}</p>
-                  <span className="badge-pill" style={{ background: sev.bg, color: sev.cor }}>{sev.label}</span>
-                  <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{sta.label}</span>
-                  {inc.nis2Reported && (
-                    <span className="badge-pill" style={{ background: '#e0e7ff', color: '#4338ca' }}>
-                      <Shield size={10} /> NIS2
-                    </span>
-                  )}
-                </div>
-                <p className="incidente-descricao">{inc.description}</p>
-                <div className="d-flex flex-wrap gap-3">
-                  <span className="incidente-data">Reportado por: {inc.reportedBy}</span>
-                  <span className="incidente-data">{inc.reportedAt}</span>
-                  {inc.resolvedAt && <span className="incidente-data" style={{ color: '#16a34a' }}>Resolvido: {inc.resolvedAt}</span>}
-                </div>
-              </div>
-              <button className="btn-editar" onClick={() => setModal(inc)}>Editar</button>
-            </div>
+      {/* Tabela */}
+      {filtrados.length === 0 ? (
+        <div className="card">
+          <div className="card-body text-center py-5 text-muted">
+            Nenhum incidente encontrado com os filtros selecionados.
           </div>
-        );
-      })}
-
-      {filtrados.length === 0 && (
-        <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
-          Nenhum incidente encontrado com os filtros selecionados.
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table className="table table-hover table-striped align-middle">
+            <thead className="table-dark">
+              <tr>
+                <th>Título</th>
+                <th>Severidade</th>
+                <th>Estado</th>
+                <th>NIS2</th>
+                <th>Reportado por</th>
+                <th>Data</th>
+                <th className="text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map((inc) => (
+                <tr key={inc.id}>
+                  <td>
+                    <p className="mb-0 fw-semibold small">{inc.title}</p>
+                    <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }}>{inc.description.slice(0, 60)}…</p>
+                  </td>
+                  <td><span className={SEV_BADGE[inc.severity]}>{SEV_LABEL[inc.severity]}</span></td>
+                  <td><span className={STA_BADGE[inc.status]}>{STA_LABEL[inc.status]}</span></td>
+                  <td>
+                    {inc.nis2Reported
+                      ? <span className="badge bg-info text-dark">Sim</span>
+                      : <span className="badge bg-light text-muted">Não</span>}
+                  </td>
+                  <td className="small">{inc.reportedBy}</td>
+                  <td className="small text-muted">{inc.reportedAt}</td>
+                  <td className="text-center">
+                    <button className="btn btn-outline-warning btn-sm" onClick={() => setModal(inc)}>
+                      Editar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {modal !== undefined && (
         <ModalIncidente incidente={modal} onClose={() => setModal(undefined)} onGuardar={handleGuardar} />
       )}
+
     </AdminLayout>
   );
 }

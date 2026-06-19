@@ -1,5 +1,4 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaShieldAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import '../App.css';
 

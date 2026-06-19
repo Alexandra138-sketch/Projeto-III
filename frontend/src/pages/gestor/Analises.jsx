@@ -2,47 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-} from 'recharts';
 
-// ── Constantes de cores e labels ──
 const MES_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const SEVERIDADE_CORES = {
-  Crítico: '#ef4444',
-  Alto:    '#f97316',
-  Médio:   '#3b82f6',
-  Baixo:   '#22c55e',
-};
-
-const ESTADO_CORES = {
-  Aberto:          '#2563eb',
-  'A Investigar':  '#f59e0b',
-  Resolvido:       '#16a34a',
-  Fechado:         '#64748b',
-};
-
-const DOCUMENTO_TIPOS_CORES = {
-  Política:  '#6366f1',
-  Pentest:   '#22c55e',
-  Auditoria: '#f59e0b',
-  Contrato:  '#ec4899',
-  Relatório: '#14b8a6',
-};
-
-// ── Funções auxiliares ──
 function formatMonthLabel(date) {
   return `${MES_LABELS[date.getMonth()]} ${date.getFullYear()}`;
 }
@@ -63,8 +25,24 @@ function buildLastMonths(count = 6) {
   return months;
 }
 
+function BarraProgresso({ label, valor, total, cor }) {
+  const pct = total > 0 ? Math.round((valor / total) * 100) : 0;
+  return (
+    <div className="mb-3">
+      <div className="d-flex justify-content-between mb-1">
+        <span className="small fw-semibold">{label}</span>
+        <span className="small text-muted">{valor} ({pct}%)</span>
+      </div>
+      <div className="progress" style={{ height: 14 }}>
+        <div className={`progress-bar ${cor}`} style={{ width: `${pct}%` }}></div>
+      </div>
+    </div>
+  );
+}
+
 function GestorAnalises() {
   const { utilizador } = useAuth();
+  const primeiroNome = utilizador?.nome?.split(' ')[0] || 'Gestor';
 
   const [incidentes, setIncidentes] = useState([]);
   const [clientes,   setClientes]   = useState([]);
@@ -72,312 +50,156 @@ function GestorAnalises() {
   const [carregando, setCarregando] = useState(true);
   const [erro,       setErro]       = useState('');
 
-  // ── Carregar dados filtrados pelo backend (gestor só vê os seus clientes) ──
   useEffect(() => {
     setCarregando(true);
-    // allSettled: se uma chamada falhar, as outras ainda carregam
-    Promise.allSettled([
-      api.get('/incidentes'),
-      api.get('/clientes'),
-      api.get('/documentos'),
-    ])
+    Promise.allSettled([api.get('/incidentes'), api.get('/clientes'), api.get('/documentos')])
       .then(([incRes, cliRes, docRes]) => {
         if (incRes.status === 'fulfilled') setIncidentes(Array.isArray(incRes.value.data) ? incRes.value.data : []);
-        if (cliRes.status === 'fulfilled') setClientes(Array.isArray(cliRes.value.data)   ? cliRes.value.data   : []);
-        if (docRes.status === 'fulfilled') setDocumentos(Array.isArray(docRes.value.data) ? docRes.value.data   : []);
-
-        const todasFalharam = [incRes, cliRes, docRes].every(r => r.status === 'rejected');
-        if (todasFalharam) setErro('Não foi possível carregar os dados.');
+        if (cliRes.status === 'fulfilled') setClientes(Array.isArray(cliRes.value.data)   ? cliRes.value.data : []);
+        if (docRes.status === 'fulfilled') setDocumentos(Array.isArray(docRes.value.data) ? docRes.value.data : []);
+        if ([incRes, cliRes, docRes].every(r => r.status === 'rejected')) setErro('Não foi possível carregar os dados.');
       })
       .finally(() => setCarregando(false));
   }, []);
 
   const mesesUltimosSeis = useMemo(() => buildLastMonths(6), []);
 
-  // ── Incidentes por severidade (gráfico de donut) ──
   const incidentesPorSeveridade = useMemo(() => {
     const mapa = {};
-    incidentes.forEach(inc => {
-      const chave = inc.severidade || 'Outro';
-      mapa[chave] = (mapa[chave] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({
-      name, value, cor: SEVERIDADE_CORES[name] || '#64748b',
-    }));
+    incidentes.forEach((i) => { const c = i.severidade || 'Outro'; mapa[c] = (mapa[c] || 0) + 1; });
+    return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [incidentes]);
 
-  // ── Incidentes por estado (gráfico de barras) ──
   const incidentesPorEstado = useMemo(() => {
     const mapa = {};
-    incidentes.forEach(inc => {
-      const chave = inc.estado || 'Outro';
-      mapa[chave] = (mapa[chave] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({
-      name, value, cor: ESTADO_CORES[name] || '#64748b',
-    }));
+    incidentes.forEach((i) => { const c = i.estado || 'Outro'; mapa[c] = (mapa[c] || 0) + 1; });
+    return Object.entries(mapa).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [incidentes]);
 
-  // ── Incidentes por mês (últimos 6 meses) ──
   const incidentesPorMes = useMemo(() => {
     const mapa = {};
-    incidentes.forEach(inc => {
-      const d = parseDate(inc.created_at || inc.createdAt);
+    incidentes.forEach((i) => {
+      const d = parseDate(i.created_at || i.createdAt);
       if (!d) return;
       const label = formatMonthLabel(d);
       mapa[label] = (mapa[label] || 0) + 1;
     });
-    return mesesUltimosSeis.map(month => ({ month, quantidade: mapa[month] || 0 }));
+    return mesesUltimosSeis.map((month) => ({ month, quantidade: mapa[month] || 0 }));
   }, [incidentes, mesesUltimosSeis]);
 
-  // ── Documentos por tipo ──
   const documentosPorTipo = useMemo(() => {
     const mapa = {};
-    documentos.forEach(doc => {
-      const tipo = doc.tipo || 'Outro';
-      mapa[tipo] = (mapa[tipo] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({
-      name, value, cor: DOCUMENTO_TIPOS_CORES[name] || '#64748b',
-    }));
+    documentos.forEach((d) => { const t = d.tipo || 'Outro'; mapa[t] = (mapa[t] || 0) + 1; });
+    return Object.entries(mapa).map(([name, value]) => ({ name, value }));
   }, [documentos]);
 
-  // ── Clientes por estado ──
-  const clientesPorEstado = useMemo(() => {
-    const mapa = { Ativo: 0, Inativo: 0 };
-    clientes.forEach(c => {
-      const estado = c.estado || 'Inativo';
-      mapa[estado] = (mapa[estado] || 0) + 1;
-    });
-    return Object.entries(mapa).map(([name, value]) => ({
-      name, value, cor: name === 'Ativo' ? '#22c55e' : '#94a3b8',
-    }));
-  }, [clientes]);
+  const totalSev = incidentesPorSeveridade.reduce((s, i) => s + i.value, 0);
+  const totalEst = incidentesPorEstado.reduce((s, i) => s + i.value, 0);
+  const totalDoc = documentosPorTipo.reduce((s, d) => s + d.value, 0);
 
-  // ── Incidentes resolvidos vs abertos (taxa de resolução) ──
-  const taxaResolucao = useMemo(() => {
-    const resolvidos = incidentes.filter(i => i.estado === 'Resolvido' || i.estado === 'Fechado').length;
-    const abertos    = incidentes.length - resolvidos;
-    return [
-      { name: 'Resolvidos', value: resolvidos, cor: '#16a34a' },
-      { name: 'Por resolver', value: abertos,  cor: '#ef4444' },
-    ];
-  }, [incidentes]);
+  const SEV_CORES = { 'Crítico': 'bg-danger', 'Alto': 'bg-warning', 'Médio': 'bg-primary', 'Baixo': 'bg-success' };
+  const EST_CORES = { 'Aberto': 'bg-primary', 'A Investigar': 'bg-warning', 'Resolvido': 'bg-success', 'Fechado': 'bg-secondary' };
+  const DOC_CORES = { 'Política': 'bg-primary', 'Pentest': 'bg-success', 'Auditoria': 'bg-warning', 'Contrato': 'bg-danger', 'Relatório': 'bg-info' };
 
   return (
     <AdminLayout>
-      {/* ── Banner com totais ── */}
-      <div className="dash-banner">
-        <h4>Análises &amp; Gráficos</h4>
-        <p>Resumo visual dos teus clientes e incidentes.</p>
-        <div className="row g-3">
-          <div className="col-6 col-md-4">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : clientes.length}</div>
-              <div className="stat-label">Clientes</div>
-            </div>
-          </div>
-          <div className="col-6 col-md-4">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : incidentes.length}</div>
-              <div className="stat-label">Incidentes</div>
-            </div>
-          </div>
-          <div className="col-6 col-md-4">
-            <div className="stat-card">
-              <div className="stat-number">{carregando ? '…' : documentos.length}</div>
-              <div className="stat-label">Documentos</div>
-            </div>
+
+      <div className="card bg-primary text-white mb-4">
+        <div className="card-body">
+          <h4 className="fw-bold mb-1">Análises — Olá, {primeiroNome} 📊</h4>
+          <p className="mb-3 opacity-75">Resumo visual dos indicadores dos seus clientes.</p>
+          <div className="row g-3">
+            {[
+              { label: 'Incidentes', valor: incidentes.length },
+              { label: 'Clientes',   valor: clientes.length   },
+              { label: 'Documentos', valor: documentos.length  },
+            ].map((s) => (
+              <div key={s.label} className="col-4">
+                <div className="card bg-white bg-opacity-25 text-white border-0">
+                  <div className="card-body text-center py-3">
+                    <h3 className="fw-bold mb-1">{carregando ? '…' : s.valor}</h3>
+                    <p className="mb-0 small">{s.label}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── Erro geral ── */}
-      {erro && (
-        <div className="dash-card" style={{ textAlign: 'center', color: '#ef4444' }}>
-          {erro}
+      {erro ? (
+        <div className="alert alert-danger">{erro}</div>
+      ) : carregando ? (
+        <div className="text-center py-5 text-muted">
+          <div className="spinner-border mb-3" role="status"></div>
+          <p>A carregar dados…</p>
         </div>
-      )}
-
-      {/* ── Gráficos ── */}
-      {!erro && (
+      ) : (
         <>
-          {/* Linha 1: Severidade + Estado */}
           <div className="row g-4 mb-4">
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Incidentes por Severidade</h5>
-                {incidentesPorSeveridade.length === 0 ? (
-                  <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
-                ) : (
-                  <>
-                    <ResponsiveContainer width="100%" height={240}>
-                      <PieChart>
-                        <Pie
-                          data={incidentesPorSeveridade}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={90}
-                          innerRadius={50}
-                        >
-                          {incidentesPorSeveridade.map(entry => (
-                            <Cell key={entry.name} fill={entry.cor} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v, n) => [v, n]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="pie-legend">
-                      {incidentesPorSeveridade.map(item => (
-                        <div className="pie-legend-item" key={item.name}>
-                          <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
-                          {item.name}: {item.value}
-                        </div>
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Incidentes por Severidade</div>
+                <div className="card-body">
+                  {incidentesPorSeveridade.length === 0
+                    ? <p className="text-muted text-center py-3">Sem dados.</p>
+                    : incidentesPorSeveridade.map((item) => (
+                        <BarraProgresso key={item.name} label={item.name} valor={item.value} total={totalSev} cor={SEV_CORES[item.name] || 'bg-secondary'} />
                       ))}
-                    </div>
-                  </>
-                )}
+                </div>
               </div>
             </div>
-
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Incidentes por Estado</h5>
-                {incidentesPorEstado.length === 0 ? (
-                  <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={260}>
-                    <BarChart data={incidentesPorEstado} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                        {incidentesPorEstado.map(entry => (
-                          <Cell key={entry.name} fill={entry.cor} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Incidentes por Estado</div>
+                <div className="card-body">
+                  {incidentesPorEstado.length === 0
+                    ? <p className="text-muted text-center py-3">Sem dados.</p>
+                    : incidentesPorEstado.map((item) => (
+                        <BarraProgresso key={item.name} label={item.name} valor={item.value} total={totalEst} cor={EST_CORES[item.name] || 'bg-secondary'} />
+                      ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Linha 2: Incidentes por mês + Taxa de resolução */}
-          <div className="row g-4 mb-4">
-            <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Incidentes nos últimos 6 meses</h5>
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={incidentesPorMes} margin={{ top: 10, right: 15, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="quantidade" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Taxa de Resolução</h5>
-                {taxaResolucao.every(t => t.value === 0) ? (
-                  <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
-                ) : (
-                  <>
-                    <ResponsiveContainer width="100%" height={240}>
-                      <PieChart>
-                        <Pie
-                          data={taxaResolucao}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={90}
-                          innerRadius={50}
-                        >
-                          {taxaResolucao.map(entry => (
-                            <Cell key={entry.name} fill={entry.cor} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v, n) => [v, n]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="pie-legend">
-                      {taxaResolucao.map(item => (
-                        <div className="pie-legend-item" key={item.name}>
-                          <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
-                          {item.name}: {item.value}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Linha 3: Documentos por tipo + Clientes por estado */}
           <div className="row g-4">
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Documentos por Tipo</h5>
-                {documentosPorTipo.length === 0 ? (
-                  <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={260}>
-                    <PieChart>
-                      <Pie
-                        data={documentosPorTipo}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {documentosPorTipo.map(entry => (
-                          <Cell key={entry.name} fill={entry.cor} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(v, n) => [v, n]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Incidentes nos últimos 6 meses</div>
+                <div className="card-body p-0">
+                  <table className="table table-sm table-hover mb-0">
+                    <thead className="table-light"><tr><th>Mês</th><th className="text-center">Incidentes</th></tr></thead>
+                    <tbody>
+                      {incidentesPorMes.map((m) => (
+                        <tr key={m.month}>
+                          <td>{m.month}</td>
+                          <td className="text-center">
+                            <span className={`badge ${m.quantidade > 0 ? 'bg-danger' : 'bg-secondary'}`}>{m.quantidade}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-
             <div className="col-12 col-lg-6">
-              <div className="dash-card">
-                <h5>Os Meus Clientes por Estado</h5>
-                {clientes.length === 0 ? (
-                  <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem dados</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={260}>
-                    <BarChart data={clientesPorEstado} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                        {clientesPorEstado.map(entry => (
-                          <Cell key={entry.name} fill={entry.cor} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
+              <div className="card h-100">
+                <div className="card-header fw-semibold">Documentos por Tipo</div>
+                <div className="card-body">
+                  {documentosPorTipo.length === 0
+                    ? <p className="text-muted text-center py-3">Sem dados.</p>
+                    : documentosPorTipo.map((item) => (
+                        <BarraProgresso key={item.name} label={item.name} valor={item.value} total={totalDoc} cor={DOC_CORES[item.name] || 'bg-secondary'} />
+                      ))}
+                </div>
               </div>
             </div>
           </div>
         </>
       )}
+
     </AdminLayout>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCalendar, FiClock, FiTag } from 'react-icons/fi';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import api from '../../api/axios';
@@ -57,7 +56,7 @@ export default function NoticiaDetalhe() {
             className="d-inline-flex align-items-center gap-2 text-decoration-none mb-4"
             style={{ fontSize: '14px', color: '#4a5565' }}
           >
-            <FiArrowLeft size={16} /> Voltar às notícias
+            ← Voltar às notícias
           </Link>
 
           <div className="mb-4">
@@ -67,17 +66,17 @@ export default function NoticiaDetalhe() {
                   className="d-inline-flex align-items-center gap-1"
                   style={{ background: '#f3e8ff', color: '#7c3aed', fontSize: '12px', fontWeight: '600', padding: '4px 12px', borderRadius: '999px' }}
                 >
-                  <FiTag size={12} /> {article.categoria}
+                  🏷 {article.categoria}
                 </span>
               )}
               <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '14px', color: '#9ca3af' }}>
                 <span className="d-flex align-items-center gap-1">
-                  <FiCalendar size={14} />
+                  📅
                   {new Date(article.created_at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
                 {article.tempo_leitura && (
                   <span className="d-flex align-items-center gap-1">
-                    <FiClock size={14} /> {article.tempo_leitura}
+                    🕐 {article.tempo_leitura}
                   </span>
                 )}
               </div>

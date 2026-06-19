@@ -5,7 +5,7 @@ import '../../App.css';
 
 const SERVICOS = [
   {
-    icon: 🎯,
+    icon: '🎯',
     iconBg: 'linear-gradient(135deg, #2b7fff 0%, #155dfc 100%)',
     titulo: 'Testes de Penetração (Pentesting)',
     descricao: 'Simulação de ataques reais para identificar vulnerabilidades na sua infraestrutura antes que os atacantes o façam.',
@@ -13,7 +13,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: 🛡,
+    icon: '🛡',
     iconBg: 'linear-gradient(135deg, #f6339a 0%, #e60076 100%)',
     titulo: 'Gestão de Incidentes NIS2',
     descricao: 'Resposta rápida a incidentes de segurança com notificação às autoridades dentro dos prazos NIS2 (24h/72h).',
@@ -21,7 +21,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: 📄,
+    icon: '📄',
     iconBg: 'linear-gradient(135deg, #ad46ff 0%, #9810fa 100%)',
     titulo: 'Auditoria de Conformidade NIS2',
     descricao: 'Avaliação completa do estado de conformidade com a Diretiva NIS2 e elaboração de planos de ação.',
@@ -29,7 +29,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: 🖥,
+    icon: '🖥',
     iconBg: 'linear-gradient(135deg, #2b7fff 0%, #155dfc 100%)',
     titulo: 'SIEM & Monitorização Contínua',
     descricao: 'Monitorização contínua de eventos de segurança com correlação avançada de ameaças.',
@@ -37,7 +37,7 @@ const SERVICOS = [
     nis2: true,
   },
   {
-    icon: 📚,
+    icon: '📚',
     iconBg: 'linear-gradient(135deg, #00b8db 0%, #0092b8 100%)',
     titulo: 'Formação e Consciencialização',
     descricao: 'Programas de formação personalizados para aumentar a maturidade de segurança das suas equipas.',
@@ -45,7 +45,7 @@ const SERVICOS = [
     nis2: false,
   },
   {
-    icon: ☁,
+    icon: '☁',
     iconBg: 'linear-gradient(135deg, #ad46ff 0%, #9810fa 100%)',
     titulo: 'Segurança Cloud & DevSecOps',
     descricao: 'Proteção de ambientes cloud e integração de segurança no ciclo de desenvolvimento de software.',

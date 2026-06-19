@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+// SweetAlert2 — biblioteca de alertas/confirmações ensinada nas aulas
+import Swal from 'sweetalert2';
 
 /* ── Modal Adicionar / Editar ── */
 function ModalDocumento({ documento, clientes, onClose, onGuardar }) {
@@ -158,32 +160,6 @@ function ModalDocumento({ documento, clientes, onClose, onGuardar }) {
   );
 }
 
-/* ── Modal Confirmar Eliminação ── */
-function ModalConfirmar({ titulo, onConfirmar, onCancelar }) {
-  return (
-    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onCancelar}>
-      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title text-danger">Eliminar Documento</h5>
-            <button type="button" className="btn-close" onClick={onCancelar}></button>
-          </div>
-          <div className="modal-body">
-            <p className="text-muted mb-0">
-              Tem a certeza que pretende eliminar o documento <strong>"{titulo}"</strong>?
-              Esta ação não pode ser revertida.
-            </p>
-          </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={onCancelar}>Cancelar</button>
-            <button className="btn btn-danger" onClick={onConfirmar}>Eliminar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── Componente Principal ── */
 function AdminDocumentos() {
   const [documentos,  setDocumentos]  = useState([]);
@@ -193,7 +169,7 @@ function AdminDocumentos() {
   const [filtroTipo,  setFiltroTipo]  = useState('all');
   const [filtroEst,   setFiltroEst]   = useState('all');
   const [modal,       setModal]       = useState(undefined);
-  const [aEliminar,   setAEliminar]   = useState(null);
+  // (aEliminar já não é necessário — confirmação feita via SweetAlert2)
 
   useEffect(() => {
     Promise.all([api.get('/documentos'), api.get('/clientes')])
@@ -245,19 +221,31 @@ function AdminDocumentos() {
       setModal(undefined);
     } catch (err) {
       console.error('Erro ao guardar documento:', err);
-      alert('Erro ao guardar documento. Verifica a consola para detalhes.');
+      Swal.fire('Erro!', 'Não foi possível guardar o documento.', 'error');
     }
   };
 
-  const handleEliminar = async () => {
-    if (!aEliminar) return;
-    try {
-      await api.delete(`/documentos/delete/${aEliminar.id}`);
-      setDocumentos((prev) => prev.filter((d) => d.id !== aEliminar.id));
-      setAEliminar(null);
-    } catch (err) {
-      console.error('Erro ao eliminar documento:', err);
-    }
+  // Confirma com SweetAlert2 antes de eliminar (padrão ensinado nas aulas)
+  const handleEliminar = (documento) => {
+    Swal.fire({
+      title: 'Tens a certeza?',
+      text: `Vais eliminar o documento "${documento.titulo}". Esta ação não pode ser revertida!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar!',
+      cancelButtonText: 'Cancelar',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await api.delete(`/documentos/delete/${documento.id}`);
+          setDocumentos((prev) => prev.filter((d) => d.id !== documento.id));
+          Swal.fire('Eliminado!', 'O documento foi removido.', 'success');
+        } catch (err) {
+          console.error('Erro ao eliminar documento:', err);
+          Swal.fire('Erro!', 'Não foi possível eliminar o documento.', 'error');
+        }
+      }
+    });
   };
 
   /* ── Badge de estado ── */
@@ -410,7 +398,7 @@ function AdminDocumentos() {
                       </button>
                       <button
                         className="btn btn-outline-danger btn-sm"
-                        onClick={() => setAEliminar(doc)}
+                        onClick={() => handleEliminar(doc)}
                       >
                         Eliminar
                       </button>
@@ -433,14 +421,7 @@ function AdminDocumentos() {
         />
       )}
 
-      {/* Modal confirmar eliminação */}
-      {aEliminar && (
-        <ModalConfirmar
-          titulo={aEliminar.titulo}
-          onConfirmar={handleEliminar}
-          onCancelar={() => setAEliminar(null)}
-        />
-      )}
+      {/* Confirmação de eliminação feita via SweetAlert2 */}
 
     </AdminLayout>
   );

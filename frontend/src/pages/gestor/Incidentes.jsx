@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+// SweetAlert2 — biblioteca de alertas/confirmações ensinada nas aulas
+import Swal from 'sweetalert2';
 
 const SEV_BADGE = { 'Crítico': 'badge bg-danger', 'Alto': 'badge bg-warning text-dark', 'Médio': 'badge bg-primary', 'Baixo': 'badge bg-success' };
 const STA_BADGE = { 'Aberto': 'badge bg-primary', 'A Investigar': 'badge bg-warning text-dark', 'Resolvido': 'badge bg-success', 'Fechado': 'badge bg-secondary' };
@@ -96,28 +98,6 @@ function ModalIncidente({ incidente, clientes, onClose, onGuardar }) {
   );
 }
 
-function ModalConfirmar({ titulo, onConfirmar, onCancelar }) {
-  return (
-    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={onCancelar}>
-      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title text-danger">Eliminar Incidente</h5>
-            <button type="button" className="btn-close" onClick={onCancelar}></button>
-          </div>
-          <div className="modal-body">
-            <p className="text-muted mb-0">Tem a certeza que pretende eliminar <strong>"{titulo}"</strong>? Esta ação não pode ser revertida.</p>
-          </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={onCancelar}>Cancelar</button>
-            <button className="btn btn-danger" onClick={onConfirmar}>Eliminar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function GestorIncidentes() {
   const [incidentes, setIncidentes] = useState([]);
   const [clientes,   setClientes]   = useState([]);
@@ -126,7 +106,7 @@ function GestorIncidentes() {
   const [filtroSev,  setFiltroSev]  = useState('all');
   const [filtroEst,  setFiltroEst]  = useState('all');
   const [modal,      setModal]      = useState(undefined);
-  const [aEliminar,  setAEliminar]  = useState(null);
+  // (aEliminar já não é necessário — confirmação feita via SweetAlert2)
 
   useEffect(() => {
     Promise.all([api.get('/incidentes'), api.get('/clientes')])
@@ -159,13 +139,27 @@ function GestorIncidentes() {
     } catch (err) { console.error('Erro ao guardar:', err); }
   };
 
-  const handleEliminar = async () => {
-    if (!aEliminar) return;
-    try {
-      await api.delete(`/incidentes/delete/${aEliminar.id}`);
-      setIncidentes((prev) => prev.filter((i) => i.id !== aEliminar.id));
-      setAEliminar(null);
-    } catch (err) { console.error('Erro ao eliminar:', err); }
+  // Confirma com SweetAlert2 antes de eliminar (padrão ensinado nas aulas)
+  const handleEliminar = (inc) => {
+    Swal.fire({
+      title: 'Tens a certeza?',
+      text: `Vais eliminar o incidente "${inc.titulo}". Esta ação não pode ser revertida!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar!',
+      cancelButtonText: 'Cancelar',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await api.delete(`/incidentes/delete/${inc.id}`);
+          setIncidentes((prev) => prev.filter((i) => i.id !== inc.id));
+          Swal.fire('Eliminado!', 'O incidente foi removido.', 'success');
+        } catch (err) {
+          console.error('Erro ao eliminar:', err);
+          Swal.fire('Erro!', 'Não foi possível eliminar o incidente.', 'error');
+        }
+      }
+    });
   };
 
   return (
@@ -258,7 +252,7 @@ function GestorIncidentes() {
                   <td className="text-center">
                     <div className="d-flex gap-1 justify-content-center">
                       <button className="btn btn-outline-warning btn-sm" onClick={() => setModal(inc)}>Editar</button>
-                      <button className="btn btn-outline-danger btn-sm" onClick={() => setAEliminar(inc)}>Eliminar</button>
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => handleEliminar(inc)}>Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -269,7 +263,7 @@ function GestorIncidentes() {
       )}
 
       {modal !== undefined && <ModalIncidente incidente={modal} clientes={clientes} onClose={() => setModal(undefined)} onGuardar={handleGuardar} />}
-      {aEliminar && <ModalConfirmar titulo={aEliminar.titulo} onConfirmar={handleEliminar} onCancelar={() => setAEliminar(null)} />}
+      {/* Confirmação de eliminação feita via SweetAlert2 */}
 
     </AdminLayout>
   );

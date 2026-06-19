@@ -33,9 +33,7 @@ const Mensagem = sequelize.define('Mensagem', {
 
 Mensagem.belongsTo(Utilizador, { as: 'remetente', foreignKey: 'remetente_id' });
 
-// Cria a tabela automaticamente se não existir
-Mensagem.sync({ alter: true }).catch((err) =>
-  console.error('[Mensagem] Erro ao sincronizar tabela:', err.message)
-);
+// Nota: a tabela 'mensagens' é gerida pelo Neon Tech.
+// Não se usa sync() aqui — a base de dados já tem a tabela criada.
 
 module.exports = Mensagem;

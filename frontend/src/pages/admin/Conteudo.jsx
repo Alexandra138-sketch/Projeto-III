@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
+// SweetAlert2 — biblioteca de alertas/confirmações ensinada nas aulas
+import Swal from 'sweetalert2';
 
 const TABS = [
   { key: 'principal', label: 'Página Principal', icon: 'bi-stars' },
@@ -199,7 +201,7 @@ function Conteudo() {
   const [modalAberto, setModalAberto] = useState(false);
   const [servicoEmEdicao, setServicoEmEdicao] = useState(null); // null = a criar; objeto = a editar
   const [formServico, setFormServico] = useState(SERVICO_VAZIO);
-  const [servicoAEliminar, setServicoAEliminar] = useState(null);
+  // (servicoAEliminar já não é necessário — confirmação feita via SweetAlert2)
 
   const abrirNovoServico = () => {
     setServicoEmEdicao(null);
@@ -243,11 +245,21 @@ function Conteudo() {
     fecharModal();
   };
 
-  const confirmarEliminar = (servico) => setServicoAEliminar(servico);
-  const cancelarEliminar = () => setServicoAEliminar(null);
-  const eliminarServico = () => {
-    setServicos((prev) => prev.filter((s) => s.id !== servicoAEliminar.id));
-    setServicoAEliminar(null);
+  // Confirma com SweetAlert2 antes de eliminar o serviço (padrão ensinado nas aulas)
+  const confirmarEliminar = (servico) => {
+    Swal.fire({
+      title: 'Tens a certeza?',
+      text: `Vais eliminar o serviço "${servico.titulo}". Esta ação não pode ser desfeita!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar!',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setServicos((prev) => prev.filter((s) => s.id !== servico.id));
+        Swal.fire('Eliminado!', 'O serviço foi removido.', 'success');
+      }
+    });
   };
 
   // --- Notícias ---
@@ -256,7 +268,7 @@ function Conteudo() {
   const [modalArtigoAberto, setModalArtigoAberto] = useState(false);
   const [artigoEmEdicao, setArtigoEmEdicao] = useState(null); // null = a criar
   const [formArtigo, setFormArtigo] = useState(ARTIGO_VAZIO);
-  const [artigoAEliminar, setArtigoAEliminar] = useState(null);
+  // (artigoAEliminar já não é necessário — confirmação feita via SweetAlert2)
 
   const handleNoticiasHeroChange = (campo) => (e) => {
     setNoticiasHero((prev) => ({ ...prev, [campo]: e.target.value }));
@@ -340,20 +352,30 @@ function Conteudo() {
       }
       fecharModalArtigo();
     } catch {
-      alert('Erro ao guardar o artigo. Verifica a ligação ao servidor.');
+      Swal.fire('Erro!', 'Não foi possível guardar o artigo. Verifica a ligação ao servidor.', 'error');
     }
   };
 
-  const confirmarEliminarArtigo = (artigo) => setArtigoAEliminar(artigo);
-  const cancelarEliminarArtigo = () => setArtigoAEliminar(null);
-  const eliminarArtigo = async () => {
-    try {
-      await api.delete(`/noticias/delete/${artigoAEliminar.id}`);
-      setArtigos(prev => prev.filter(a => a.id !== artigoAEliminar.id));
-      setArtigoAEliminar(null);
-    } catch {
-      alert('Erro ao eliminar o artigo.');
-    }
+  // Confirma com SweetAlert2 antes de eliminar o artigo (padrão ensinado nas aulas)
+  const confirmarEliminarArtigo = (artigo) => {
+    Swal.fire({
+      title: 'Tens a certeza?',
+      text: `Vais eliminar o artigo "${artigo.titulo}". Esta ação não pode ser desfeita!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar!',
+      cancelButtonText: 'Cancelar',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await api.delete(`/noticias/delete/${artigo.id}`);
+          setArtigos(prev => prev.filter(a => a.id !== artigo.id));
+          Swal.fire('Eliminado!', 'O artigo foi removido.', 'success');
+        } catch {
+          Swal.fire('Erro!', 'Não foi possível eliminar o artigo.', 'error');
+        }
+      }
+    });
   };
 
   // --- Contactos ---
@@ -379,18 +401,27 @@ function Conteudo() {
       const { data } = await api.put(`/contactos/lido/${id}`);
       setMensagens(prev => prev.map(m => m.id === data.id ? data : m));
     } catch {
-      alert('Erro ao atualizar mensagem.');
+      Swal.fire('Erro!', 'Não foi possível atualizar a mensagem.', 'error');
     }
   };
 
-  // ── Eliminar mensagem recebida ──
+  // ── Eliminar mensagem recebida — usa SweetAlert2 para confirmação ──
   const eliminarMensagem = async (id) => {
-    if (!window.confirm('Eliminar esta mensagem de contacto?')) return;
+    const result = await Swal.fire({
+      title: 'Tens a certeza?',
+      text: 'Vais eliminar esta mensagem de contacto. Esta ação não pode ser desfeita!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar!',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
     try {
       await api.delete(`/contactos/delete/${id}`);
       setMensagens(prev => prev.filter(m => m.id !== id));
+      Swal.fire('Eliminado!', 'A mensagem foi removida.', 'success');
     } catch {
-      alert('Erro ao eliminar mensagem.');
+      Swal.fire('Erro!', 'Não foi possível eliminar a mensagem.', 'error');
     }
   };
 
@@ -414,7 +445,7 @@ function Conteudo() {
       setGuardado(true);
       setTimeout(() => setGuardado(false), 2500);
     } catch {
-      alert('Erro ao guardar. Verifica a ligação ao servidor.');
+      Swal.fire('Erro!', 'Não foi possível guardar. Verifica a ligação ao servidor.', 'error');
     } finally {
       setAGuardar(false);
     }
@@ -1235,46 +1266,7 @@ function Conteudo() {
         </>
       )}
 
-      {/* Modal: Confirmar Eliminação */}
-      {servicoAEliminar && (
-        <>
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            role="dialog"
-            style={{ zIndex: 1055 }}
-          >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title fw-bold">Eliminar Serviço</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={cancelarEliminar}
-                    aria-label="Fechar"
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  Tens a certeza que queres eliminar{' '}
-                  <span className="fw-semibold">"{servicoAEliminar.titulo}"</span>? Esta ação não
-                  pode ser desfeita.
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-outline-secondary" onClick={cancelarEliminar}>
-                    Cancelar
-                  </button>
-                  <button type="button" className="btn btn-danger" onClick={eliminarServico}>
-                    <i className="bi bi-trash me-1"></i>
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
-        </>
-      )}
+      {/* Confirmação de eliminação de serviço feita via SweetAlert2 */}
       {/* Modal: Criar / Editar Artigo */}
       {modalArtigoAberto && (
         <>
@@ -1457,50 +1449,7 @@ function Conteudo() {
         </>
       )}
 
-      {/* Modal: Confirmar Eliminação de Artigo */}
-      {artigoAEliminar && (
-        <>
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            role="dialog"
-            style={{ zIndex: 1055 }}
-          >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title fw-bold">Eliminar Artigo</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={cancelarEliminarArtigo}
-                    aria-label="Fechar"
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  Tens a certeza que queres eliminar{' '}
-                  <span className="fw-semibold">"{artigoAEliminar.titulo}"</span>? Esta ação não
-                  pode ser desfeita.
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={cancelarEliminarArtigo}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="button" className="btn btn-danger" onClick={eliminarArtigo}>
-                    <i className="bi bi-trash me-1"></i>
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
-        </>
-      )}
+      {/* Confirmação de eliminação de artigo feita via SweetAlert2 */}
     </AdminLayout>
   );
 }

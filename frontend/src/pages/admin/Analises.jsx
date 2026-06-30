@@ -65,6 +65,16 @@ function getCreatedAt(item) {
 
 const CHART_HEIGHT = 250;
 
+// Componente para mostrar quando não há dados num gráfico
+function SemDados() {
+  return (
+    <div style={{ height: CHART_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', flexDirection: 'column', gap: '8px' }}>
+      <span style={{ fontSize: '2rem' }}>📊</span>
+      <span style={{ fontSize: '0.9rem' }}>Sem dados disponíveis</span>
+    </div>
+  );
+}
+
 function Analises() {
   const [incidentes, setIncidentes] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -206,32 +216,36 @@ function Analises() {
               <div className="dash-card chart-card">
                 <h5>Incidentes por Severidade</h5>
                 <div className="chart-wrap">
-                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <PieChart>
-                      <Pie
-                        data={incidentesPorSeveridade}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={75}
-                        innerRadius={40}
-                      >
-                        {incidentesPorSeveridade.map((entry) => (
-                          <Cell key={entry.name} fill={entry.cor} />
+                  {incidentesPorSeveridade.length === 0 ? <SemDados /> : (
+                    <>
+                      <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                        <PieChart>
+                          <Pie
+                            data={incidentesPorSeveridade}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={75}
+                            innerRadius={40}
+                          >
+                            {incidentesPorSeveridade.map((entry) => (
+                              <Cell key={entry.name} fill={entry.cor} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value, name) => [value, name]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="pie-legend">
+                        {incidentesPorSeveridade.map((item) => (
+                          <div className="pie-legend-item" key={item.name}>
+                            <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
+                            {item.name}: {item.value}
+                          </div>
                         ))}
-                      </Pie>
-                      <Tooltip formatter={(value, name) => [value, name]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="pie-legend">
-                    {incidentesPorSeveridade.map((item) => (
-                      <div className="pie-legend-item" key={item.name}>
-                        <span className="pie-dot" style={{ backgroundColor: item.cor }}></span>
-                        {item.name}: {item.value}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -240,8 +254,8 @@ function Analises() {
               <div className="dash-card chart-card">
                 <h5>Incidentes por Estado</h5>
                 <div className="chart-wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <BarChart 
+                  {incidentesPorEstado.length === 0 ? <SemDados /> : <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                    <BarChart
                       data={incidentesPorEstado}
                       margin={{ top: 15, right: 10, left: 10, bottom: 35 }}
                     >
@@ -278,7 +292,7 @@ function Analises() {
                         <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }} />
                       </Bar>
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ResponsiveContainer>}
                 </div>
               </div>
             </div>
@@ -303,25 +317,27 @@ function Analises() {
             <div className="col-12 col-lg-6">
               <div className="dash-card">
                 <h5>Documentos por Tipo</h5>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={documentosPorTipo}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {documentosPorTipo.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [value, name]} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {documentosPorTipo.length === 0 ? <SemDados /> : (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={documentosPorTipo}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {documentosPorTipo.map((entry) => (
+                          <Cell key={entry.name} fill={entry.cor} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [value, name]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
@@ -349,25 +365,27 @@ function Analises() {
             <div className="col-12 col-lg-6">
               <div className="dash-card">
                 <h5>Serviços Ativos / Inativos</h5>
-                <ResponsiveContainer width="100%" height={240}>
-                  <PieChart>
-                    <Pie
-                      data={servicosStatus}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      innerRadius={40}
-                    >
-                      {servicosStatus.map((entry) => (
-                        <Cell key={entry.name} fill={entry.cor} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [value, name]} />
-                    <Legend verticalAlign="bottom" height={36} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {servicosStatus.every(s => s.value === 0) ? <SemDados /> : (
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={servicosStatus}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        innerRadius={40}
+                      >
+                        {servicosStatus.map((entry) => (
+                          <Cell key={entry.name} fill={entry.cor} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [value, name]} />
+                      <Legend verticalAlign="bottom" height={36} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>

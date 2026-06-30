@@ -59,6 +59,8 @@ app.use('/contactos',   require('./routes/contactoRoutes'));
 app.use('/conteudo',    require('./routes/conteudoRoutes'));
 app.use('/logs',        require('./routes/logRoutes'));
 app.use('/empresa',     require('./routes/empresaRoutes'));
+app.use('/pedidos',     require('./routes/pedidoRoutes'));
+app.use('/ativos',      require('./routes/ativoRoutes'));
 
 /* ── Arranque ── */
 const PORT = process.env.PORT || 3000;

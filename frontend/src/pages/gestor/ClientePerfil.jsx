@@ -30,6 +30,11 @@ function GestorClientePerfil() {
   const [msgLoading,   setMsgLoading]   = useState(false);
   const [docs,         setDocs]         = useState([]);
   const [incidentes,   setIncidentes]   = useState([]);
+  const [ativos,       setAtivos]       = useState([]);
+  const [pedidos,      setPedidos]      = useState([]);
+  // Estado do formulário de resposta ao pedido
+  const [pedidoResposta, setPedidoResposta] = useState({ id: null, estado: '', resposta: '' });
+  const [aResponder,     setAResponder]     = useState(false);
 
   const mensagensEndRef       = useRef(null);
   const mensagensContainerRef = useRef(null);
@@ -52,6 +57,16 @@ function GestorClientePerfil() {
     api.get(`/incidentes?cliente_id=${dbClienteId}`)
       .then(({ data }) => setIncidentes(Array.isArray(data) ? data : []))
       .catch(() => setIncidentes([]));
+
+    // Buscar ativos tecnológicos deste cliente
+    api.get('/ativos', { params: { cliente_id: dbClienteId } })
+      .then(({ data }) => setAtivos(Array.isArray(data) ? data : []))
+      .catch(() => setAtivos([]));
+
+    // Buscar pedidos/questões deste cliente
+    api.get('/pedidos', { params: { cliente_id: dbClienteId } })
+      .then(({ data }) => setPedidos(Array.isArray(data) ? data : []))
+      .catch(() => setPedidos([]));
   }, [dbClienteId]);
 
   /* ── Socket.IO ── */
@@ -181,11 +196,16 @@ function GestorClientePerfil() {
 
   const pentests = docs.filter(d => d.tipo === 'Pentest');
 
+  // Pedidos pendentes (para mostrar badge de atenção)
+  const pedidosPendentes = pedidos.filter((p) => p.estado === 'Pendente').length;
+
   const abas = [
     { id: 'resumo',      label: 'Resumo',      Icone: FileText,      count: null              },
     { id: 'documentos',  label: 'Documentos',  Icone: FileText,      count: docs.length       },
     { id: 'pentests',    label: 'Pentests',    Icone: Shield,        count: pentests.length   },
     { id: 'incidentes',  label: 'Incidentes',  Icone: AlertTriangle, count: incidentes.length },
+    { id: 'ativos',      label: 'Ativos',      Icone: Shield,        count: ativos.length     },
+    { id: 'pedidos',     label: 'Pedidos',     Icone: MessageSquare, count: pedidosPendentes  },
     { id: 'comunicacao', label: 'Comunicação', Icone: MessageSquare, count: null              },
   ];
 
@@ -337,6 +357,177 @@ function GestorClientePerfil() {
                       {inc.estado}
                       {inc.data_ocorrencia && ` · ${new Date(inc.data_ocorrencia).toLocaleDateString('pt-PT')}`}
                     </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Ativos Tecnológicos ── */}
+          {abaAtiva === 'ativos' && (
+            <div style={{ padding: '1rem 0' }}>
+              {ativos.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  Este cliente ainda não registou ativos tecnológicos.
+                </p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Criticidade</th>
+                        <th>IP</th>
+                        <th>Sistema Operativo</th>
+                        <th>Responsável</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ativos.map((a) => {
+                        const corCrit = {
+                          Crítica: { bg: '#fee2e2', cor: '#dc2626' },
+                          Alta:    { bg: '#ffedd5', cor: '#c2410c' },
+                          Média:   { bg: '#fef9c3', cor: '#ca8a04' },
+                          Baixa:   { bg: '#dcfce7', cor: '#16a34a' },
+                          Residual:{ bg: '#f1f5f9', cor: '#64748b' },
+                        };
+                        const { bg, cor: c } = corCrit[a.criticidade] || { bg: '#f1f5f9', cor: '#64748b' };
+                        return (
+                          <tr key={a.id}>
+                            <td>
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem' }}>{a.nome}</p>
+                              {a.numero_inventario && (
+                                <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8' }}>#{a.numero_inventario}</p>
+                              )}
+                            </td>
+                            <td style={{ fontSize: '0.82rem' }}>{a.tipo_equipamento || '—'}</td>
+                            <td>
+                              <span style={{ background: bg, color: c, fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
+                                {a.criticidade || '—'}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: '0.82rem', fontFamily: 'monospace' }}>{a.ip || '—'}</td>
+                            <td style={{ fontSize: '0.82rem' }}>{a.sistema_operativo || '—'}</td>
+                            <td style={{ fontSize: '0.82rem' }}>{a.responsavel || '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Pedidos e Questões ── */}
+          {abaAtiva === 'pedidos' && (
+            <div style={{ padding: '1rem 0' }}>
+              {pedidos.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  Este cliente ainda não submeteu pedidos.
+                </p>
+              ) : pedidos.map((pedido) => {
+                const estadoCores = {
+                  Pendente:    { bg: '#fffbeb', cor: '#b45309', borda: '#fcd34d' },
+                  'Em Análise':{ bg: '#eff6ff', cor: '#1d4ed8', borda: '#93c5fd' },
+                  Resolvido:   { bg: '#f0fdf4', cor: '#15803d', borda: '#86efac' },
+                  Fechado:     { bg: '#f8fafc', cor: '#64748b', borda: '#e2e8f0' },
+                };
+                const cores = estadoCores[pedido.estado] || estadoCores.Fechado;
+
+                // Mostrar painel de resposta para este pedido específico
+                const esteAberto = pedidoResposta.id === pedido.id;
+
+                return (
+                  <div key={pedido.id} style={{ marginBottom: '0.75rem', padding: '1rem', background: cores.bg, borderRadius: 10, border: `1px solid ${cores.borda}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
+                          <span style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.72rem', fontWeight: 600, padding: '1px 7px', borderRadius: 99 }}>
+                            {pedido.tipo}
+                          </span>
+                          <span style={{ background: cores.bg, color: cores.cor, fontSize: '0.72rem', fontWeight: 600, padding: '1px 7px', borderRadius: 99, border: `1px solid ${cores.borda}` }}>
+                            {pedido.estado}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{pedido.assunto}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+                          {new Date(pedido.created_at).toLocaleDateString('pt-PT')}
+                        </p>
+                      </div>
+                      <button
+                        style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '0.3rem 0.75rem', fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0 }}
+                        onClick={() => setPedidoResposta(
+                          esteAberto
+                            ? { id: null, estado: '', resposta: '' }
+                            : { id: pedido.id, estado: pedido.estado, resposta: pedido.resposta || '' }
+                        )}
+                      >
+                        {esteAberto ? 'Cancelar' : 'Responder'}
+                      </button>
+                    </div>
+
+                    <p style={{ margin: '0.75rem 0 0', fontSize: '0.82rem', color: '#374151', whiteSpace: 'pre-wrap' }}>
+                      {pedido.descricao}
+                    </p>
+
+                    {pedido.resposta && !esteAberto && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                        <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600, color: '#15803d' }}>
+                          Resposta {pedido.respondedor ? `(${pedido.respondedor.nome})` : ''}:
+                        </p>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#374151', whiteSpace: 'pre-wrap' }}>
+                          {pedido.resposta}
+                        </p>
+                      </div>
+                    )}
+
+                    {esteAberto && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                        <div className="row g-2 mb-2">
+                          <div className="col-md-4">
+                            <label className="form-label small fw-semibold mb-1">Alterar Estado</label>
+                            <select className="form-select form-select-sm"
+                              value={pedidoResposta.estado}
+                              onChange={(e) => setPedidoResposta((prev) => ({ ...prev, estado: e.target.value }))}>
+                              <option>Pendente</option>
+                              <option>Em Análise</option>
+                              <option>Resolvido</option>
+                              <option>Fechado</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="mb-2">
+                          <label className="form-label small fw-semibold mb-1">Resposta</label>
+                          <textarea className="form-control form-control-sm" rows={3}
+                            value={pedidoResposta.resposta}
+                            onChange={(e) => setPedidoResposta((prev) => ({ ...prev, resposta: e.target.value }))}
+                            placeholder="Escreve a resposta para o cliente…" />
+                        </div>
+                        <button
+                          disabled={aResponder}
+                          style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '0.3rem 0.75rem', fontSize: '0.82rem', cursor: 'pointer' }}
+                          onClick={async () => {
+                            setAResponder(true);
+                            try {
+                              const { data } = await api.put(`/pedidos/${pedido.id}`, {
+                                estado:   pedidoResposta.estado,
+                                resposta: pedidoResposta.resposta,
+                              });
+                              setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, ...data } : p));
+                              setPedidoResposta({ id: null, estado: '', resposta: '' });
+                            } catch (err) {
+                              console.error('Erro ao responder ao pedido:', err);
+                            } finally {
+                              setAResponder(false);
+                            }
+                          }}
+                        >
+                          {aResponder ? 'A guardar…' : 'Guardar Resposta'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

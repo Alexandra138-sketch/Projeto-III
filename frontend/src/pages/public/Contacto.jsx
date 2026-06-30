@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { FiMail, FiPhone, FiMapPin, FiClock, FiSend, FiCheckCircle } from 'react-icons/fi';
+import { FaShieldAlt } from 'react-icons/fa';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import api from '../../api/axios';
 import '../../App.css';
 
 const INFO = [
-  { icon: '✉', label: 'E-mail',   value: 'info@cyberboxsecur.pt' },
-  { icon: '📞', label: 'Telefone', value: '+351 210 000 000' },
-  { icon: '📍', label: 'Morada',  value: 'Lisboa, Portugal' },
-  { icon: '🕐', label: 'Horário',  value: 'Segunda a Sexta: 09h – 18h' },
+  { icon: <FiMail size={18} color="#155dfc" />, label: 'E-mail',   value: 'info@cyberboxsecur.pt' },
+  { icon: <FiPhone size={18} color="#155dfc" />, label: 'Telefone', value: '+351 210 000 000' },
+  { icon: <FiMapPin size={18} color="#155dfc" />, label: 'Morada',  value: 'Lisboa, Portugal' },
+  { icon: <FiClock size={18} color="#155dfc" />, label: 'Horário',  value: 'Segunda a Sexta: 09h – 18h' },
 ];
 
 const SERVICOS_OPCOES = [
@@ -127,7 +129,7 @@ export default function Contacto() {
                 style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px' }}
               >
                 <div className="d-flex align-items-center gap-2 mb-2">
-                  🛡
+                  <FaShieldAlt size={16} color="#155dfc" />
                   <span className="fw-semibold small" style={{ color: '#1e3a8a' }}>Incidentes de Segurança</span>
                 </div>
                 <p className="small mb-1" style={{ color: '#1d4ed8' }}>
@@ -147,7 +149,7 @@ export default function Contacto() {
                       className="d-flex align-items-center justify-content-center mx-auto mb-4"
                       style={{ width: '64px', height: '64px', background: '#dcfce7', borderRadius: '50%' }}
                     >
-                      ✅
+                      <FiCheckCircle size={32} color="#16a34a" />
                     </div>
                     <h3 className="fw-semibold mb-2" style={{ color: '#101828' }}>Mensagem Enviada!</h3>
                     <p style={{ color: '#4a5565' }}>
@@ -273,7 +275,7 @@ export default function Contacto() {
                     className="btn w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
                     style={{ background: 'linear-gradient(90deg, #9810fa 0%, #155dfc 100%)', color: '#fff', borderRadius: '10px', padding: '12px', fontSize: '15px' }}
                   >
-                    ✉
+                    <FiSend size={16} />
                     {loading ? 'A enviar...' : 'Enviar Mensagem'}
                   </button>
                 </form>

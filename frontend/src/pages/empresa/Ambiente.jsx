@@ -16,6 +16,10 @@ import { useEffect, useRef, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
+import {
+  FiShield, FiFileText, FiAlertTriangle,
+  FiMessageSquare, FiDownload, FiFile, FiSend,
+} from 'react-icons/fi';
 
 // URL base do backend para construir links de download
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -37,11 +41,11 @@ const BADGE_ESTADO_INC = {
 
 // ── Separadores disponíveis ────────────────────────────────────
 const TABS = [
-  { id: 'resumo',       label: '🛡 Resumo'      },
-  { id: 'documentos',   label: '📄 Documentos'  },
-  { id: 'pentests',     label: '🔍 Pentests'    },
-  { id: 'incidentes',   label: '⚠ Incidentes'  },
-  { id: 'comunicacao',  label: '💬 Comunicação' },
+  { id: 'resumo',       label: 'Resumo',       Icon: FiShield },
+  { id: 'documentos',   label: 'Documentos',   Icon: FiFileText },
+  { id: 'pentests',     label: 'Pentests',      Icon: FiFileText },
+  { id: 'incidentes',   label: 'Incidentes',   Icon: FiAlertTriangle },
+  { id: 'comunicacao',  label: 'Comunicação',  Icon: FiMessageSquare },
 ];
 
 function Ambiente() {
@@ -139,7 +143,7 @@ function Ambiente() {
           <p>Visão geral da postura de segurança da tua empresa.</p>
         </div>
         <div className="dash-card text-center" style={{ padding: '3rem' }}>
-          🛡
+          <FiShield size={48} style={{ color: '#94a3b8', marginBottom: '1rem' }} />
           <h5 style={{ color: '#374151' }}>Conta ainda não configurada</h5>
           <p style={{ color: '#64748b' }}>
             A tua conta de utilizador ainda não está ligada a nenhum cliente no sistema.<br />
@@ -192,7 +196,7 @@ function Ambiente() {
       {/* ── Separadores (Tabs) ── */}
       <div className="dash-card p-0 mb-4" style={{ overflow: 'hidden' }}>
         <div style={{ display: 'flex', borderBottom: '1px solid #f1f5f9', overflowX: 'auto' }}>
-          {TABS.map(({ id, label }) => (
+          {TABS.map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => setTabAtiva(id)}
@@ -205,6 +209,7 @@ function Ambiente() {
                 borderBottom: tabAtiva === id ? '2px solid #2563eb' : '2px solid transparent',
               }}
             >
+              <Icon size={15} />
               {label}
             </button>
           ))}
@@ -301,7 +306,7 @@ function Ambiente() {
                 <div className="col-12 col-md-6" key={doc.id}>
                   <div className="dash-card h-100">
                     <div className="d-flex align-items-center gap-2 mb-2">
-                      📄
+                      <FiFile size={18} style={{ color: '#2563eb' }} />
                       <span className="badge bg-info text-dark">{doc.tipo || 'Outro'}</span>
                     </div>
                     <h6 className="mb-1">{doc.titulo}</h6>
@@ -315,7 +320,7 @@ function Ambiente() {
                         download target="_blank" rel="noreferrer"
                         className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 justify-content-center"
                       >
-                        ⬇ Descarregar
+                        <FiDownload size={13} /> Descarregar
                       </a>
                     ) : (
                       <button className="btn btn-sm btn-outline-secondary" disabled>Sem ficheiro</button>
@@ -347,7 +352,7 @@ function Ambiente() {
                 <div className="col-12 col-md-6" key={doc.id}>
                   <div className="dash-card h-100" style={{ borderLeft: '3px solid #22c55e' }}>
                     <div className="d-flex align-items-center gap-2 mb-2">
-                      🔍
+                      <FiFile size={18} style={{ color: '#22c55e' }} />
                       <span className="badge bg-success">Pentest</span>
                     </div>
                     <h6 className="mb-1">{doc.titulo}</h6>
@@ -361,7 +366,7 @@ function Ambiente() {
                         download target="_blank" rel="noreferrer"
                         className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 justify-content-center"
                       >
-                        ⬇ Descarregar relatório
+                        <FiDownload size={13} /> Descarregar relatório
                       </a>
                     ) : (
                       <button className="btn btn-sm btn-outline-secondary" disabled>Sem ficheiro</button>
@@ -495,7 +500,7 @@ function Ambiente() {
                   className="btn btn-primary d-flex align-items-center gap-1"
                   disabled={!novaMensagem.trim() || enviando}
                 >
-                  ✉
+                  <FiSend size={15} />
                   {enviando ? '…' : 'Enviar'}
                 </button>
               </form>

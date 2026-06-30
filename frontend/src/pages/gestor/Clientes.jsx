@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
+import {
+  Search, AlertTriangle, MessageSquare, Loader,
+  CheckCircle, XCircle, ChevronRight, Users,
+} from 'lucide-react';
 
 const CORES = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#ec4899'];
 function getCor(id) { return CORES[(parseInt(id, 10) - 1) % CORES.length]; }
@@ -72,7 +76,7 @@ function GestorClientes() {
         </div>
       ) : erro ? (
         <div className="dash-card" style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
-          ⚠
+          <AlertTriangle size={28} style={{ marginBottom: 12 }} />
           <p style={{ margin: 0 }}>{erro}</p>
         </div>
       ) : filtrados.length === 0 ? (
@@ -118,12 +122,12 @@ function GestorClientes() {
                     <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
                       <p className="incidente-nome">{c.nome}</p>
                       <span className="badge-pill" style={{ background: ativo ? '#dcfce7' : '#f1f5f9', color: ativo ? '#16a34a' : '#94a3b8' }}>
-                        {ativo ? '✓' : '✗'}
+                        {ativo ? <CheckCircle size={10} /> : <XCircle size={10} />}
                         {' '}{ativo ? 'Ativo' : 'Inativo'}
                       </span>
                       {c.incidentes_abertos > 0 && (
                         <span className="badge-pill" style={{ background: '#fee2e2', color: '#dc2626' }}>
-                          ⚠ {c.incidentes_abertos} incidente{c.incidentes_abertos > 1 ? 's' : ''}
+                          <AlertTriangle size={10} /> {c.incidentes_abertos} incidente{c.incidentes_abertos > 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
@@ -147,9 +151,9 @@ function GestorClientes() {
                   {/* Chat badge + seta */}
                   <div className="d-flex align-items-center gap-2 flex-shrink-0">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                      💬 Chat
+                      <MessageSquare size={13} /> Chat
                     </div>
-                    ›
+                    <ChevronRight size={18} color="#d1d5db" />
                   </div>
 
                 </div>

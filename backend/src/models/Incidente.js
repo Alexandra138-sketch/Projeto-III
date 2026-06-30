@@ -63,6 +63,36 @@ const Incidente = sequelize.define('Incidente', {
     type: DataTypes.INTEGER,
   },
 
+  // ── Campos adicionais baseados no template CNCS/NIS2 ──────
+  // (requerem execução do NEON_MIGRATION.sql no Neon Tech)
+
+  // Tipo de incidente segundo categorias CNCS
+  // (ex: Phishing, Malware, Ransomware, DDoS, Violação de Dados, etc.)
+  tipo_incidente: {
+    type: DataTypes.STRING(100),
+  },
+
+  // Sistemas e equipamentos afetados pelo incidente
+  sistemas_afetados: {
+    type: DataTypes.TEXT,
+  },
+
+  // Número de utilizadores/pessoas afetadas
+  utilizadores_afetados: {
+    type: DataTypes.INTEGER,
+  },
+
+  // Indica se houve comprometimento de dados pessoais ou sensíveis
+  dados_comprometidos: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+
+  // Origem conhecida do ataque (IP, vetor, etc.)
+  origem_ataque: {
+    type: DataTypes.STRING(200),
+  },
+
 }, {
   tableName: 'incidentes',  // nome exato da tabela na BD
   timestamps: true,          // cria created_at e updated_at automaticamente

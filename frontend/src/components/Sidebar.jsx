@@ -1,44 +1,58 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  FiGrid, FiBarChart2, FiUsers, FiBriefcase, FiFileText,
+  FiAlertTriangle, FiActivity, FiGlobe, FiLogOut, FiShield, FiLayers,
+  FiServer, FiMessageSquare,
+} from 'react-icons/fi';
 import './layout.css';
 
 const ADMIN_LINKS = [
-  { to: '/admin',              label: 'Dashboard',           icone: '🏠', end: true },
-  { to: '/admin/analises',     label: 'Análises & Gráficos', icone: '📊' },
-  { to: '/admin/utilizadores', label: 'Utilizadores',        icone: '👥' },
-  { to: '/admin/clientes',     label: 'Clientes',            icone: '💼' },
-  { to: '/admin/documentos',   label: 'Documentos',          icone: '📄' },
-  { to: '/admin/incidentes',   label: 'Incidentes',          icone: '⚠' },
-  { to: '/admin/logs',         label: 'Logs de Atividade',   icone: '📋' },
-  { to: '/admin/conteudo',     label: 'Conteúdo do Site',    icone: '🌐' },
+  { to: '/admin',              label: 'Dashboard',           icon: FiGrid,          end: true },
+  { to: '/admin/analises',     label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/admin/utilizadores', label: 'Utilizadores',        icon: FiUsers },
+  { to: '/admin/clientes',     label: 'Clientes',            icon: FiBriefcase },
+  { to: '/admin/documentos',   label: 'Documentos',          icon: FiFileText },
+  { to: '/admin/incidentes',   label: 'Incidentes',          icon: FiAlertTriangle },
+  { to: '/admin/logs',         label: 'Logs de Atividade',   icon: FiActivity },
+  { to: '/admin/conteudo',     label: 'Conteúdo do Site',    icon: FiGlobe },
 ];
 
 const GESTOR_LINKS = [
-  { to: '/gestor',            label: 'Dashboard',           icone: '🏠', end: true },
-  { to: '/gestor/analises',   label: 'Análises & Gráficos', icone: '📊' },
-  { to: '/gestor/clientes',   label: 'Clientes',            icone: '💼' },
-  { to: '/gestor/documentos', label: 'Documentos',          icone: '📄' },
-  { to: '/gestor/incidentes', label: 'Incidentes',          icone: '⚠' },
+  { to: '/gestor',            label: 'Dashboard',           icon: FiGrid,          end: true },
+  { to: '/gestor/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/gestor/clientes',   label: 'Clientes',            icon: FiBriefcase },
+  { to: '/gestor/documentos', label: 'Documentos',          icon: FiFileText },
+  { to: '/gestor/incidentes', label: 'Incidentes',          icon: FiAlertTriangle },
 ];
 
 const EMPRESA_LINKS = [
-  { to: '/empresa',            label: 'Dashboard',          icone: '🏠', end: true },
-  { to: '/empresa/ambiente',   label: 'Ambiente',           icone: '🛡' },
-  { to: '/empresa/analises',   label: 'Análises',           icone: '📊' },
-  { to: '/empresa/incidentes', label: 'Incidentes',         icone: '⚠' },
-  { to: '/empresa/documentos', label: 'Os Meus Documentos', icone: '📄' },
+  { to: '/empresa',            label: 'Dashboard',           icon: FiGrid,          end: true },
+  { to: '/empresa/ambiente',   label: 'Ambiente',            icon: FiLayers },
+  { to: '/empresa/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
+  { to: '/empresa/ativos',     label: 'Ativos Tecnológicos', icon: FiServer },
+  { to: '/empresa/incidentes', label: 'Incidentes',          icon: FiAlertTriangle },
+  { to: '/empresa/documentos', label: 'Os Meus Documentos',  icon: FiFileText },
+  { to: '/empresa/pedidos',    label: 'Pedidos & Questões',  icon: FiMessageSquare },
 ];
 
-const ROLE_LABELS = { admin: 'Administrador', gestor: 'Gestor', empresa: 'Empresa' };
+const ROLE_LABELS = {
+  admin: 'Administrador',
+  gestor: 'Gestor',
+  empresa: 'Empresa',
+};
 
 function Sidebar() {
   const { utilizador, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const links =
-    utilizador?.perfil === 'admin'  ? ADMIN_LINKS  :
+    utilizador?.perfil === 'admin' ? ADMIN_LINKS :
     utilizador?.perfil === 'gestor' ? GESTOR_LINKS :
     EMPRESA_LINKS;
 
@@ -48,20 +62,22 @@ function Sidebar() {
   return (
     <div className="admin-sidebar">
       <a href="/" className="sidebar-brand">
-        <img src="/img/logo2.png" alt="CyberBoxSecur"
-          style={{ height: '50px', width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+          <img
+            src="/img/logo2.png" alt="CyberBoxSecur" style={{ height: '50px', width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+          />
       </a>
 
       <nav className="sidebar-nav">
-        {links.map(({ to, label, icone, end }) => (
+        {links.map(({ to, label, icon: Icon, badge, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
           >
-            <span style={{ fontSize: '1rem' }}>{icone}</span>
+            <Icon size={18} />
             <span>{label}</span>
+            {badge != null && <span className="sidebar-badge">{badge}</span>}
           </NavLink>
         ))}
       </nav>
@@ -73,7 +89,7 @@ function Sidebar() {
           <span className="user-role">{roleLabel}</span>
         </div>
         <button className="sidebar-logout" onClick={handleLogout} title="Sair">
-          ↩
+          <FiLogOut size={16} />
         </button>
       </div>
     </div>

@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react';
+import {
+  Save as SaveIcon,
+  Plus as PlusIcon,
+  Trash2 as Trash2Icon,
+  Eye as EyeIcon,
+  EyeOff as EyeOffIcon,
+  CheckCircle as CheckCircleIcon,
+  Globe as GlobeIcon,
+  FileText as FileTextIcon,
+  Sparkles as SparklesIcon,
+  Mail as MailIcon,
+  Newspaper as NewspaperIcon,
+  Calendar as CalendarIcon,
+  Inbox as InboxIcon,
+} from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
-// SweetAlert2 — biblioteca de alertas/confirmações ensinada nas aulas
-import Swal from 'sweetalert2';
+
 
 const TABS = [
   { key: 'principal', label: 'Página Principal', icon: 'bi-stars' },
@@ -201,7 +215,7 @@ function Conteudo() {
   const [modalAberto, setModalAberto] = useState(false);
   const [servicoEmEdicao, setServicoEmEdicao] = useState(null); // null = a criar; objeto = a editar
   const [formServico, setFormServico] = useState(SERVICO_VAZIO);
-  // (servicoAEliminar já não é necessário — confirmação feita via SweetAlert2)
+  const [servicoAEliminar, setServicoAEliminar] = useState(null);
 
   const abrirNovoServico = () => {
     setServicoEmEdicao(null);
@@ -245,21 +259,11 @@ function Conteudo() {
     fecharModal();
   };
 
-  // Confirma com SweetAlert2 antes de eliminar o serviço (padrão ensinado nas aulas)
-  const confirmarEliminar = (servico) => {
-    Swal.fire({
-      title: 'Tens a certeza?',
-      text: `Vais eliminar o serviço "${servico.titulo}". Esta ação não pode ser desfeita!`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, eliminar!',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setServicos((prev) => prev.filter((s) => s.id !== servico.id));
-        Swal.fire('Eliminado!', 'O serviço foi removido.', 'success');
-      }
-    });
+  const confirmarEliminar = (servico) => setServicoAEliminar(servico);
+  const cancelarEliminar = () => setServicoAEliminar(null);
+  const eliminarServico = () => {
+    setServicos((prev) => prev.filter((s) => s.id !== servicoAEliminar.id));
+    setServicoAEliminar(null);
   };
 
   // --- Notícias ---
@@ -268,7 +272,7 @@ function Conteudo() {
   const [modalArtigoAberto, setModalArtigoAberto] = useState(false);
   const [artigoEmEdicao, setArtigoEmEdicao] = useState(null); // null = a criar
   const [formArtigo, setFormArtigo] = useState(ARTIGO_VAZIO);
-  // (artigoAEliminar já não é necessário — confirmação feita via SweetAlert2)
+  const [artigoAEliminar, setArtigoAEliminar] = useState(null);
 
   const handleNoticiasHeroChange = (campo) => (e) => {
     setNoticiasHero((prev) => ({ ...prev, [campo]: e.target.value }));
@@ -352,30 +356,20 @@ function Conteudo() {
       }
       fecharModalArtigo();
     } catch {
-      Swal.fire('Erro!', 'Não foi possível guardar o artigo. Verifica a ligação ao servidor.', 'error');
+      alert('Erro ao guardar o artigo. Verifica a ligação ao servidor.');
     }
   };
 
-  // Confirma com SweetAlert2 antes de eliminar o artigo (padrão ensinado nas aulas)
-  const confirmarEliminarArtigo = (artigo) => {
-    Swal.fire({
-      title: 'Tens a certeza?',
-      text: `Vais eliminar o artigo "${artigo.titulo}". Esta ação não pode ser desfeita!`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, eliminar!',
-      cancelButtonText: 'Cancelar',
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await api.delete(`/noticias/delete/${artigo.id}`);
-          setArtigos(prev => prev.filter(a => a.id !== artigo.id));
-          Swal.fire('Eliminado!', 'O artigo foi removido.', 'success');
-        } catch {
-          Swal.fire('Erro!', 'Não foi possível eliminar o artigo.', 'error');
-        }
-      }
-    });
+  const confirmarEliminarArtigo = (artigo) => setArtigoAEliminar(artigo);
+  const cancelarEliminarArtigo = () => setArtigoAEliminar(null);
+  const eliminarArtigo = async () => {
+    try {
+      await api.delete(`/noticias/delete/${artigoAEliminar.id}`);
+      setArtigos(prev => prev.filter(a => a.id !== artigoAEliminar.id));
+      setArtigoAEliminar(null);
+    } catch {
+      alert('Erro ao eliminar o artigo.');
+    }
   };
 
   // --- Contactos ---
@@ -401,27 +395,18 @@ function Conteudo() {
       const { data } = await api.put(`/contactos/lido/${id}`);
       setMensagens(prev => prev.map(m => m.id === data.id ? data : m));
     } catch {
-      Swal.fire('Erro!', 'Não foi possível atualizar a mensagem.', 'error');
+      alert('Erro ao atualizar mensagem.');
     }
   };
 
-  // ── Eliminar mensagem recebida — usa SweetAlert2 para confirmação ──
+  // ── Eliminar mensagem recebida ──
   const eliminarMensagem = async (id) => {
-    const result = await Swal.fire({
-      title: 'Tens a certeza?',
-      text: 'Vais eliminar esta mensagem de contacto. Esta ação não pode ser desfeita!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, eliminar!',
-      cancelButtonText: 'Cancelar',
-    });
-    if (!result.isConfirmed) return;
+    if (!window.confirm('Eliminar esta mensagem de contacto?')) return;
     try {
       await api.delete(`/contactos/delete/${id}`);
       setMensagens(prev => prev.filter(m => m.id !== id));
-      Swal.fire('Eliminado!', 'A mensagem foi removida.', 'success');
     } catch {
-      Swal.fire('Erro!', 'Não foi possível eliminar a mensagem.', 'error');
+      alert('Erro ao eliminar mensagem.');
     }
   };
 
@@ -445,101 +430,127 @@ function Conteudo() {
       setGuardado(true);
       setTimeout(() => setGuardado(false), 2500);
     } catch {
-      Swal.fire('Erro!', 'Não foi possível guardar. Verifica a ligação ao servidor.', 'error');
+      alert('Erro ao guardar. Verifica a ligação ao servidor.');
     } finally {
       setAGuardar(false);
     }
   };
 
+
+  // Ícones Lucide para os tabs (como no Figma Make)
+  const TAB_ICONS = {
+    principal: <SparklesIcon size={16} />,
+    servicos:  <GlobeIcon size={16} />,
+    noticias:  <NewspaperIcon size={16} />,
+    contactos: <MailIcon size={16} />,
+  };
+
   return (
     <AdminLayout>
       <div className="container-fluid py-4 px-md-4">
+
         {/* Cabeçalho */}
-        <div className="mb-4">
-          <h4 className="clientes-titulo">Gestão de Conteúdo do Site</h4>
-          <p className="text-secondary mb-0">
-            Edite os textos e conteúdos exibidos nas páginas públicas
-          </p>
+        <div className="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h4 className="fw-semibold mb-1" style={{ color: '#111827' }}>
+              Gestão de Conteúdo do Site
+            </h4>
+            <p className="text-secondary small mb-0">
+              Edite os textos e conteúdos exibidos nas páginas públicas
+            </p>
+          </div>
+          {/* Mensagem de guardado com sucesso */}
+          {guardado && (
+            <div
+              className="d-flex align-items-center gap-2 px-3 py-2 rounded-3 small fw-medium"
+              style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+            >
+              <CheckCircleIcon size={16} /> Alterações guardadas com sucesso!
+            </div>
+          )}
         </div>
 
-        {/* Tabs */}
-        <ul className="nav nav-tabs mb-4">
+        {/* Tabs — estilo underline igual ao Figma */}
+        <div className="d-flex gap-0 mb-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
           {TABS.map((tab) => (
-            <li className="nav-item" key={tab.key}>
-              <button
-                type="button"
-                className={`nav-link d-flex align-items-center gap-2 ${
-                  tabAtiva === tab.key ? 'active fw-semibold' : 'text-secondary'
-                }`}
-                onClick={() => setTabAtiva(tab.key)}
-              >
-                <i className={`bi ${tab.icon}`}></i>
-                {tab.label}
-              </button>
-            </li>
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setTabAtiva(tab.key)}
+              className="btn d-flex align-items-center gap-2 px-4 py-3 rounded-0 border-0"
+              style={{
+                borderBottom: tabAtiva === tab.key
+                  ? '2px solid #2563eb'
+                  : '2px solid transparent',
+                color: tabAtiva === tab.key ? '#1d4ed8' : '#6b7280',
+                fontSize: '0.875rem',
+                fontWeight: tabAtiva === tab.key ? 600 : 400,
+                marginBottom: '-1px',
+                transition: 'color 0.15s, border-color 0.15s',
+              }}
+            >
+              {TAB_ICONS[tab.key]}
+              {tab.label}
+            </button>
           ))}
-        </ul>
+        </div>
 
-        {/* Conteúdo: Página Principal */}
+        {/* ── TAB: Página Principal ── */}
         {tabAtiva === 'principal' && (
           <div className="d-flex flex-column gap-4">
-            {/* Secção Hero */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-start mb-1">
-                  <div className="d-flex align-items-center gap-3">
-                    <span
-                      className="d-inline-flex align-items-center justify-content-center rounded-3"
-                      style={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: '#f3e8fd',
-                        color: '#9333ea',
-                      }}
-                    >
-                      <i className="bi bi-stars fs-5"></i>
-                    </span>
-                    <div>
-                      <h5 className="fw-bold mb-0">Secção Hero (Topo da Página)</h5>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-1"
-                  >
-                    <i className="bi bi-eye"></i>
-                    Pré-visualizar
-                  </button>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  O primeiro conteúdo que os visitantes veem ao entrar no site
-                </p>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold mb-1">
-                    Título Principal{' '}
-                    <span className="text-secondary fw-normal">
+            {/* Secção Hero */}
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span
+                      className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                      style={{ width: 32, height: 32, backgroundColor: '#ede9fe', color: '#7c3aed' }}
+                    >
+                      <SparklesIcon size={15} />
+                    </span>
+                    <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>
+                      Secção Hero (Topo da Página)
+                    </h5>
+                  </div>
+                  <p className="text-secondary small mb-0 ms-1">
+                    O primeiro conteúdo que os visitantes veem ao entrar no site
+                  </p>
+                </div>
+                <a href="/" target="_blank" rel="noopener noreferrer"
+                  className="d-flex align-items-center gap-1 text-primary text-decoration-none small">
+                  <EyeIcon size={14} /> Pré-visualizar
+                </a>
+              </div>
+
+              <div className="d-flex flex-column gap-3">
+                <div>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Título Principal
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>
                       (aparece em destaque no topo)
                     </span>
                   </label>
                   <input
                     type="text"
-                    className="form-control form-control-lg"
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem' }}
                     value={hero.titulo}
                     onChange={handleHeroChange('titulo')}
                   />
                 </div>
-
                 <div>
-                  <label className="form-label fw-semibold mb-1">
-                    Subtítulo{' '}
-                    <span className="text-secondary fw-normal">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Subtítulo
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>
                       (texto explicativo abaixo do título)
                     </span>
                   </label>
                   <textarea
-                    className="form-control"
-                    rows={2}
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem', resize: 'none' }}
+                    rows={3}
                     value={hero.subtitulo}
                     onChange={handleHeroChange('subtitulo')}
                   />
@@ -548,208 +559,222 @@ function Conteudo() {
             </div>
 
             {/* Secção de Serviços */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex align-items-center gap-3 mb-1">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-3"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: '#dbeafe',
-                      color: '#2563eb',
-                    }}
-                  >
-                    <i className="bi bi-globe2 fs-5"></i>
-                  </span>
-                  <h5 className="fw-bold mb-0">Secção de Serviços</h5>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  Cabeçalho da área onde os serviços são apresentados
-                </p>
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span
+                  className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                  style={{ width: 32, height: 32, backgroundColor: '#dbeafe', color: '#2563eb' }}
+                >
+                  <GlobeIcon size={15} />
+                </span>
+                <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>Secção de Serviços</h5>
+              </div>
+              <p className="text-secondary small mb-3 ms-1">
+                Cabeçalho da área onde os serviços são apresentados
+              </p>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold mb-1">
-                    Título da Secção{' '}
-                    <span className="text-secondary fw-normal">
+              <div className="d-flex flex-column gap-3">
+                <div>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Título da Secção
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>
                       (aparece antes da lista de serviços)
                     </span>
                   </label>
                   <input
                     type="text"
-                    className="form-control"
-                    placeholder="Ex.: Os Nossos Serviços"
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem' }}
                     value={servicosHeader.titulo}
                     onChange={handleServicosHeaderChange('titulo')}
                   />
                 </div>
-
                 <div>
-                  <label className="form-label fw-semibold mb-1">
-                    Subtítulo da Secção{' '}
-                    <span className="text-secondary fw-normal">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Subtítulo da Secção
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>
                       (descrição breve dos serviços)
                     </span>
                   </label>
                   <textarea
-                    className="form-control"
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem', resize: 'none' }}
                     rows={2}
-                    placeholder="Texto explicativo da secção de serviços"
                     value={servicosHeader.subtitulo}
                     onChange={handleServicosHeaderChange('subtitulo')}
                   />
                 </div>
               </div>
             </div>
+
+            {/* Botão Guardar */}
+            <div className="d-flex justify-content-end">
+              <button
+                type="button"
+                className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 rounded-3"
+                style={{ fontSize: '0.875rem' }}
+                onClick={handleGuardarTodas}
+                disabled={aGuardar}
+              >
+                {aGuardar
+                  ? <><span className="spinner-border spinner-border-sm" role="status"></span> A guardar...</>
+                  : <><SaveIcon size={16} /> Guardar Todas as Alterações</>
+                }
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Conteúdo: Serviços */}
+        {/* ── TAB: Serviços ── */}
         {tabAtiva === 'servicos' && (
-          <div>
+          <div className="d-flex flex-column gap-4">
             {/* Banner informativo */}
             <div
-              className="d-flex flex-wrap justify-content-between align-items-center gap-3 rounded-3 p-3 mb-4"
+              className="d-flex flex-wrap justify-content-between align-items-center gap-3 rounded-3 p-3"
               style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}
             >
-              <div style={{ color: '#1e3a8a' }}>
-                <span className="fw-bold">Gestão de Serviços:</span>{' '}
-                Adicione, edite ou remova serviços exibidos na página principal. Cada serviço
-                aparece como um cartão com ícone, título e descrição.
-              </div>
-              <button
-                type="button"
-                className="btn btn-primary d-flex align-items-center gap-2 flex-shrink-0"
-                onClick={abrirNovoServico}
-              >
-                <i className="bi bi-plus-lg"></i>
-                Novo Serviço
-              </button>
+              <p className="mb-0 small" style={{ color: '#1e40af', flex: 1 }}>
+                <strong>Gestão de Serviços:</strong> Adicione, edite ou remova serviços exibidos na
+                página principal. Cada serviço aparece como um cartão com ícone, título e descrição.
+              </p>
+              {!modalAberto && (
+                <button
+                  type="button"
+                  className="btn btn-primary d-flex align-items-center gap-2 rounded-3 flex-shrink-0"
+                  style={{ fontSize: '0.875rem' }}
+                  onClick={abrirNovoServico}
+                >
+                  <PlusIcon size={16} /> Novo Serviço
+                </button>
+              )}
             </div>
 
             {/* Grid de serviços */}
             <div className="row g-3">
               {servicos.map((servico) => (
-                <div className="col-12 col-lg-6" key={servico.id}>
-                  <div className="card shadow-sm border-0 h-100">
-                    <div className="card-body p-4">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <div className="d-flex align-items-start gap-3">
-                          <span
-                            className="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
-                            style={{
-                              width: 44,
-                              height: 44,
-                              background: 'linear-gradient(135deg, #6366f1, #9333ea)',
-                              color: '#fff',
-                            }}
-                          >
-                            <i className={`bi ${servico.icone} fs-5`}></i>
-                          </span>
-                          <div>
-                            <h6 className="fw-bold mb-1">{servico.titulo}</h6>
-                            <p className="text-secondary mb-0 small">{servico.descricao}</p>
-                          </div>
+                <div className="col-12 col-md-6" key={servico.id}>
+                  <div className="bg-white rounded-3 p-4 h-100"
+                    style={{ border: '1px solid #e5e7eb', transition: 'border-color 0.15s' }}>
+                    <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
+                      <div className="d-flex align-items-start gap-3 flex-1">
+                        <span
+                          className="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+                          style={{
+                            width: 40, height: 40,
+                            background: 'linear-gradient(135deg, #3b82f6, #7c3aed)',
+                            color: '#fff',
+                          }}
+                        >
+                          <i className={`bi ${servico.icone}`}></i>
+                        </span>
+                        <div className="flex-1" style={{ minWidth: 0 }}>
+                          <h6 className="fw-semibold mb-1" style={{ color: '#111827' }}>
+                            {servico.titulo}
+                          </h6>
+                          <p className="text-secondary mb-0 small"
+                            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {servico.descricao}
+                          </p>
                         </div>
-                        {servico.badge && (
-                          <span
-                            className="badge rounded-pill flex-shrink-0 ms-2"
-                            style={{ backgroundColor: '#f3e8fd', color: '#9333ea' }}
-                          >
-                            {servico.badge}
-                          </span>
-                        )}
                       </div>
+                      {servico.badge && (
+                        <span
+                          className="badge rounded-pill flex-shrink-0"
+                          style={{ backgroundColor: '#f3e8fd', color: '#7c3aed', fontSize: '0.7rem' }}
+                        >
+                          {servico.badge}
+                        </span>
+                      )}
+                    </div>
 
-                      <div className="d-flex gap-4 mt-3 ps-0">
-                        <button
-                          type="button"
-                          className="btn btn-link text-decoration-none p-0 fw-semibold"
-                          onClick={() => abrirEditarServico(servico)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-link text-decoration-none p-0 fw-semibold text-danger d-flex align-items-center gap-1"
-                          onClick={() => confirmarEliminar(servico)}
-                        >
-                          <i className="bi bi-trash"></i>
-                          Eliminar
-                        </button>
-                      </div>
+                    <div className="d-flex align-items-center gap-2 pt-3" style={{ borderTop: '1px solid #f3f4f6' }}>
+                      <button
+                        type="button"
+                        className="btn btn-link p-0 text-decoration-none fw-medium flex-1 text-center"
+                        style={{ color: '#2563eb', fontSize: '0.875rem' }}
+                        onClick={() => abrirEditarServico(servico)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn d-flex align-items-center justify-content-center gap-1 px-3 py-1 rounded-2"
+                        style={{ color: '#dc2626', fontSize: '0.875rem', backgroundColor: 'transparent' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        onClick={() => confirmarEliminar(servico)}
+                      >
+                        <Trash2Icon size={14} /> Eliminar
+                      </button>
                     </div>
                   </div>
                 </div>
               ))}
+              {servicos.length === 0 && (
+                <div className="col-12 text-center text-secondary py-5 small">
+                  Ainda não existem serviços. Clica em "Novo Serviço" para adicionar o primeiro.
+                </div>
+              )}
             </div>
-
-            {servicos.length === 0 && (
-              <div className="text-center text-secondary py-5">
-                Ainda não existem serviços. Clica em "Novo Serviço" para adicionar o primeiro.
-              </div>
-            )}
           </div>
         )}
 
-        {/* Conteúdo: Notícias */}
+        {/* ── TAB: Notícias ── */}
         {tabAtiva === 'noticias' && (
           <div className="d-flex flex-column gap-4">
-            {/* Secção Hero (Topo da Página de Notícias) */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-start mb-1">
-                  <div className="d-flex align-items-center gap-3">
-                    <span
-                      className="d-inline-flex align-items-center justify-content-center rounded-3"
-                      style={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: '#f3e8fd',
-                        color: '#9333ea',
-                      }}
-                    >
-                      <i className="bi bi-stars fs-5"></i>
-                    </span>
-                    <h5 className="fw-bold mb-0">Secção Hero (Topo da Página)</h5>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-1"
-                  >
-                    <i className="bi bi-eye"></i>
-                    Pré-visualizar
-                  </button>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  O primeiro conteúdo que os visitantes veem na página de notícias
-                </p>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold mb-1">
-                    Título Principal{' '}
-                    <span className="text-secondary fw-normal">
+            {/* Hero notícias */}
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span
+                      className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                      style={{ width: 32, height: 32, backgroundColor: '#ede9fe', color: '#7c3aed' }}
+                    >
+                      <SparklesIcon size={15} />
+                    </span>
+                    <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>
+                      Secção Hero (Topo da Página)
+                    </h5>
+                  </div>
+                  <p className="text-secondary small mb-0 ms-1">
+                    O primeiro conteúdo que os visitantes veem na página de notícias
+                  </p>
+                </div>
+                <a href="/noticias" target="_blank" rel="noopener noreferrer"
+                  className="d-flex align-items-center gap-1 text-primary text-decoration-none small">
+                  <EyeIcon size={14} /> Pré-visualizar
+                </a>
+              </div>
+
+              <div className="d-flex flex-column gap-3">
+                <div>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Título Principal
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>
                       (aparece em destaque no topo)
                     </span>
                   </label>
                   <input
                     type="text"
-                    className="form-control form-control-lg"
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem' }}
                     value={noticiasHero.titulo}
                     onChange={handleNoticiasHeroChange('titulo')}
                   />
                 </div>
-
                 <div>
-                  <label className="form-label fw-semibold mb-1">
-                    Subtítulo{' '}
-                    <span className="text-secondary fw-normal">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Subtítulo
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>
                       (texto explicativo abaixo do título)
                     </span>
                   </label>
                   <textarea
-                    className="form-control"
-                    rows={2}
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem', resize: 'none' }}
+                    rows={3}
                     value={noticiasHero.subtitulo}
                     onChange={handleNoticiasHeroChange('subtitulo')}
                   />
@@ -757,150 +782,150 @@ function Conteudo() {
               </div>
             </div>
 
-            {/* Banner informativo + Novo Artigo */}
+            {/* Gestão de artigos */}
             <div
               className="d-flex flex-wrap justify-content-between align-items-center gap-3 rounded-3 p-3"
               style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}
             >
-              <div style={{ color: '#1e3a8a' }}>
-                <span className="fw-bold">Gestão de Artigos:</span>{' '}
-                Adicione, edite ou remova artigos exibidos na página de notícias. Cada artigo
-                aparece com título, resumo e imagem.
-              </div>
-              <button
-                type="button"
-                className="btn btn-primary d-flex align-items-center gap-2 flex-shrink-0"
-                onClick={abrirNovoArtigo}
-              >
-                <i className="bi bi-plus-lg"></i>
-                Novo Artigo
-              </button>
+              <p className="mb-0 small" style={{ color: '#1e40af', flex: 1 }}>
+                <strong>Gestão de Artigos:</strong> Adicione, edite ou remova artigos exibidos na
+                página de notícias. Cada artigo aparece com título, resumo e imagem.
+              </p>
+              {!modalArtigoAberto && (
+                <button
+                  type="button"
+                  className="btn btn-primary d-flex align-items-center gap-2 rounded-3 flex-shrink-0"
+                  style={{ fontSize: '0.875rem' }}
+                  onClick={abrirNovoArtigo}
+                >
+                  <PlusIcon size={16} /> Novo Artigo
+                </button>
+              )}
             </div>
 
             {/* Grid de artigos */}
             <div className="row g-3">
               {artigos.map((artigo) => (
                 <div className="col-12 col-md-6 col-lg-4" key={artigo.id}>
-                  <div className="card shadow-sm border-0 h-100 overflow-hidden">
+                  <div className="bg-white rounded-3 overflow-hidden h-100" style={{ border: '1px solid #e5e7eb' }}>
                     <div
                       style={{
-                        height: 180,
+                        height: 160,
                         backgroundImage: `url(${artigo.imagem})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
-                        backgroundColor: '#0f172a',
+                        backgroundColor: '#f1f5f9',
                       }}
-                    ></div>
-                    <div className="card-body p-4 d-flex flex-column">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
+                    />
+                    <div className="p-4 d-flex flex-column">
+                      <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
                         {artigo.categoria && (
-                          <span
-                            className="badge rounded-pill"
-                            style={{ backgroundColor: '#f3e8fd', color: '#9333ea' }}
-                          >
+                          <span className="badge rounded-pill"
+                            style={{ backgroundColor: '#ede9fe', color: '#7c3aed', fontSize: '0.7rem' }}>
                             {artigo.categoria}
                           </span>
                         )}
-                        <span className="text-secondary small d-flex align-items-center gap-1">
-                          <i className="bi bi-calendar3"></i>
-                          {formatarDataPt(artigo.dataPublicacao)}
+                        <span className="text-secondary d-flex align-items-center gap-1" style={{ fontSize: '0.75rem' }}>
+                          <CalendarIcon size={12} /> {formatarDataPt(artigo.dataPublicacao)}
                         </span>
                       </div>
-
-                      <h6 className="fw-bold mb-2">{artigo.titulo}</h6>
-                      <p className="text-secondary small mb-3">{artigo.resumo}</p>
-
-                      <div className="d-flex justify-content-between align-items-center mt-auto mb-3">
-                        <span className="text-secondary small">{artigo.tempoLeitura}</span>
-                        <span
-                          className={`small fw-semibold ${
-                            artigo.publicado ? 'text-success' : 'text-secondary'
-                          }`}
-                        >
+                      <h6 className="fw-semibold mb-1" style={{ color: '#111827', fontSize: '0.875rem' }}>
+                        {artigo.titulo}
+                      </h6>
+                      <p className="text-secondary mb-3 flex-grow-1"
+                        style={{
+                          fontSize: '0.75rem',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}>
+                        {artigo.resumo}
+                      </p>
+                      <div className="d-flex justify-content-between align-items-center mb-3"
+                        style={{ fontSize: '0.75rem' }}>
+                        <span className="text-secondary">{artigo.tempoLeitura}</span>
+                        <span style={{ color: artigo.publicado ? '#16a34a' : '#d97706', fontWeight: 500 }}>
                           {artigo.publicado ? 'Publicado' : 'Rascunho'}
                         </span>
                       </div>
-
-                      <hr className="mt-0 mb-3" />
-
-                      <div className="d-flex gap-4">
+                      <div className="d-flex align-items-center gap-2 pt-3" style={{ borderTop: '1px solid #f3f4f6' }}>
                         <button
                           type="button"
-                          className="btn btn-link text-decoration-none p-0 fw-semibold"
+                          className="btn btn-link p-0 text-decoration-none fw-medium flex-1 text-center"
+                          style={{ color: '#2563eb', fontSize: '0.875rem' }}
                           onClick={() => abrirEditarArtigo(artigo)}
                         >
                           Editar
                         </button>
                         <button
                           type="button"
-                          className="btn btn-link text-decoration-none p-0 fw-semibold text-danger d-flex align-items-center gap-1"
+                          className="btn d-flex align-items-center justify-content-center gap-1 px-3 py-1 rounded-2"
+                          style={{ color: '#dc2626', fontSize: '0.875rem', backgroundColor: 'transparent' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                           onClick={() => confirmarEliminarArtigo(artigo)}
                         >
-                          <i className="bi bi-trash"></i>
-                          Eliminar
+                          <Trash2Icon size={14} /> Eliminar
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
+              {artigos.length === 0 && (
+                <div className="col-12 text-center text-secondary py-5 small">
+                  Ainda não existem artigos. Clica em "Novo Artigo" para adicionar o primeiro.
+                </div>
+              )}
             </div>
-
-            {artigos.length === 0 && (
-              <div className="text-center text-secondary py-5">
-                Ainda não existem artigos. Clica em "Novo Artigo" para adicionar o primeiro.
-              </div>
-            )}
           </div>
         )}
 
-        {/* Conteúdo: Contactos */}
+        {/* ── TAB: Contactos ── */}
         {tabAtiva === 'contactos' && (
           <div className="d-flex flex-column gap-4">
-            {/* Cabeçalho da Página */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-start mb-1">
-                  <div className="d-flex align-items-center gap-3">
-                    <span
-                      className="d-inline-flex align-items-center justify-content-center rounded-3"
-                      style={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: '#dbeafe',
-                        color: '#2563eb',
-                      }}
-                    >
-                      <i className="bi bi-envelope fs-5"></i>
-                    </span>
-                    <h5 className="fw-bold mb-0">Cabeçalho da Página</h5>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-1"
-                  >
-                    <i className="bi bi-eye"></i>
-                    Pré-visualizar
-                  </button>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  Textos principais da página de contactos
-                </p>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold mb-1">Título Principal</label>
+            {/* Cabeçalho da Página */}
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span
+                      className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                      style={{ width: 32, height: 32, backgroundColor: '#dbeafe', color: '#2563eb' }}
+                    >
+                      <MailIcon size={15} />
+                    </span>
+                    <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>Cabeçalho da Página</h5>
+                  </div>
+                  <p className="text-secondary small mb-0 ms-1">Textos principais da página de contactos</p>
+                </div>
+                <a href="/contacto" target="_blank" rel="noopener noreferrer"
+                  className="d-flex align-items-center gap-1 text-primary text-decoration-none small">
+                  <EyeIcon size={14} /> Pré-visualizar
+                </a>
+              </div>
+              <div className="d-flex flex-column gap-3">
+                <div>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Título Principal
+                  </label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem' }}
                     value={contactosCabecalho.titulo}
                     onChange={handleContactosCabecalhoChange('titulo')}
                   />
                 </div>
-
                 <div>
-                  <label className="form-label fw-semibold mb-1">Subtítulo</label>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Subtítulo
+                  </label>
                   <textarea
-                    className="form-control"
+                    className="form-control rounded-3"
+                    style={{ fontSize: '0.875rem', resize: 'none' }}
                     rows={2}
                     value={contactosCabecalho.subtitulo}
                     onChange={handleContactosCabecalhoChange('subtitulo')}
@@ -910,351 +935,236 @@ function Conteudo() {
             </div>
 
             {/* Informações de Contacto */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex align-items-center gap-3 mb-1">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-3"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: '#dcfce7',
-                      color: '#16a34a',
-                    }}
-                  >
-                    <i className="bi bi-envelope fs-5"></i>
-                  </span>
-                  <h5 className="fw-bold mb-0">Informações de Contacto</h5>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  Dados exibidos na barra lateral da página
-                </p>
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span
+                  className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                  style={{ width: 32, height: 32, backgroundColor: '#dcfce7', color: '#16a34a' }}
+                >
+                  <MailIcon size={15} />
+                </span>
+                <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>Informações de Contacto</h5>
+              </div>
+              <p className="text-secondary small mb-3 ms-1">Dados exibidos na barra lateral da página</p>
 
-                <div className="row g-3 mb-3">
-                  <div className="col-12 col-md-6">
-                    <label className="form-label fw-semibold mb-1">E-mail</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={contactosInfo.email}
-                      onChange={handleContactosInfoChange('email')}
-                    />
-                  </div>
-                  <div className="col-12 col-md-6">
-                    <label className="form-label fw-semibold mb-1">Telefone</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={contactosInfo.telefone}
-                      onChange={handleContactosInfoChange('telefone')}
-                    />
-                  </div>
+              <div className="row g-3">
+                <div className="col-12 col-md-6">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>E-mail</label>
+                  <input type="email" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                    value={contactosInfo.email} onChange={handleContactosInfoChange('email')} />
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-semibold mb-1">Morada</label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={contactosInfo.morada}
-                    onChange={handleContactosInfoChange('morada')}
-                  />
+                <div className="col-12 col-md-6">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Telefone</label>
+                  <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                    value={contactosInfo.telefone} onChange={handleContactosInfoChange('telefone')} />
                 </div>
-
-                <div className="row g-3">
-                  <div className="col-12 col-md-6">
-                    <label className="form-label fw-semibold mb-1">Horário</label>
-                    <textarea
-                      className="form-control"
-                      rows={2}
-                      value={contactosInfo.horario}
-                      onChange={handleContactosInfoChange('horario')}
-                    />
-                  </div>
-                  <div className="col-12 col-md-6">
-                    <label className="form-label fw-semibold mb-1">
-                      Número SOC (Emergências){' '}
-                      <span className="text-secondary fw-normal">(Security Operations Center)</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={contactosInfo.numeroSoc}
-                      onChange={handleContactosInfoChange('numeroSoc')}
-                    />
-                  </div>
+                <div className="col-12">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Morada</label>
+                  <textarea className="form-control rounded-3" style={{ fontSize: '0.875rem', resize: 'none' }}
+                    rows={2} value={contactosInfo.morada} onChange={handleContactosInfoChange('morada')} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Horário</label>
+                  <textarea className="form-control rounded-3" style={{ fontSize: '0.875rem', resize: 'none' }}
+                    rows={2} value={contactosInfo.horario} onChange={handleContactosInfoChange('horario')} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Número SOC
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>(Security Operations Center)</span>
+                  </label>
+                  <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                    value={contactosInfo.numeroSoc} onChange={handleContactosInfoChange('numeroSoc')} />
                 </div>
               </div>
             </div>
 
             {/* Formulário de Contacto */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex align-items-center gap-3 mb-1">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-3"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: '#f3e8fd',
-                      color: '#9333ea',
-                    }}
-                  >
-                    <i className="bi bi-file-text fs-5"></i>
-                  </span>
-                  <h5 className="fw-bold mb-0">Formulário de Contacto</h5>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  Textos do formulário de envio de mensagens
-                </p>
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span
+                  className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                  style={{ width: 32, height: 32, backgroundColor: '#ede9fe', color: '#7c3aed' }}
+                >
+                  <FileTextIcon size={15} />
+                </span>
+                <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>Formulário de Contacto</h5>
+              </div>
+              <p className="text-secondary small mb-3 ms-1">Textos do formulário de envio de mensagens</p>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold mb-1">Título do Formulário</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={contactosFormulario.titulo}
-                    onChange={handleContactosFormularioChange('titulo')}
-                  />
-                </div>
-
+              <div className="d-flex flex-column gap-3">
                 <div>
-                  <label className="form-label fw-semibold mb-1">
-                    Mensagem de Sucesso{' '}
-                    <span className="text-secondary fw-normal">(exibida após envio)</span>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Título do Formulário
                   </label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={contactosFormulario.mensagemSucesso}
-                    onChange={handleContactosFormularioChange('mensagemSucesso')}
-                  />
+                  <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                    value={contactosFormulario.titulo}
+                    onChange={handleContactosFormularioChange('titulo')} />
+                </div>
+                <div>
+                  <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                    Mensagem de Sucesso
+                    <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>(exibida após envio)</span>
+                  </label>
+                  <textarea className="form-control rounded-3" style={{ fontSize: '0.875rem', resize: 'none' }}
+                    rows={2} value={contactosFormulario.mensagemSucesso}
+                    onChange={handleContactosFormularioChange('mensagemSucesso')} />
                 </div>
               </div>
             </div>
 
-            {/* ── Mensagens Recebidas (da BD) ── */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex align-items-center gap-3 mb-1">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-3"
-                    style={{ width: 40, height: 40, backgroundColor: '#fef9c3', color: '#a16207' }}
-                  >
-                    <i className="bi bi-inbox fs-5"></i>
-                  </span>
-                  <div>
-                    <h5 className="fw-bold mb-0">
-                      Mensagens Recebidas
-                      {mensagens.filter(m => !m.lido).length > 0 && (
-                        <span
-                          className="badge rounded-pill ms-2"
-                          style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '12px' }}
-                        >
-                          {mensagens.filter(m => !m.lido).length} novas
-                        </span>
-                      )}
-                    </h5>
-                  </div>
-                </div>
-                <p className="text-secondary ms-0 ms-md-5 ps-md-1 mb-4">
-                  Mensagens enviadas pelo formulário de contacto do site
-                </p>
+            {/* Mensagens Recebidas */}
+            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span
+                  className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                  style={{ width: 32, height: 32, backgroundColor: '#fef9c3', color: '#a16207' }}
+                >
+                  <InboxIcon size={15} />
+                </span>
+                <h5 className="fw-semibold mb-0" style={{ color: '#111827' }}>
+                  Mensagens Recebidas
+                  {mensagens.filter(m => !m.lido).length > 0 && (
+                    <span className="badge rounded-pill ms-2"
+                      style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '0.7rem' }}>
+                      {mensagens.filter(m => !m.lido).length} novas
+                    </span>
+                  )}
+                </h5>
+              </div>
+              <p className="text-secondary small mb-3 ms-1">
+                Mensagens enviadas pelo formulário de contacto do site
+              </p>
 
-                {carregandoMsgs ? (
-                  <p className="text-secondary">A carregar mensagens…</p>
-                ) : mensagens.length === 0 ? (
-                  <p className="text-center text-secondary py-3">Ainda não há mensagens recebidas.</p>
-                ) : (
-                  <div className="d-flex flex-column gap-3">
-                    {mensagens.map(msg => (
-                      <div
-                        key={msg.id}
-                        className="rounded-3 p-3"
-                        style={{
-                          backgroundColor: msg.lido ? '#f8fafc' : '#eff6ff',
-                          border: msg.lido ? '1px solid #e2e8f0' : '1px solid #bfdbfe',
-                        }}
-                      >
-                        <div className="d-flex justify-content-between align-items-start gap-2">
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
-                              <i className={`bi bi-envelope${msg.lido ? '' : '-fill'}`} style={{ color: msg.lido ? '#94a3b8' : '#2563eb' }}></i>
-                              <span className="fw-semibold">{msg.nome}</span>
-                              <span className="text-secondary small">{msg.email}</span>
-                              {!msg.lido && (
-                                <span className="badge rounded-pill" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8', fontSize: '11px' }}>
-                                  Não lida
-                                </span>
-                              )}
-                            </div>
-                            {msg.assunto && (
-                              <p className="fw-medium mb-1 small" style={{ color: '#374151' }}>{msg.assunto}</p>
+              {carregandoMsgs ? (
+                <p className="text-secondary small">A carregar mensagens…</p>
+              ) : mensagens.length === 0 ? (
+                <p className="text-center text-secondary small py-3">Ainda não há mensagens recebidas.</p>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {mensagens.map(msg => (
+                    <div
+                      key={msg.id}
+                      className="rounded-3 p-3"
+                      style={{
+                        backgroundColor: msg.lido ? '#f8fafc' : '#eff6ff',
+                        border: msg.lido ? '1px solid #e2e8f0' : '1px solid #bfdbfe',
+                      }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start gap-2">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <MailIcon size={14} style={{ color: msg.lido ? '#94a3b8' : '#2563eb' }} />
+                            <span className="fw-semibold small">{msg.nome}</span>
+                            <span className="text-secondary" style={{ fontSize: '0.75rem' }}>{msg.email}</span>
+                            {!msg.lido && (
+                              <span className="badge rounded-pill"
+                                style={{ backgroundColor: '#dbeafe', color: '#1d4ed8', fontSize: '0.7rem' }}>
+                                Não lida
+                              </span>
                             )}
-                            <p className="mb-1 small" style={{ color: '#4a5565', lineHeight: 1.5 }}>{msg.mensagem}</p>
-                            <p className="text-secondary" style={{ fontSize: '12px', margin: 0 }}>
-                              {new Date(msg.created_at).toLocaleString('pt-PT')}
-                              {msg.telefone && ` · ${msg.telefone}`}
-                            </p>
                           </div>
-                          <div className="d-flex gap-2 flex-shrink-0">
-                            <button
-                              type="button"
-                              className="btn btn-link p-0 text-decoration-none"
-                              title={msg.lido ? 'Marcar como não lida' : 'Marcar como lida'}
-                              onClick={() => toggleLido(msg.id)}
-                            >
-                              <i className={`bi bi-${msg.lido ? 'eye-slash' : 'check2-circle'}`} style={{ color: '#2563eb' }}></i>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-link p-0 text-decoration-none"
-                              title="Eliminar mensagem"
-                              onClick={() => eliminarMensagem(msg.id)}
-                            >
-                              <i className="bi bi-trash text-danger"></i>
-                            </button>
-                          </div>
+                          {msg.assunto && (
+                            <p className="fw-medium mb-1 small" style={{ color: '#374151' }}>{msg.assunto}</p>
+                          )}
+                          <p className="mb-1 small" style={{ color: '#4a5565' }}>{msg.mensagem}</p>
+                          <p className="text-secondary mb-0" style={{ fontSize: '0.7rem' }}>
+                            {new Date(msg.created_at).toLocaleString('pt-PT')}
+                            {msg.telefone && ` · ${msg.telefone}`}
+                          </p>
+                        </div>
+                        <div className="d-flex gap-2 flex-shrink-0">
+                          <button type="button" className="btn btn-link p-0 text-decoration-none"
+                            title={msg.lido ? 'Marcar como não lida' : 'Marcar como lida'}
+                            onClick={() => toggleLido(msg.id)}>
+                            {msg.lido
+                              ? <EyeOffIcon size={16} style={{ color: '#2563eb' }} />
+                              : <CheckCircleIcon size={16} style={{ color: '#2563eb' }} />
+                            }
+                          </button>
+                          <button type="button" className="btn btn-link p-0 text-decoration-none"
+                            title="Eliminar mensagem"
+                            onClick={() => eliminarMensagem(msg.id)}>
+                            <Trash2Icon size={16} style={{ color: '#dc2626' }} />
+                          </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Botão Guardar */}
+            <div className="d-flex justify-content-end">
+              <button
+                type="button"
+                className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 rounded-3"
+                style={{ fontSize: '0.875rem' }}
+                onClick={handleGuardarTodas}
+                disabled={aGuardar}
+              >
+                {aGuardar
+                  ? <><span className="spinner-border spinner-border-sm" role="status"></span> A guardar...</>
+                  : <><SaveIcon size={16} /> Guardar Todas as Alterações</>
+                }
+              </button>
             </div>
           </div>
         )}
-        {/* Espaço para o botão flutuante não cobrir conteúdo */}
-        <div style={{ height: 72 }}></div>
+
       </div>
 
-      {/* Botão flutuante: Guardar Todas as Alterações */}
-      <div
-        className="position-fixed bottom-0 end-0 p-4 d-flex align-items-center gap-3"
-        style={{ zIndex: 1030 }}
-      >
-        {guardado && (
-          <span className="text-success fw-semibold d-flex align-items-center gap-1 bg-white px-3 py-2 rounded-3 shadow-sm">
-            <i className="bi bi-check-circle-fill"></i>
-            Alterações guardadas
-          </span>
-        )}
-        <button
-          type="button"
-          className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 shadow"
-          onClick={handleGuardarTodas}
-          disabled={aGuardar}
-        >
-          {aGuardar ? (
-            <>
-              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-              A guardar...
-            </>
-          ) : (
-            <>
-              <i className="bi bi-floppy"></i>
-              Guardar Todas as Alterações
-            </>
-          )}
-        </button>
-      </div>
       {/* Modal: Criar / Editar Serviço */}
       {modalAberto && (
         <>
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            role="dialog"
-            style={{ zIndex: 1055 }}
-          >
+          <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ zIndex: 1055 }}>
             <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
+              <div className="modal-content rounded-3 border-0 shadow">
                 <form onSubmit={guardarServico}>
-                  <div className="modal-header">
-                    <h5 className="modal-title fw-bold">
+                  <div className="modal-header border-0 pb-0">
+                    <h5 className="modal-title fw-semibold" style={{ color: '#111827' }}>
                       {servicoEmEdicao ? 'Editar Serviço' : 'Novo Serviço'}
                     </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={fecharModal}
-                      aria-label="Fechar"
-                    ></button>
+                    <button type="button" className="btn-close" onClick={fecharModal} aria-label="Fechar"></button>
                   </div>
-                  <div className="modal-body">
+                  <div className="modal-body pt-3">
                     <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">Título</label>
-                      <input
-                        type="text"
-                        className="form-control"
+                      <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Título</label>
+                      <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
                         placeholder="Ex.: Testes de Penetração (Pentesting)"
-                        value={formServico.titulo}
-                        onChange={handleFormServicoChange('titulo')}
-                        required
-                        autoFocus
-                      />
+                        value={formServico.titulo} onChange={handleFormServicoChange('titulo')}
+                        required autoFocus />
                     </div>
-
                     <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">Descrição</label>
-                      <textarea
-                        className="form-control"
-                        rows={3}
-                        placeholder="Breve descrição do serviço"
-                        value={formServico.descricao}
-                        onChange={handleFormServicoChange('descricao')}
-                        required
-                      />
+                      <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Descrição</label>
+                      <textarea className="form-control rounded-3" style={{ fontSize: '0.875rem', resize: 'none' }}
+                        rows={3} placeholder="Breve descrição do serviço"
+                        value={formServico.descricao} onChange={handleFormServicoChange('descricao')} required />
                     </div>
-
                     <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">Ícone</label>
-                      <select
-                        className="form-select"
-                        value={formServico.icone}
-                        onChange={handleFormServicoChange('icone')}
-                      >
+                      <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Ícone</label>
+                      <select className="form-select rounded-3" style={{ fontSize: '0.875rem' }}
+                        value={formServico.icone} onChange={handleFormServicoChange('icone')}>
                         {ICONES_SERVICO.map((opt) => (
-                          <option key={opt.valor} value={opt.valor}>
-                            {opt.label}
-                          </option>
+                          <option key={opt.valor} value={opt.valor}>{opt.label}</option>
                         ))}
                       </select>
-                      <div className="mt-2 d-flex align-items-center gap-2">
-                        <span
-                          className="d-inline-flex align-items-center justify-content-center rounded-3"
-                          style={{
-                            width: 36,
-                            height: 36,
-                            background: 'linear-gradient(135deg, #6366f1, #9333ea)',
-                            color: '#fff',
-                          }}
-                        >
-                          <i className={`bi ${formServico.icone}`}></i>
-                        </span>
-                        <span className="text-secondary small">Pré-visualização do ícone</span>
-                      </div>
                     </div>
-
-                    <div>
-                      <label className="form-label fw-semibold mb-1">
-                        Etiqueta / Badge{' '}
-                        <span className="text-secondary fw-normal">(opcional, ex.: NIS2)</span>
+                    <div className="mb-2">
+                      <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>
+                        Etiqueta / Badge
+                        <span className="fw-normal text-secondary ms-2" style={{ fontSize: '0.75rem' }}>(opcional, ex.: NIS2)</span>
                       </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ex.: NIS2"
-                        value={formServico.badge}
-                        onChange={handleFormServicoChange('badge')}
-                      />
+                      <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                        placeholder="Ex.: NIS2" value={formServico.badge}
+                        onChange={handleFormServicoChange('badge')} />
                     </div>
                   </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-outline-secondary" onClick={fecharModal}>
-                      Cancelar
-                    </button>
-                    <button type="submit" className="btn btn-primary">
+                  <div className="modal-footer border-0 pt-0">
+                    <button type="button" className="btn btn-outline-secondary rounded-3" onClick={fecharModal}>Cancelar</button>
+                    <button type="submit" className="btn btn-primary rounded-3 d-flex align-items-center gap-2">
+                      <SaveIcon size={15} />
                       {servicoEmEdicao ? 'Guardar Alterações' : 'Adicionar Serviço'}
                     </button>
                   </div>
@@ -1266,179 +1176,110 @@ function Conteudo() {
         </>
       )}
 
-      {/* Confirmação de eliminação de serviço feita via SweetAlert2 */}
+      {/* Modal: Confirmar Eliminação Serviço */}
+      {servicoAEliminar && (
+        <>
+          <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ zIndex: 1055 }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content rounded-3 border-0 shadow">
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-semibold" style={{ color: '#111827' }}>Eliminar Serviço</h5>
+                  <button type="button" className="btn-close" onClick={cancelarEliminar} aria-label="Fechar"></button>
+                </div>
+                <div className="modal-body" style={{ fontSize: '0.9rem' }}>
+                  Tens a certeza que queres eliminar{' '}
+                  <strong>"{servicoAEliminar.titulo}"</strong>? Esta ação não pode ser desfeita.
+                </div>
+                <div className="modal-footer border-0 pt-0">
+                  <button type="button" className="btn btn-outline-secondary rounded-3" onClick={cancelarEliminar}>Cancelar</button>
+                  <button type="button" className="btn btn-danger rounded-3 d-flex align-items-center gap-2" onClick={eliminarServico}>
+                    <Trash2Icon size={15} /> Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
+        </>
+      )}
+
       {/* Modal: Criar / Editar Artigo */}
       {modalArtigoAberto && (
         <>
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            role="dialog"
-            style={{ zIndex: 1055 }}
-          >
+          <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ zIndex: 1055 }}>
             <div className="modal-dialog modal-dialog-centered modal-lg">
-              <div className="modal-content">
+              <div className="modal-content rounded-3 border-0 shadow">
                 <form onSubmit={guardarArtigo}>
-                  <div className="modal-header">
-                    <h5 className="modal-title fw-bold">
+                  <div className="modal-header border-0 pb-0">
+                    <h5 className="modal-title fw-semibold" style={{ color: '#111827' }}>
                       {artigoEmEdicao ? 'Editar Artigo' : 'Novo Artigo'}
                     </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={fecharModalArtigo}
-                      aria-label="Fechar"
-                    ></button>
+                    <button type="button" className="btn-close" onClick={fecharModalArtigo} aria-label="Fechar"></button>
                   </div>
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">
-                        Categoria <span className="text-secondary fw-normal">(categoria do artigo)</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ex.: NIS2 & Compliance"
-                        value={formArtigo.categoria}
-                        onChange={handleFormArtigoChange('categoria')}
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">
-                        Título do Artigo{' '}
-                        <span className="text-secondary fw-normal">(título do artigo)</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ex.: NIS2: O que muda para as empresas portuguesas em 2025"
-                        value={formArtigo.titulo}
-                        onChange={handleFormArtigoChange('titulo')}
-                        required
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">
-                        Resumo <span className="text-secondary fw-normal">(resumo do artigo)</span>
-                      </label>
-                      <textarea
-                        className="form-control"
-                        rows={3}
-                        placeholder="Breve resumo do artigo"
-                        value={formArtigo.resumo}
-                        onChange={handleFormArtigoChange('resumo')}
-                        required
-                      />
-                    </div>
-
-                    <div className="row g-3 mb-3">
-                      <div className="col-12 col-md-6">
-                        <label className="form-label fw-semibold mb-1">
-                          Data de Publicação{' '}
-                          <span className="text-secondary fw-normal">
-                            (data em que o artigo foi publicado)
-                          </span>
-                        </label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={formArtigo.dataPublicacao}
-                          onChange={handleFormArtigoChange('dataPublicacao')}
-                        />
+                  <div className="modal-body pt-3">
+                    <div className="row g-3">
+                      <div className="col-12">
+                        <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Categoria</label>
+                        <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                          placeholder="Ex.: NIS2 & Compliance"
+                          value={formArtigo.categoria} onChange={handleFormArtigoChange('categoria')} autoFocus />
+                      </div>
+                      <div className="col-12">
+                        <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Título do Artigo</label>
+                        <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                          placeholder="Ex.: NIS2: O que muda para as empresas portuguesas"
+                          value={formArtigo.titulo} onChange={handleFormArtigoChange('titulo')} required />
+                      </div>
+                      <div className="col-12">
+                        <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Resumo</label>
+                        <textarea className="form-control rounded-3" style={{ fontSize: '0.875rem', resize: 'none' }}
+                          rows={3} placeholder="Breve resumo do artigo"
+                          value={formArtigo.resumo} onChange={handleFormArtigoChange('resumo')} required />
                       </div>
                       <div className="col-12 col-md-6">
-                        <label className="form-label fw-semibold mb-1">
-                          Tempo de Leitura{' '}
-                          <span className="text-secondary fw-normal">
-                            (tempo estimado para ler o artigo)
-                          </span>
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
+                        <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Data de Publicação</label>
+                        <input type="date" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
+                          value={formArtigo.dataPublicacao} onChange={handleFormArtigoChange('dataPublicacao')} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Tempo de Leitura</label>
+                        <input type="text" className="form-control rounded-3" style={{ fontSize: '0.875rem' }}
                           placeholder="Ex.: 5 min"
-                          value={formArtigo.tempoLeitura}
-                          onChange={handleFormArtigoChange('tempoLeitura')}
-                        />
+                          value={formArtigo.tempoLeitura} onChange={handleFormArtigoChange('tempoLeitura')} />
                       </div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold mb-1">
-                        Imagem de Capa{' '}
-                        <span className="text-secondary fw-normal">
-                          (escolher imagem do computador)
-                        </span>
-                      </label>
-                      <div className="d-flex align-items-center gap-3">
-                        <span
-                          className="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0 overflow-hidden"
-                          style={{
-                            width: 64,
-                            height: 64,
-                            backgroundColor: '#f1f5f9',
-                            backgroundImage: formArtigo.imagem ? `url(${formArtigo.imagem})` : 'none',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                          }}
-                        >
-                          {!formArtigo.imagem && (
-                            <i className="bi bi-image text-secondary fs-5"></i>
-                          )}
-                        </span>
-                        <div className="flex-grow-1">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="form-control"
-                            onChange={handleImagemArtigoSelecionada}
-                          />
-                          <div className="form-text">
-                            {formArtigo.imagem
-                              ? 'Imagem selecionada — escolhe outra para substituir.'
-                              : 'PNG ou JPG. Aparece como imagem de capa do artigo.'}
+                      <div className="col-12">
+                        <label className="form-label fw-medium mb-1" style={{ fontSize: '0.875rem', color: '#374151' }}>Imagem de Capa</label>
+                        <input type="file" accept="image/*" className="form-control rounded-3"
+                          style={{ fontSize: '0.875rem' }} onChange={handleImagemArtigoSelecionada} />
+                        {formArtigo.imagem && (
+                          <div className="mt-2 rounded-3 overflow-hidden" style={{ height: 80, width: 120 }}>
+                            <img src={formArtigo.imagem} alt="preview"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
+                        )}
+                      </div>
+                      <div className="col-12">
+                        <div className="rounded-3 p-3 d-flex align-items-start gap-2"
+                          style={{ backgroundColor: '#faf5ff', border: '1px solid #e9d5ff' }}>
+                          <input type="checkbox" className="form-check-input mt-0" id="artigoPublicado"
+                            style={{ accentColor: '#7c3aed' }}
+                            checked={formArtigo.publicado} onChange={handleFormArtigoChange('publicado')} />
+                          <label className="form-check-label fw-medium" htmlFor="artigoPublicado"
+                            style={{ color: '#6b21a8', fontSize: '0.875rem' }}>
+                            Artigo Publicado
+                            <span className="d-block fw-normal" style={{ color: '#9333ea', fontSize: '0.75rem' }}>
+                              Ao ativar, o artigo será visível na página de notícias
+                            </span>
+                          </label>
                         </div>
                       </div>
-                    </div>
-
-                    <div
-                      className="form-check p-3 rounded-3"
-                      style={{ backgroundColor: '#f3e8fd' }}
-                    >
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="artigoPublicado"
-                        checked={formArtigo.publicado}
-                        onChange={handleFormArtigoChange('publicado')}
-                      />
-                      <label
-                        className="form-check-label fw-semibold"
-                        htmlFor="artigoPublicado"
-                        style={{ color: '#6b21a8' }}
-                      >
-                        Artigo Publicado
-                        <div className="fw-normal small" style={{ color: '#9333ea' }}>
-                          Ao ativar, o artigo será visível na página de notícias
-                        </div>
-                      </label>
                     </div>
                   </div>
-                  <div className="modal-footer">
-                    <button type="submit" className="btn btn-primary d-flex align-items-center gap-2">
-                      <i className="bi bi-floppy"></i>
+                  <div className="modal-footer border-0 pt-0">
+                    <button type="button" className="btn btn-outline-secondary rounded-3" onClick={fecharModalArtigo}>Cancelar</button>
+                    <button type="submit" className="btn btn-primary rounded-3 d-flex align-items-center gap-2">
+                      <SaveIcon size={15} />
                       {artigoEmEdicao ? 'Guardar Alterações' : 'Adicionar Artigo'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={fecharModalArtigo}
-                    >
-                      Cancelar
                     </button>
                   </div>
                 </form>
@@ -1449,7 +1290,33 @@ function Conteudo() {
         </>
       )}
 
-      {/* Confirmação de eliminação de artigo feita via SweetAlert2 */}
+      {/* Modal: Confirmar Eliminação Artigo */}
+      {artigoAEliminar && (
+        <>
+          <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ zIndex: 1055 }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content rounded-3 border-0 shadow">
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-semibold" style={{ color: '#111827' }}>Eliminar Artigo</h5>
+                  <button type="button" className="btn-close" onClick={cancelarEliminarArtigo} aria-label="Fechar"></button>
+                </div>
+                <div className="modal-body" style={{ fontSize: '0.9rem' }}>
+                  Tens a certeza que queres eliminar{' '}
+                  <strong>"{artigoAEliminar.titulo}"</strong>? Esta ação não pode ser desfeita.
+                </div>
+                <div className="modal-footer border-0 pt-0">
+                  <button type="button" className="btn btn-outline-secondary rounded-3" onClick={cancelarEliminarArtigo}>Cancelar</button>
+                  <button type="button" className="btn btn-danger rounded-3 d-flex align-items-center gap-2" onClick={eliminarArtigo}>
+                    <Trash2Icon size={15} /> Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1050 }}></div>
+        </>
+      )}
+
     </AdminLayout>
   );
 }

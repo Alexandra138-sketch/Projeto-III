@@ -233,117 +233,106 @@ function EmpresaAtivos() {
   return (
     <AdminLayout>
 
-      {/* Cabeçalho */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* ── Cabeçalho ── */}
+      <div className="dash-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h4 className="fw-bold mb-1">Ativos Tecnológicos</h4>
-          <p className="text-muted mb-0">
-            {carregando ? 'A carregar…' : `${ativos.length} ativos · ${totalCriticos} de alta/crítica criticidade`}
-          </p>
+          <h4>Ativos Tecnológicos</h4>
+          <p>Inventário de ativos tecnológicos da empresa (template CNCS/NIS2).</p>
         </div>
         <button className="btn btn-primary" onClick={() => setModal(null)}>
           + Adicionar Ativo
         </button>
       </div>
 
-      {/* Cartões de resumo */}
-      <div className="row g-3 mb-4">
-        {[
-          { numero: ativos.length,     label: 'Total Ativos',      bg: 'bg-primary'   },
-          { numero: totalCriticos,      label: 'Alta/Crítica',      bg: 'bg-danger'    },
-          { numero: ativos.filter((a) => a.criticidade === 'Baixa' || a.criticidade === 'Residual').length,
-            label: 'Baixo Risco',      bg: 'bg-success'   },
-          { numero: ativos.filter((a) => a.ip).length,
-            label: 'Com IP Registado', bg: 'bg-info'      },
-        ].map(({ numero, label, bg }) => (
-          <div key={label} className="col-6 col-md-3">
-            <div className={`card text-white ${bg}`}>
-              <div className="card-body text-center py-3">
-                <h3 className="fw-bold mb-1">{carregando ? '…' : numero}</h3>
-                <p className="mb-0 small">{label}</p>
+      {/* ── Estatísticas rápidas ── */}
+      {!carregando && (
+        <div className="row g-3 mb-4">
+          {[
+            { numero: ativos.length,    label: 'Total Ativos',      bg: '#eff6ff', cor: '#2563eb' },
+            { numero: totalCriticos,     label: 'Alta/Crítica',      bg: '#fee2e2', cor: '#dc2626' },
+            { numero: ativos.filter((a) => a.criticidade === 'Baixa' || a.criticidade === 'Residual').length,
+              label: 'Baixo Risco',     bg: '#f0fdf4', cor: '#16a34a' },
+            { numero: ativos.filter((a) => a.ip).length,
+              label: 'Com IP',          bg: '#f5f3ff', cor: '#7c3aed' },
+          ].map(({ numero, label, bg, cor }) => (
+            <div key={label} className="col-6 col-md-3">
+              <div className="dash-card" style={{ textAlign: 'center', padding: '1.25rem' }}>
+                <p style={{ fontSize: '1.8rem', fontWeight: 700, color: cor, margin: 0 }}>{numero}</p>
+                <p style={{ fontSize: '0.8rem', color: cor, margin: 0, fontWeight: 500 }}>{label}</p>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      )}
+
+      {/* ── Pesquisa ── */}
+      <div className="dash-card mb-4">
+        <input type="text" className="form-control"
+          placeholder="Pesquisar por nome, tipo, IP ou localização…"
+          value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} />
       </div>
 
-      {/* Barra de pesquisa */}
-      <div className="card mb-4">
-        <div className="card-body py-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="🔍 Pesquisar por nome, tipo, IP ou localização…"
-            value={pesquisa}
-            onChange={(e) => setPesquisa(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Tabela de ativos */}
-      {carregando ? (
-        <div className="text-center py-5 text-muted">
-          <div className="spinner-border mb-3" role="status"></div>
-          <p>A carregar inventário…</p>
-        </div>
-      ) : filtrados.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center py-5 text-muted">
+      {/* ── Tabela de ativos ── */}
+      <div className="dash-card">
+        {carregando ? (
+          <p style={{ color: '#94a3b8' }}>A carregar inventário…</p>
+        ) : filtrados.length === 0 ? (
+          <p style={{ color: '#94a3b8' }}>
             {ativos.length === 0
               ? 'Ainda não tens ativos registados. Clica em "+ Adicionar Ativo" para começar.'
               : 'Nenhum ativo encontrado para a pesquisa atual.'}
-          </div>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-hover table-striped align-middle">
-            <thead className="table-dark">
-              <tr>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Criticidade</th>
-                <th>IP</th>
-                <th>Sistema Operativo</th>
-                <th>Localização</th>
-                <th>Responsável</th>
-                <th className="text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((ativo) => (
-                <tr key={ativo.id}>
-                  <td>
-                    <p className="mb-0 fw-semibold small">{ativo.nome}</p>
-                    {ativo.numero_inventario && (
-                      <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }}>
-                        #{ativo.numero_inventario}
-                      </p>
-                    )}
-                  </td>
-                  <td className="small">{ativo.tipo_equipamento || '—'}</td>
-                  <td>
-                    <span className={BADGE_CRITICIDADE[ativo.criticidade] || 'badge bg-secondary'}>
-                      {ativo.criticidade || '—'}
-                    </span>
-                  </td>
-                  <td className="small text-monospace">{ativo.ip || '—'}</td>
-                  <td className="small">{ativo.sistema_operativo || '—'}</td>
-                  <td className="small">{ativo.localizacao || '—'}</td>
-                  <td className="small">{ativo.responsavel || '—'}</td>
-                  <td className="text-center">
-                    <div className="d-flex gap-1 justify-content-center">
-                      <button className="btn btn-outline-warning btn-sm"
-                        onClick={() => setModal(ativo)}>Editar</button>
-                      <button className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleEliminar(ativo)}>Eliminar</button>
-                    </div>
-                  </td>
+          </p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th>Criticidade</th>
+                  <th>IP</th>
+                  <th>Sistema Operativo</th>
+                  <th>Localização</th>
+                  <th>Responsável</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {filtrados.map((ativo) => (
+                  <tr key={ativo.id}>
+                    <td>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{ativo.nome}</p>
+                      {ativo.numero_inventario && (
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
+                          #{ativo.numero_inventario}
+                        </p>
+                      )}
+                    </td>
+                    <td style={{ fontSize: '0.85rem' }}>{ativo.tipo_equipamento || '—'}</td>
+                    <td>
+                      <span className={BADGE_CRITICIDADE[ativo.criticidade] || 'badge bg-secondary'}>
+                        {ativo.criticidade || '—'}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{ativo.ip || '—'}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{ativo.sistema_operativo || '—'}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{ativo.localizacao || '—'}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{ativo.responsavel || '—'}</td>
+                    <td>
+                      <div className="d-flex gap-1">
+                        <button className="btn btn-outline-secondary btn-sm"
+                          onClick={() => setModal(ativo)}>Editar</button>
+                        <button className="btn btn-outline-danger btn-sm"
+                          onClick={() => handleEliminar(ativo)}>Eliminar</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Modal de criação/edição */}
       {modal !== undefined && (

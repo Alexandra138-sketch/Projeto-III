@@ -82,153 +82,137 @@ function EmpresaPedidos() {
   return (
     <AdminLayout>
 
-      {/* Cabeçalho */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* ── Cabeçalho ── */}
+      <div className="dash-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h4 className="fw-bold mb-1">Pedidos e Questões</h4>
-          <p className="text-muted mb-0">
-            {carregando ? 'A carregar…' : `${pedidos.length} pedidos · ${totalPendentes} pendentes`}
-          </p>
+          <h4>Pedidos e Questões</h4>
+          <p>Submete pedidos de suporte e questões ao teu gestor.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setMostrarForm(!mostrarForm)}>
           {mostrarForm ? 'Cancelar' : '+ Novo Pedido'}
         </button>
       </div>
 
-      {/* Resumo de estados */}
-      <div className="row g-3 mb-4">
-        {[
-          { numero: pedidos.length,   label: 'Total',      bg: 'bg-secondary' },
-          { numero: totalPendentes,    label: 'Pendentes',  bg: 'bg-warning'   },
-          { numero: pedidos.filter((p) => p.estado === 'Em Análise').length,
-            label: 'Em Análise', bg: 'bg-primary' },
-          { numero: totalResolvidos,   label: 'Resolvidos', bg: 'bg-success'   },
-        ].map(({ numero, label, bg }) => (
-          <div key={label} className="col-6 col-md-3">
-            <div className={`card text-white ${bg}`}>
-              <div className="card-body text-center py-3">
-                <h3 className="fw-bold mb-1">{carregando ? '…' : numero}</h3>
-                <p className="mb-0 small">{label}</p>
+      {/* ── Estatísticas ── */}
+      {!carregando && (
+        <div className="row g-3 mb-4">
+          {[
+            { numero: pedidos.length,  label: 'Total',      bg: '#f8fafc', cor: '#64748b' },
+            { numero: totalPendentes,   label: 'Pendentes',  bg: '#fffbeb', cor: '#b45309' },
+            { numero: pedidos.filter((p) => p.estado === 'Em Análise').length,
+              label: 'Em Análise',     bg: '#eff6ff', cor: '#2563eb' },
+            { numero: totalResolvidos,  label: 'Resolvidos', bg: '#f0fdf4', cor: '#16a34a' },
+          ].map(({ numero, label, bg, cor }) => (
+            <div key={label} className="col-6 col-md-3">
+              <div className="dash-card" style={{ textAlign: 'center', padding: '1.25rem' }}>
+                <p style={{ fontSize: '1.8rem', fontWeight: 700, color: cor, margin: 0 }}>{numero}</p>
+                <p style={{ fontSize: '0.8rem', color: cor, margin: 0, fontWeight: 500 }}>{label}</p>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Formulário de novo pedido */}
-      {mostrarForm && (
-        <div className="card mb-4 border-primary">
-          <div className="card-header bg-primary text-white fw-semibold">
-            Novo Pedido / Questão
-          </div>
-          <div className="card-body">
-            {erro && <div className="alert alert-danger">{erro}</div>}
-            <form onSubmit={handleSubmeter}>
-              <div className="row g-3">
-                <div className="col-md-3">
-                  <label className="form-label fw-semibold">Tipo de Pedido</label>
-                  <select className="form-select" value={form.tipo}
-                    onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                    {TIPOS_PEDIDO.map((t) => <option key={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="col-md-9">
-                  <label className="form-label fw-semibold">Assunto *</label>
-                  <input required type="text" className="form-control"
-                    value={form.assunto}
-                    onChange={(e) => setForm({ ...form, assunto: e.target.value })}
-                    placeholder="Resumo breve do pedido ou questão…" />
-                </div>
-                <div className="col-12">
-                  <label className="form-label fw-semibold">Descrição detalhada *</label>
-                  <textarea required rows={4} className="form-control"
-                    value={form.descricao}
-                    onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                    placeholder="Descreve o pedido ou questão com o máximo de detalhe possível…" />
-                </div>
-              </div>
-              <div className="d-flex gap-2 mt-3">
-                <button type="submit" className="btn btn-primary" disabled={aEnviar}>
-                  {aEnviar ? 'A enviar…' : 'Submeter Pedido'}
-                </button>
-                <button type="button" className="btn btn-secondary"
-                  onClick={() => setMostrarForm(false)}>
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Erro geral */}
+      {/* ── Formulário de novo pedido ── */}
+      {mostrarForm && (
+        <div className="dash-card mb-4">
+          <h6 style={{ fontWeight: 600, marginBottom: '1rem' }}>Novo Pedido / Questão</h6>
+          {erro && <div className="alert alert-danger">{erro}</div>}
+          <form onSubmit={handleSubmeter}>
+            <div className="row g-3">
+              <div className="col-md-3">
+                <label className="form-label fw-semibold">Tipo de Pedido</label>
+                <select className="form-select" value={form.tipo}
+                  onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                  {TIPOS_PEDIDO.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="col-md-9">
+                <label className="form-label fw-semibold">Assunto *</label>
+                <input required type="text" className="form-control"
+                  value={form.assunto}
+                  onChange={(e) => setForm({ ...form, assunto: e.target.value })}
+                  placeholder="Resumo breve do pedido ou questão…" />
+              </div>
+              <div className="col-12">
+                <label className="form-label fw-semibold">Descrição detalhada *</label>
+                <textarea required rows={4} className="form-control"
+                  value={form.descricao}
+                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  placeholder="Descreve o pedido com o máximo de detalhe possível…" />
+              </div>
+            </div>
+            <div className="d-flex gap-2 mt-3">
+              <button type="submit" className="btn btn-primary" disabled={aEnviar}>
+                {aEnviar ? 'A enviar…' : 'Submeter Pedido'}
+              </button>
+              <button type="button" className="btn btn-outline-secondary"
+                onClick={() => setMostrarForm(false)}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ── Erro geral ── */}
       {erro && !mostrarForm && <div className="alert alert-danger">{erro}</div>}
 
-      {/* Lista de pedidos */}
+      {/* ── Lista de pedidos ── */}
       {carregando ? (
-        <div className="text-center py-5 text-muted">
-          <div className="spinner-border mb-3" role="status"></div>
-          <p>A carregar pedidos…</p>
-        </div>
+        <p style={{ color: '#94a3b8' }}>A carregar pedidos…</p>
       ) : pedidos.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center py-5 text-muted">
-            Ainda não tens pedidos submetidos. Clica em "+ Novo Pedido" para começar.
-          </div>
+        <div className="dash-card" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+          Ainda não tens pedidos submetidos. Clica em &quot;+ Novo Pedido&quot; para começar.
         </div>
       ) : (
         <div className="d-flex flex-column gap-3">
           {pedidos.map((pedido) => (
             <div
               key={pedido.id}
-              className="card"
+              className="dash-card"
               style={{ cursor: 'pointer', borderLeft: pedido.resposta ? '4px solid #22c55e' : '4px solid #e2e8f0' }}
               onClick={() => setPedidoAberto(pedidoAberto?.id === pedido.id ? null : pedido)}
             >
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div className="flex-grow-1">
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <span className="badge bg-light text-dark border">{pedido.tipo}</span>
-                      <span className={BADGE_ESTADO[pedido.estado] || 'badge bg-secondary'}>
-                        {ICONE_ESTADO[pedido.estado]} {pedido.estado}
-                      </span>
-                    </div>
-                    <h6 className="fw-semibold mb-1">{pedido.assunto}</h6>
-                    <p className="text-muted small mb-0">
-                      {new Date(pedido.created_at).toLocaleDateString('pt-PT')}
-                      {pedido.resposta && ' · Respondido pelo gestor ✓'}
-                    </p>
+              <div className="d-flex justify-content-between align-items-start">
+                <div style={{ flex: 1 }}>
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span className="badge bg-light text-dark border">{pedido.tipo}</span>
+                    <span className={BADGE_ESTADO[pedido.estado] || 'badge bg-secondary'}>
+                      {ICONE_ESTADO[pedido.estado]} {pedido.estado}
+                    </span>
                   </div>
-                  <span className="text-muted small ms-2">
-                    {pedidoAberto?.id === pedido.id ? '▲' : '▼'}
-                  </span>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{pedido.assunto}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+                    {new Date(pedido.created_at).toLocaleDateString('pt-PT')}
+                    {pedido.resposta && ' · Respondido pelo gestor ✓'}
+                  </p>
                 </div>
-
-                {/* Detalhe expandido ao clicar */}
-                {pedidoAberto?.id === pedido.id && (
-                  <div className="mt-3 border-top pt-3">
-                    <p className="small mb-3" style={{ whiteSpace: 'pre-wrap' }}>
-                      <strong>O meu pedido:</strong><br />{pedido.descricao}
-                    </p>
-                    {pedido.resposta ? (
-                      <div className="p-3 rounded" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                        <p className="small mb-1">
-                          <strong>Resposta do gestor</strong>
-                          {pedido.respondedor && ` (${pedido.respondedor.nome})`}:
-                        </p>
-                        <p className="small mb-0" style={{ whiteSpace: 'pre-wrap' }}>{pedido.resposta}</p>
-                      </div>
-                    ) : (
-                      <div className="p-3 rounded" style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
-                        <p className="small mb-0 text-warning-emphasis">
-                          ⏳ A aguardar resposta do gestor…
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                  {pedidoAberto?.id === pedido.id ? '▲' : '▼'}
+                </span>
               </div>
+
+              {/* Detalhe expandido ao clicar */}
+              {pedidoAberto?.id === pedido.id && (
+                <div style={{ marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+                  <p style={{ fontSize: '0.85rem', marginBottom: '0.75rem', whiteSpace: 'pre-wrap' }}>
+                    <strong>O meu pedido:</strong><br />{pedido.descricao}
+                  </p>
+                  {pedido.resposta ? (
+                    <div style={{ padding: '0.75rem', borderRadius: 8, backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                      <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600, color: '#15803d' }}>
+                        Resposta do gestor{pedido.respondedor && ` (${pedido.respondedor.nome})`}:
+                      </p>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>{pedido.resposta}</p>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '0.75rem', borderRadius: 8, backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#b45309' }}>⏳ A aguardar resposta do gestor…</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

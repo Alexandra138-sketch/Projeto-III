@@ -87,7 +87,7 @@ function Sidebar() {
         <div className="user-info">
           <p className="user-name">{utilizador?.nome || 'Utilizador'}</p>
           <span className="user-role">{roleLabel}</span>
-        </div>
+              </div>
         <button className="sidebar-logout" onClick={handleLogout} title="Sair">
           <FiLogOut size={16} />
         </button>

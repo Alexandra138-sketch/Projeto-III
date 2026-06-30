@@ -220,153 +220,142 @@ function Incidentes() {
   return (
     <AdminLayout>
 
-      {/* Cabeçalho */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* ── Cabeçalho ── */}
+      <div className="dash-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h4 className="fw-bold mb-1">Os Meus Incidentes</h4>
-          <p className="text-muted mb-0">
-            {carregando ? 'A carregar…' : `${incidentes.length} incidentes · ${totalAbertos} abertos`}
-          </p>
+          <h4>Os Meus Incidentes</h4>
+          <p>Acompanha e reporta incidentes de segurança da tua empresa.</p>
         </div>
         <button className="btn btn-danger" onClick={() => setModalReportar(true)}>
           ⚠ Reportar Incidente
         </button>
       </div>
 
-      {/* Cartões de resumo */}
-      <div className="row g-3 mb-4">
-        {[
-          { numero: totalAbertos,  label: 'Abertos',  bg: 'bg-danger'    },
-          { numero: totalCriticos, label: 'Críticos', bg: 'bg-dark'      },
-          { numero: incidentes.filter((i) => i.nis2_notificado).length,
-            label: 'Notif. NIS2', bg: 'bg-warning' },
-          { numero: incidentes.filter((i) => i.estado === 'Resolvido' || i.estado === 'Fechado').length,
-            label: 'Resolvidos',  bg: 'bg-success'   },
-        ].map(({ numero, label, bg }) => (
-          <div key={label} className="col-6 col-md-3">
-            <div className={`card text-white ${bg}`}>
-              <div className="card-body text-center py-3">
-                <h3 className="fw-bold mb-1">{carregando ? '…' : numero}</h3>
-                <p className="mb-0 small">{label}</p>
+      {/* ── Estatísticas rápidas ── */}
+      {!carregando && (
+        <div className="row g-3 mb-4">
+          {[
+            { numero: totalAbertos,  label: 'Abertos',     bg: '#fee2e2', cor: '#dc2626' },
+            { numero: totalCriticos, label: 'Críticos',    bg: '#ffedd5', cor: '#c2410c' },
+            { numero: incidentes.filter((i) => i.nis2_notificado).length,
+              label: 'Notif. NIS2', bg: '#fffbeb', cor: '#b45309' },
+            { numero: incidentes.filter((i) => i.estado === 'Resolvido' || i.estado === 'Fechado').length,
+              label: 'Resolvidos',  bg: '#f0fdf4', cor: '#16a34a' },
+          ].map(({ numero, label, bg, cor }) => (
+            <div key={label} className="col-6 col-md-3">
+              <div className="dash-card" style={{ textAlign: 'center', padding: '1.25rem' }}>
+                <p style={{ fontSize: '1.8rem', fontWeight: 700, color: cor, margin: 0 }}>{numero}</p>
+                <p style={{ fontSize: '0.8rem', color: cor, margin: 0, fontWeight: 500 }}>{label}</p>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="row g-2">
-            <div className="col-md-5">
-              <input type="text" className="form-control"
-                placeholder="🔍 Pesquisar incidentes…"
-                value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} />
-            </div>
-            <div className="col-md-3">
-              <select className="form-select" value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}>
-                <option value="">Todos os estados</option>
-                <option>Aberto</option>
-                <option>A Investigar</option>
-                <option>Resolvido</option>
-                <option>Fechado</option>
-              </select>
-            </div>
-            <div className="col-md-3">
-              <select className="form-select" value={filtroSev}
-                onChange={(e) => setFiltroSev(e.target.value)}>
-                <option value="">Todas as severidades</option>
-                <option>Crítico</option>
-                <option>Alto</option>
-                <option>Médio</option>
-                <option>Baixo</option>
-              </select>
-            </div>
-            <div className="col-md-1 text-end">
-              <span className="text-muted small">{filtrados.length}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Erro */}
-      {erro && <div className="alert alert-danger">{erro}</div>}
-
-      {/* Tabela de incidentes */}
-      {carregando ? (
-        <div className="text-center py-5 text-muted">
-          <div className="spinner-border mb-3" role="status"></div>
-          <p>A carregar incidentes…</p>
-        </div>
-      ) : filtrados.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center py-5 text-muted">
-            {incidentes.length === 0
-              ? 'Ainda não tens incidentes registados.'
-              : 'Nenhum resultado para os filtros aplicados.'}
-          </div>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-hover table-striped align-middle">
-            <thead className="table-dark">
-              <tr>
-                <th>Título</th>
-                <th>Severidade</th>
-                <th>Estado</th>
-                <th>NIS2</th>
-                <th>Data</th>
-                <th className="text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((inc) => (
-                <tr key={inc.id}>
-                  <td>
-                    <p className="mb-0 fw-semibold small">{inc.titulo}</p>
-                    {inc.descricao && (
-                      <p className="mb-0 text-muted" style={{ fontSize: '0.75rem' }}>
-                        {inc.descricao.slice(0, 60)}…
-                      </p>
-                    )}
-                  </td>
-                  <td>
-                    <span className={BADGE_SEVERIDADE[inc.severidade] || 'badge bg-secondary'}>
-                      {inc.severidade}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={BADGE_ESTADO[inc.estado] || 'badge bg-secondary'}>
-                      {inc.estado}
-                    </span>
-                  </td>
-                  <td>
-                    {inc.nis2_notificado
-                      ? <span className="badge bg-info text-dark">Sim</span>
-                      : <span className="badge bg-light text-muted">Não</span>}
-                  </td>
-                  <td className="small text-muted">
-                    {inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}
-                  </td>
-                  <td className="text-center">
-                    <button className="btn btn-outline-primary btn-sm"
-                      onClick={() => setModalIncidente(inc)}>
-                      Ver
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          ))}
         </div>
       )}
 
+      {/* ── Filtros e pesquisa ── */}
+      <div className="dash-card mb-4">
+        <div className="row g-2">
+          <div className="col-12 col-md-5">
+            <input type="text" className="form-control"
+              placeholder="Pesquisar por título…"
+              value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} />
+          </div>
+          <div className="col-6 col-md-3">
+            <select className="form-select" value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos os estados</option>
+              <option value="Aberto">Aberto</option>
+              <option value="A Investigar">A Investigar</option>
+              <option value="Resolvido">Resolvido</option>
+              <option value="Fechado">Fechado</option>
+            </select>
+          </div>
+          <div className="col-6 col-md-3">
+            <select className="form-select" value={filtroSev}
+              onChange={(e) => setFiltroSev(e.target.value)}>
+              <option value="">Todas as severidades</option>
+              <option value="Crítico">Crítico</option>
+              <option value="Alto">Alto</option>
+              <option value="Médio">Médio</option>
+              <option value="Baixo">Baixo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Mensagem de erro ── */}
+      {erro && <div className="alert alert-danger">{erro}</div>}
+
+      {/* ── Tabela de incidentes ── */}
+      <div className="dash-card">
+        {carregando ? (
+          <p style={{ color: '#94a3b8' }}>A carregar incidentes…</p>
+        ) : filtrados.length === 0 ? (
+          <p style={{ color: '#94a3b8' }}>
+            {incidentes.length === 0 ? 'Ainda não tens incidentes registados.' : 'Nenhum resultado para os filtros aplicados.'}
+          </p>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Severidade</th>
+                  <th>Estado</th>
+                  <th>NIS2</th>
+                  <th>Responsável</th>
+                  <th>Data</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((inc) => (
+                  <tr key={inc.id}>
+                    <td>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{inc.titulo}</p>
+                      {inc.descricao && (
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+                          {inc.descricao.slice(0, 60)}…
+                        </p>
+                      )}
+                    </td>
+                    <td>
+                      <span className={BADGE_SEVERIDADE[inc.severidade] || 'badge bg-secondary'}>
+                        {inc.severidade}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={BADGE_ESTADO[inc.estado] || 'badge bg-secondary'}>
+                        {inc.estado}
+                      </span>
+                    </td>
+                    <td>
+                      {inc.nis2_notificado
+                        ? <span className="badge bg-info text-dark">Sim</span>
+                        : <span className="badge bg-light text-muted">Não</span>}
+                    </td>
+                    <td style={{ fontSize: '0.85rem' }}>{inc.responsavel?.nome || '—'}</td>
+                    <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                      {inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}
+                    </td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-secondary"
+                        onClick={() => setModalIncidente(inc)}>
+                        Ver
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Modal de detalhe do incidente */}
       {modalIncidente && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setModalIncidente(null)}>
-          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">{modalIncidente.titulo}</h5>
@@ -437,7 +426,7 @@ function Incidentes() {
       )}
 
     </AdminLayout>
-  );
+    );
 }
 
 export default Incidentes;

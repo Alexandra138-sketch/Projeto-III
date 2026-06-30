@@ -102,3 +102,6 @@ const Incidente = sequelize.define('Incidente', {
 });
 
 module.exports = Incidente;
+
+
+module.exports = Incidente;

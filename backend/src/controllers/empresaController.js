@@ -5,20 +5,14 @@
 //  Uma empresa é um cliente que tem uma conta de acesso ao portal.
 //
 //  Funções disponíveis:
-//    - empresa_perfil           → GET  /empresa/perfil
-//    - empresa_incidentes       → GET  /empresa/incidentes
-//    - empresa_documentos       → GET  /empresa/documentos
-//    - empresa_reportar_incidente → POST /empresa/incidentes
-//    - empresa_upload_documento → POST /empresa/documentos
-//    - empresa_list_ativos      → GET  /empresa/ativos
-//    - empresa_create_ativo     → POST /empresa/ativos
-//    - empresa_update_ativo     → PUT  /empresa/ativos/:id
-//    - empresa_delete_ativo     → DELETE /empresa/ativos/:id
-//    - empresa_list_pedidos     → GET  /empresa/pedidos
-//    - empresa_create_pedido    → POST /empresa/pedidos
+//    - empresa_perfil              → GET  /empresa/perfil
+//    - empresa_incidentes          → GET  /empresa/incidentes
+//    - empresa_documentos          → GET  /empresa/documentos
+//    - empresa_reportar_incidente  → POST /empresa/incidentes
+//    - empresa_upload_documento    → POST /empresa/documentos
 // ─────────────────────────────────────────────────────────────
 
-const { Cliente, Incidente, Documento, Utilizador, Ativo, Pedido } = require('../models');
+const { Cliente, Incidente, Documento, Utilizador } = require('../models');
 
 // ── Função auxiliar ───────────────────────────────────────────
 // Encontra o registo de cliente associado ao utilizador autenticado.
@@ -158,125 +152,6 @@ const empresa_upload_documento = async (req, res) => {
   }
 };
 
-// ── GET /empresa/ativos ───────────────────────────────────────
-const empresa_list_ativos = async (req, res) => {
-  try {
-    const cliente = await encontrarClienteDaEmpresa(req.utilizador.id);
-    if (!cliente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
-
-    const ativos = await Ativo.findAll({
-      where: { cliente_id: cliente.id },
-      order: [['created_at', 'DESC']],
-    });
-    res.json(ativos);
-  } catch (err) {
-    console.error('[Empresa] Erro ao listar ativos:', err.message);
-    res.status(500).json({ erro: 'Erro ao obter ativos tecnológicos.' });
-  }
-};
-
-// ── POST /empresa/ativos ──────────────────────────────────────
-const empresa_create_ativo = async (req, res) => {
-  try {
-    const cliente = await encontrarClienteDaEmpresa(req.utilizador.id);
-    if (!cliente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
-
-    if (!req.body.nome) return res.status(400).json({ erro: 'O nome do ativo é obrigatório.' });
-
-    const novoAtivo = await Ativo.create({
-      ...req.body,
-      cliente_id: cliente.id,
-    });
-    res.status(201).json(novoAtivo);
-  } catch (err) {
-    console.error('[Empresa] Erro ao criar ativo:', err.message);
-    res.status(500).json({ erro: 'Erro ao criar ativo tecnológico.' });
-  }
-};
-
-// ── PUT /empresa/ativos/:id ───────────────────────────────────
-const empresa_update_ativo = async (req, res) => {
-  try {
-    const cliente = await encontrarClienteDaEmpresa(req.utilizador.id);
-    if (!cliente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
-
-    // Verificar se o ativo pertence a este cliente (segurança)
-    const ativo = await Ativo.findOne({
-      where: { id: req.params.id, cliente_id: cliente.id },
-    });
-    if (!ativo) return res.status(404).json({ erro: 'Ativo não encontrado.' });
-
-    await ativo.update(req.body);
-    res.json(ativo);
-  } catch (err) {
-    console.error('[Empresa] Erro ao atualizar ativo:', err.message);
-    res.status(500).json({ erro: 'Erro ao atualizar ativo tecnológico.' });
-  }
-};
-
-// ── DELETE /empresa/ativos/:id ────────────────────────────────
-const empresa_delete_ativo = async (req, res) => {
-  try {
-    const cliente = await encontrarClienteDaEmpresa(req.utilizador.id);
-    if (!cliente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
-
-    const ativo = await Ativo.findOne({
-      where: { id: req.params.id, cliente_id: cliente.id },
-    });
-    if (!ativo) return res.status(404).json({ erro: 'Ativo não encontrado.' });
-
-    await ativo.destroy();
-    res.json({ mensagem: 'Ativo eliminado com sucesso.' });
-  } catch (err) {
-    console.error('[Empresa] Erro ao eliminar ativo:', err.message);
-    res.status(500).json({ erro: 'Erro ao eliminar ativo tecnológico.' });
-  }
-};
-
-// ── GET /empresa/pedidos ──────────────────────────────────────
-const empresa_list_pedidos = async (req, res) => {
-  try {
-    const cliente = await encontrarClienteDaEmpresa(req.utilizador.id);
-    if (!cliente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
-
-    const pedidos = await Pedido.findAll({
-      where: { cliente_id: cliente.id },
-      include: [
-        { model: require('../models').Utilizador, as: 'respondedor', attributes: ['id', 'nome'] },
-      ],
-      order: [['created_at', 'DESC']],
-    });
-    res.json(pedidos);
-  } catch (err) {
-    console.error('[Empresa] Erro ao listar pedidos:', err.message);
-    res.status(500).json({ erro: 'Erro ao obter pedidos.' });
-  }
-};
-
-// ── POST /empresa/pedidos ─────────────────────────────────────
-const empresa_create_pedido = async (req, res) => {
-  try {
-    const cliente = await encontrarClienteDaEmpresa(req.utilizador.id);
-    if (!cliente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
-
-    const { tipo, assunto, descricao } = req.body;
-    if (!assunto || !descricao) {
-      return res.status(400).json({ erro: 'Assunto e descrição são obrigatórios.' });
-    }
-
-    const novoPedido = await Pedido.create({
-      cliente_id: cliente.id,
-      tipo:       tipo    || 'Questão',
-      assunto,
-      descricao,
-      estado:     'Pendente',
-    });
-    res.status(201).json(novoPedido);
-  } catch (err) {
-    console.error('[Empresa] Erro ao criar pedido:', err.message);
-    res.status(500).json({ erro: 'Erro ao submeter pedido.' });
-  }
-};
 
 module.exports = {
   empresa_perfil,
@@ -284,10 +159,4 @@ module.exports = {
   empresa_documentos,
   empresa_reportar_incidente,
   empresa_upload_documento,
-  empresa_list_ativos,
-  empresa_create_ativo,
-  empresa_update_ativo,
-  empresa_delete_ativo,
-  empresa_list_pedidos,
-  empresa_create_pedido,
 };

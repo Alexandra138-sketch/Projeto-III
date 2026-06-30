@@ -67,36 +67,38 @@ const Incidente = sequelize.define('Incidente', {
   // (requerem execução do NEON_MIGRATION.sql no Neon Tech)
 
   // Tipo de incidente segundo categorias CNCS
-  // (ex: Phishing, Malware, Ransomware, DDoS, Violação de Dados, etc.)
+  // (ex: Phishing, Malware, Ransomware, DDoS, Acesso não autorizado, Fuga de dados, Outro)
   tipo_incidente: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING,
   },
 
-  // Sistemas e equipamentos afetados pelo incidente
+  // Sistemas ou infraestruturas afetadas pelo incidente
   sistemas_afetados: {
     type: DataTypes.TEXT,
   },
 
-  // Número de utilizadores/pessoas afetadas
+  // Número aproximado de utilizadores afetados
   utilizadores_afetados: {
     type: DataTypes.INTEGER,
   },
 
-  // Indica se houve comprometimento de dados pessoais ou sensíveis
+  // Indica se houve fuga ou comprometimento de dados pessoais
   dados_comprometidos: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
 
-  // Origem conhecida do ataque (IP, vetor, etc.)
+  // Origem suspeita do ataque (ex: interno, externo, desconhecido)
   origem_ataque: {
-    type: DataTypes.STRING(200),
+    type: DataTypes.STRING,
   },
 
 }, {
-  tableName: 'incidentes',  // nome exato da tabela na BD
-  timestamps: true,          // cria created_at e updated_at automaticamente
-  underscored: true,         // usa snake_case nas colunas
+  // Nome da tabela na base de dados
+  tableName: 'incidentes',
+  // Cria automaticamente as colunas created_at e updated_at
+  timestamps: true,
+  underscored: true,
 });
 
 module.exports = Incidente;

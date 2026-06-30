@@ -27,8 +27,6 @@ import EmpresaDocumentos from './pages/empresa/Documentos';
 import EmpresaIncidentes from './pages/empresa/Incidentes';
 import EmpresaAnalises from './pages/empresa/Analises';
 import EmpresaAmbiente from './pages/empresa/Ambiente';
-import EmpresaAtivos from './pages/empresa/Ativos';
-import EmpresaPedidos from './pages/empresa/Pedidos';
 import ClientePerfil from './pages/admin/ClientePerfil';
 
 
@@ -67,8 +65,6 @@ function App() {
           <Route path="/empresa/incidentes" element={<ProtectedRoute perfil="empresa"><EmpresaIncidentes /></ProtectedRoute>} />
           <Route path="/empresa/analises" element={<ProtectedRoute perfil="empresa"><EmpresaAnalises /></ProtectedRoute>} />
           <Route path="/empresa/ambiente" element={<ProtectedRoute perfil="empresa"><EmpresaAmbiente /></ProtectedRoute>} />
-          <Route path="/empresa/ativos" element={<ProtectedRoute perfil="empresa"><EmpresaAtivos /></ProtectedRoute>} />
-          <Route path="/empresa/pedidos" element={<ProtectedRoute perfil="empresa"><EmpresaPedidos /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

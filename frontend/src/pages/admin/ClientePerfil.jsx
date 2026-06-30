@@ -12,56 +12,12 @@ import api from '../../api/axios';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-/* Mapeamento de IDs de demonstração para IDs inteiros reais na BD */
-const DEMO_TO_DB_ID = { c1: 1, c2: 2, c3: 3, c4: 4 };
-
 /* Cor gerada a partir do ID do cliente */
 const CORES_PERFIL = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#ec4899'];
 function getCor(id) {
   return CORES_PERFIL[(parseInt(id, 10) - 1) % CORES_PERFIL.length];
 }
 
-const DOCUMENTOS_DB = {
-  c1: [
-    { id: 'd1', titulo: 'Política de Segurança da Informação NIS2', tipo: 'policy', estado: 'active', versao: '3.1', descricao: 'Política geral de segurança conforme diretiva NIS2.', atualizado: '2025-02-15', tamanho: '2.4 MB' },
-    { id: 'd2', titulo: 'Relatório de Pentest - Infraestrutura Web', tipo: 'pentest', estado: 'active', versao: '1.0', descricao: 'Relatório completo do teste de intrusão à infra web.', atualizado: '2025-01-30', tamanho: '8.7 MB' },
-    { id: 'd3', titulo: 'Relatório de Incidente - Ransomware Q1 2025', tipo: 'report', estado: 'active', versao: '2.1', descricao: 'Relatório de incidente notificado às autoridades NIS2.', atualizado: '2025-02-28', tamanho: '3.5 MB' },
-  ],
-  c2: [
-    { id: 'd4', titulo: 'Plano de Continuidade de Negócio', tipo: 'policy', estado: 'pending_review', versao: '2.0', descricao: 'BCP conforme requisitos NIS2 artigo 21.', atualizado: '2025-03-01', tamanho: '5.1 MB' },
-    { id: 'd5', titulo: 'Contrato de Serviços de Cibersegurança', tipo: 'contract', estado: 'active', versao: '1.0', descricao: 'Contrato de prestação de serviços geridos de segurança.', atualizado: '2024-06-15', tamanho: '1.8 MB' },
-  ],
-  c3: [], c4: [],
-};
-
-const PENTESTS_DB = {
-  c1: [
-    { id: 'p1', tipo: 'external', estado: 'completed', agendado: '2025-01-15', concluido: '2025-01-28', findings: 12, critical: 1, high: 3, medium: 5, low: 3 },
-    { id: 'p2', tipo: 'web', estado: 'in_progress', agendado: '2025-03-10', concluido: null, findings: 7, critical: 0, high: 2, medium: 3, low: 2 },
-  ],
-  c2: [{ id: 'p3', tipo: 'internal', estado: 'scheduled', agendado: '2025-04-05', concluido: null, findings: 0, critical: 0, high: 0, medium: 0, low: 0 }],
-  c3: [], c4: [],
-};
-
-const INCIDENTES_DB = {
-  c1: [
-    { id: 'i1', titulo: 'Ransomware - Servidores de Ficheiros', severidade: 'critical', estado: 'resolved', descricao: 'Ataque de ransomware detetado nos servidores de ficheiros.', reportado: '2025-02-10', resolvido: '2025-02-12', reportadoPor: 'João Silva', nis2: true },
-    { id: 'i3', titulo: 'Acesso Não Autorizado - VPN', severidade: 'medium', estado: 'open', descricao: 'Tentativas de acesso não autorizado via VPN detetadas nos logs.', reportado: '2025-03-15', resolvido: null, reportadoPor: 'João Silva', nis2: false },
-    { id: 'i5', titulo: 'Vazamento de Credenciais', severidade: 'critical', estado: 'resolved', descricao: 'Credenciais encontradas em repositório público. Reset realizado.', reportado: '2025-01-05', resolvido: '2025-01-07', reportadoPor: 'João Silva', nis2: true },
-  ],
-  c2: [{ id: 'i2', titulo: 'Phishing Campaign - Executivos', severidade: 'high', estado: 'investigating', descricao: 'Campanha de phishing direcionada a executivos.', reportado: '2025-03-10', resolvido: null, reportadoPor: 'Ana Costa', nis2: false }],
-  c3: [], c4: [],
-};
-
-const MENSAGENS_INICIAIS = {
-  c1: [
-    { id: 'm1', remetente: 'João Silva', isMe: true, conteudo: 'Bom dia, o relatório de pentest já está disponível para consulta.', timestamp: new Date(Date.now() - 259200000).toISOString() },
-    { id: 'm2', remetente: 'Tech Corp Portugal', isMe: false, conteudo: 'Obrigado. Temos dúvidas sobre o item 3.2. Poderão agendar uma reunião?', timestamp: new Date(Date.now() - 172800000).toISOString() },
-    { id: 'm3', remetente: 'João Silva', isMe: true, conteudo: 'Claro. Proponho quinta-feira às 10h00. Vou enviar o convite de calendário.', timestamp: new Date(Date.now() - 86400000).toISOString() },
-    { id: 'm4', remetente: 'Tech Corp Portugal', isMe: false, conteudo: 'Perfeito, quinta às 10h fica bem. Até lá!', timestamp: new Date(Date.now() - 72000000).toISOString() },
-  ],
-  c2: [], c3: [], c4: [],
-};
 
 const DOC_TIPO = { policy: 'Política', report: 'Relatório', contract: 'Contrato', audit: 'Auditoria', pentest: 'Pentest' };
 const DOC_EST = { 'Ativo': { label: 'Ativo', bg: '#dcfce7', cor: '#16a34a' }, 'Expirado': { label: 'Expirado', bg: '#fee2e2', cor: '#dc2626' }, 'Em Revisão': { label: 'Em revisão', bg: '#fef9c3', cor: '#ca8a04' } };
@@ -95,8 +51,8 @@ function ClientePerfil() {
   const navigate = useNavigate();
   const { utilizador } = useAuth();
 
-  /* ID inteiro real na BD (c1→1, c2→2, …) */
-  const dbClienteId = DEMO_TO_DB_ID[clienteId] ?? parseInt(clienteId, 10);
+  /* ID inteiro real na BD */
+  const dbClienteId = parseInt(clienteId, 10);
 
   const [cliente, setCliente]           = useState(null);
   const [clienteCarregando, setClienteCarregando] = useState(true);
@@ -118,8 +74,8 @@ function ClientePerfil() {
   const socketRef             = useRef(null);
   const carregandoRef         = useRef(false);
 
-  /* Pentests — ainda em demo */
-  const pentests = PENTESTS_DB[`c${dbClienteId}`] || [];
+  /* Pentests — sem tabela na BD, sempre vazio */
+  const pentests = [];
 
   /* Buscar incidentes e documentos reais da BD */
   useEffect(() => {
@@ -203,19 +159,8 @@ function ClientePerfil() {
       }
     } catch {
       if (inicial) {
-        /* fallback demo */
-        const demoRaw = MENSAGENS_INICIAIS[clienteId] || [];
-        setMsgs(demoRaw.map((m) => ({
-          id: m.id,
-          conteudo: m.conteudo,
-          remetente_id: m.isMe ? (utilizador?.id ?? 1) : 99,
-          cliente_id: dbClienteId,
-          criado_em: m.timestamp,
-          remetente: { nome: m.remetente },
-        })));
+        setMsgs([]);
         setTemMais(false);
-        setModoDemo(true);
-        setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
       }
     } finally {
       carregandoRef.current = false;

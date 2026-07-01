@@ -237,5 +237,3 @@ module.exports = {
   cliente_update,
   cliente_delete,
 };
-lete,
-};

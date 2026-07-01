@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
-import { Search, Activity, Loader, LogIn, FileText, AlertTriangle, User } from 'lucide-react';
+import { Search, Activity, Loader, LogIn, FileText, AlertTriangle, User, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const LOGS_POR_PAGINA = 20;
 
 const ACAO_CFG = {
   'Iniciou sessão':     { bg: '#dbeafe', cor: '#2563eb',  icone: LogIn       },
@@ -22,6 +24,7 @@ function AdminLogs() {
   const [carregando, setCarregando] = useState(true);
   const [pesquisa,   setPesquisa]   = useState('');
   const [filtroAcao, setFiltroAcao] = useState('all');
+  const [pagina,     setPagina]     = useState(1);
 
   useEffect(() => {
     api.get('/logs')
@@ -29,6 +32,10 @@ function AdminLogs() {
       .catch((err) => console.error('Erro ao carregar logs:', err))
       .finally(() => setCarregando(false));
   }, []);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [pesquisa, filtroAcao]);
 
   const acoes = [...new Set(logs.map((l) => l.acao_efetuada))];
 
@@ -39,6 +46,10 @@ function AdminLogs() {
     const matchA = filtroAcao === 'all' || l.acao_efetuada === filtroAcao;
     return matchP && matchA;
   });
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / LOGS_POR_PAGINA));
+  const paginaAtual  = Math.min(pagina, totalPaginas);
+  const paginados    = filtrados.slice((paginaAtual - 1) * LOGS_POR_PAGINA, paginaAtual * LOGS_POR_PAGINA);
 
   return (
     <AdminLayout>
@@ -110,7 +121,7 @@ function AdminLogs() {
           <Activity size={40} color="#e2e8f0" style={{ marginBottom: 12 }} />
           <p style={{ margin: 0 }}>Nenhum registo encontrado.</p>
         </div>
-      ) : filtrados.map((log) => {
+      ) : paginados.map((log) => {
         const cfg   = getAcaoCfg(log.acao_efetuada);
         const Icone = cfg.icone;
         return (
@@ -146,6 +157,26 @@ function AdminLogs() {
           </div>
         );
       })}
+
+      {!carregando && filtrados.length > 0 && (
+        <div className="paginacao">
+          <button
+            className="btn-pagina"
+            onClick={() => setPagina((p) => Math.max(1, p - 1))}
+            disabled={paginaAtual === 1}
+          >
+            <ChevronLeft size={15} /> Anterior
+          </button>
+          <span className="paginacao-info">Página {paginaAtual} de {totalPaginas}</span>
+          <button
+            className="btn-pagina"
+            onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+            disabled={paginaAtual === totalPaginas}
+          >
+            Seguinte <ChevronRight size={15} />
+          </button>
+        </div>
+      )}
 
     </AdminLayout>
   );

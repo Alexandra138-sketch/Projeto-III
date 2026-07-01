@@ -560,6 +560,42 @@
   -webkit-box-orient: vertical;
 }
 
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.paginacao-info {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.btn-pagina {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.82rem;
+  color: #475569;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-pagina:hover:not(:disabled) {
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+.btn-pagina:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .btn-editar {
   padding: 0.35rem 0.85rem;
   border: 1px solid #e2e8f0;

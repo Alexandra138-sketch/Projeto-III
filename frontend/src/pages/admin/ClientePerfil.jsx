@@ -581,34 +581,40 @@ function ClientePerfil() {
                   </div>
                 </div>
 
-                {/* Resp. de Segurança — lido diretamente dos campos da BD */}
-                {cliente.resp_seguranca_nome && (
-                  <div className="contacto-box contacto-box-seguranca">
-                    <div className="contacto-icon contacto-icon-seguranca">
-                      <Shield size={13} color="#2563eb" />
-                    </div>
-                    <div>
-                      <p className="contacto-titulo">Resp. Segurança</p>
-                      <p className="contacto-nome">{cliente.resp_seguranca_nome}</p>
-                      {cliente.resp_seguranca_email && <p className="contacto-detalhe">{cliente.resp_seguranca_email}</p>}
-                      {cliente.resp_seguranca_telefone && <p className="contacto-detalhe">{cliente.resp_seguranca_telefone}</p>}
-                    </div>
+                {/* Resp. de Segurança — sempre visível, "Não definido" se vazio */}
+                <div className="contacto-box contacto-box-seguranca">
+                  <div className="contacto-icon contacto-icon-seguranca">
+                    <Shield size={13} color="#2563eb" />
                   </div>
-                )}
-                {/* Contacto Permanente */}
-                {cliente.contacto_perm_nome && (
-                  <div className="contacto-box contacto-box-permanente">
-                    <div className="contacto-icon contacto-icon-permanente">
-                      <User size={13} color="#16a34a" />
-                    </div>
-                    <div>
-                      <p className="contacto-titulo">Contacto Permanente</p>
-                      <p className="contacto-nome">{cliente.contacto_perm_nome}</p>
-                      {cliente.contacto_perm_email && <p className="contacto-detalhe">{cliente.contacto_perm_email}</p>}
-                      {cliente.contacto_perm_telefone && <p className="contacto-detalhe">{cliente.contacto_perm_telefone}</p>}
-                    </div>
+                  <div>
+                    <p className="contacto-titulo">Resp. Segurança</p>
+                    {cliente.resp_seguranca_nome
+                      ? <>
+                          <p className="contacto-nome">{cliente.resp_seguranca_nome}</p>
+                          {cliente.resp_seguranca_email    && <p className="contacto-detalhe">{cliente.resp_seguranca_email}</p>}
+                          {cliente.resp_seguranca_telefone && <p className="contacto-detalhe">{cliente.resp_seguranca_telefone}</p>}
+                        </>
+                      : <p className="contacto-detalhe" style={{ color: '#94a3b8', fontStyle: 'italic' }}>Não definido</p>
+                    }
                   </div>
-                )}
+                </div>
+                {/* Contacto Permanente — sempre visível */}
+                <div className="contacto-box contacto-box-permanente">
+                  <div className="contacto-icon contacto-icon-permanente">
+                    <User size={13} color="#16a34a" />
+                  </div>
+                  <div>
+                    <p className="contacto-titulo">Contacto Permanente</p>
+                    {cliente.contacto_perm_nome
+                      ? <>
+                          <p className="contacto-nome">{cliente.contacto_perm_nome}</p>
+                          {cliente.contacto_perm_email    && <p className="contacto-detalhe">{cliente.contacto_perm_email}</p>}
+                          {cliente.contacto_perm_telefone && <p className="contacto-detalhe">{cliente.contacto_perm_telefone}</p>}
+                        </>
+                      : <p className="contacto-detalhe" style={{ color: '#94a3b8', fontStyle: 'italic' }}>Não definido</p>
+                    }
+                  </div>
+                </div>
               </div>
             </div>
           </div>

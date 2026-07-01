@@ -172,8 +172,30 @@ function FormModal({ utilizador, onClose, onSaved }) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
+  // ID do cliente associado (só relevante ao editar utilizador empresa)
+  const [clienteId, setClienteId] = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Ao editar um utilizador empresa, buscar o cliente associado para pré-preencher os campos de contacto
+  useEffect(() => {
+    if (!isEdit || utilizador.perfil !== 'empresa') return;
+    api.get('/clientes').then(({ data }) => {
+      const c = data.find(cli => cli.utilizador_id === utilizador.id);
+      if (c) {
+        setClienteId(c.id);
+        setForm(prev => ({
+          ...prev,
+          resp_seguranca_nome:     c.resp_seguranca_nome     || '',
+          resp_seguranca_email:    c.resp_seguranca_email    || '',
+          resp_seguranca_telefone: c.resp_seguranca_telefone || '',
+          contacto_perm_nome:      c.contacto_perm_nome      || '',
+          contacto_perm_email:     c.contacto_perm_email     || '',
+          contacto_perm_telefone:  c.contacto_perm_telefone  || '',
+        }));
+      }
+    }).catch(() => {});
+  }, []); // eslint-disable-line
 
   const regenerar = () => {
     setCopied(false);
@@ -194,6 +216,22 @@ function FormModal({ utilizador, onClose, onSaved }) {
       if (isEdit) {
         const payload = { nome: form.nome, email: form.email, telefone: form.telefone, perfil: form.perfil };
         const { data } = await api.put(`/utilizadores/${utilizador.id}`, payload);
+
+        // Se for empresa, também atualizar o registo de cliente com os contactos
+        if (form.perfil === 'empresa' && clienteId) {
+          await api.put(`/clientes/update/${clienteId}`, {
+            nome:                    form.nome,
+            email:                   form.email,
+            telefone:                form.telefone,
+            resp_seguranca_nome:     form.resp_seguranca_nome     || null,
+            resp_seguranca_email:    form.resp_seguranca_email    || null,
+            resp_seguranca_telefone: form.resp_seguranca_telefone || null,
+            contacto_perm_nome:      form.contacto_perm_nome      || null,
+            contacto_perm_email:     form.contacto_perm_email     || null,
+            contacto_perm_telefone:  form.contacto_perm_telefone  || null,
+          });
+        }
+
         onSaved(data);
       } else {
         const { data } = await api.post('/utilizadores', form);
@@ -276,8 +314,8 @@ function FormModal({ utilizador, onClose, onSaved }) {
           </div>
         )}
 
-        {/* Campos extra de contacto — só ao criar empresa */}
-        {form.perfil === 'empresa' && !isEdit && (
+        {/* Campos extra de contacto — ao criar OU editar utilizador empresa */}
+        {form.perfil === 'empresa' && (
           <div style={{
             padding: '0.9rem', borderRadius: 8,
             background: '#f8fafc', border: '1px solid #e2e8f0',

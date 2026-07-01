@@ -222,7 +222,7 @@ function GestorClientePerfil() {
             </div>
 
             {/* KPIs rápidos */}
-            <div className="d-flex gap-3 flex-wrap">
+            <div className="d-flex gap-3 flex-wrap mb-3">
               <div className="perfil-kpi perfil-kpi-azul">
                 <p className="kpi-valor kpi-valor-azul">{cliente.total_documentos ?? 0}</p>
                 <p className="kpi-label">Documentos</p>
@@ -236,6 +236,38 @@ function GestorClientePerfil() {
                 <p className="kpi-label">Mensagens</p>
               </div>
             </div>
+
+            {/* Responsável de Segurança e Contacto Permanente */}
+            {(cliente.resp_seguranca_nome || cliente.contacto_perm_nome) && (
+              <div className="d-flex flex-wrap gap-2">
+                {cliente.resp_seguranca_nome && (
+                  <div className="contacto-box contacto-box-seguranca">
+                    <div className="contacto-icon contacto-icon-seguranca">
+                      <Shield size={13} color="#2563eb" />
+                    </div>
+                    <div>
+                      <p className="contacto-titulo">Resp. Segurança</p>
+                      <p className="contacto-nome">{cliente.resp_seguranca_nome}</p>
+                      {cliente.resp_seguranca_email && <p className="contacto-detalhe">{cliente.resp_seguranca_email}</p>}
+                      {cliente.resp_seguranca_telefone && <p className="contacto-detalhe">{cliente.resp_seguranca_telefone}</p>}
+                    </div>
+                  </div>
+                )}
+                {cliente.contacto_perm_nome && (
+                  <div className="contacto-box contacto-box-permanente">
+                    <div className="contacto-icon contacto-icon-permanente">
+                      <Phone size={13} color="#16a34a" />
+                    </div>
+                    <div>
+                      <p className="contacto-titulo">Contacto Permanente</p>
+                      <p className="contacto-nome">{cliente.contacto_perm_nome}</p>
+                      {cliente.contacto_perm_email && <p className="contacto-detalhe">{cliente.contacto_perm_email}</p>}
+                      {cliente.contacto_perm_telefone && <p className="contacto-detalhe">{cliente.contacto_perm_telefone}</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -84,7 +84,7 @@ function Modal({ title, onClose, children }) {
             color: '#94a3b8', padding: 4,
           }}><X size={18} /></button>
         </div>
-        <div style={{ padding: '1.4rem' }}>{children}</div>
+        <div style={{ padding: '1.4rem', maxHeight: '75vh', overflowY: 'auto' }}>{children}</div>
       </div>
     </div>
   );
@@ -156,11 +156,18 @@ const gerarPassword = () => {
 function FormModal({ utilizador, onClose, onSaved }) {
   const isEdit = !!utilizador;
   const [form, setForm] = useState({
-    nome:     utilizador?.nome     || '',
-    email:    utilizador?.email    || '',
-    telefone: utilizador?.telefone || '',
-    perfil:   utilizador?.perfil   || 'gestor',
-    password: isEdit ? '' : gerarPassword(),
+    nome:                    utilizador?.nome     || '',
+    email:                   utilizador?.email    || '',
+    telefone:                utilizador?.telefone || '',
+    perfil:                  utilizador?.perfil   || 'gestor',
+    password:                isEdit ? '' : gerarPassword(),
+    // Campos extra só usados ao criar um novo utilizador com perfil empresa
+    resp_seguranca_nome:     '',
+    resp_seguranca_email:    '',
+    resp_seguranca_telefone: '',
+    contacto_perm_nome:      '',
+    contacto_perm_email:     '',
+    contacto_perm_telefone:  '',
   });
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -266,6 +273,67 @@ function FormModal({ utilizador, onClose, onSaved }) {
             <p style={{ margin: 0, fontSize: 12, color: '#1d4ed8', lineHeight: 1.5 }}>
               Será criada automaticamente uma <strong>empresa cliente</strong> com o nome, email e telefone indicados. O utilizador poderá entrar na área de empresa.
             </p>
+          </div>
+        )}
+
+        {/* Campos extra de contacto — só ao criar empresa */}
+        {form.perfil === 'empresa' && !isEdit && (
+          <div style={{
+            padding: '0.9rem', borderRadius: 8,
+            background: '#f8fafc', border: '1px solid #e2e8f0',
+            display: 'flex', flexDirection: 'column', gap: '0.65rem',
+          }}>
+            {/* Responsável de Segurança */}
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Responsável de Segurança
+            </p>
+            {[
+              { id: 'resp_seguranca_nome',     label: 'Nome',     type: 'text',  ph: 'ex. Maria Santos'  },
+              { id: 'resp_seguranca_email',    label: 'E-mail',   type: 'email', ph: 'maria@empresa.pt'  },
+              { id: 'resp_seguranca_telefone', label: 'Telefone', type: 'text',  ph: '+351 912 000 000'  },
+            ].map(({ id, label, type, ph }) => (
+              <label key={id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{label}</span>
+                <input
+                  type={type}
+                  value={form[id]}
+                  onChange={e => set(id, e.target.value)}
+                  placeholder={ph}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '0.45rem 0.65rem',
+                    border: '1px solid #e2e8f0', borderRadius: 7,
+                    fontSize: 13, color: '#0f172a', outline: 'none', background: '#fff',
+                  }}
+                />
+              </label>
+            ))}
+
+            {/* Contacto Permanente */}
+            <p style={{ margin: '0.25rem 0 0', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Contacto Permanente
+            </p>
+            {[
+              { id: 'contacto_perm_nome',      label: 'Nome',     type: 'text',  ph: 'ex. Pedro Costa'   },
+              { id: 'contacto_perm_email',     label: 'E-mail',   type: 'email', ph: 'pedro@empresa.pt'  },
+              { id: 'contacto_perm_telefone',  label: 'Telefone', type: 'text',  ph: '+351 913 000 000'  },
+            ].map(({ id, label, type, ph }) => (
+              <label key={id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{label}</span>
+                <input
+                  type={type}
+                  value={form[id]}
+                  onChange={e => set(id, e.target.value)}
+                  placeholder={ph}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '0.45rem 0.65rem',
+                    border: '1px solid #e2e8f0', borderRadius: 7,
+                    fontSize: 13, color: '#0f172a', outline: 'none', background: '#fff',
+                  }}
+                />
+              </label>
+            ))}
           </div>
         )}
 

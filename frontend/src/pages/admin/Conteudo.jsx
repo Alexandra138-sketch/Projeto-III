@@ -447,15 +447,12 @@ function Conteudo() {
 
   return (
     <AdminLayout>
-      <div className="container-fluid py-4 px-md-4">
 
-        {/* Cabeçalho */}
-        <div className="d-flex justify-content-between align-items-start mb-4">
+        {/* Cabeçalho — mesmo estilo usado em Logs de Atividade / Incidentes */}
+        <div className="incidentes-header">
           <div>
-            <h4 className="fw-semibold mb-1" style={{ color: '#111827' }}>
-              Gestão de Conteúdo do Site
-            </h4>
-            <p className="text-secondary small mb-0">
+            <h4 className="incidentes-titulo">Gestão de Conteúdo do Site</h4>
+            <p className="incidentes-subtitulo">
               Edite os textos e conteúdos exibidos nas páginas públicas
             </p>
           </div>
@@ -470,29 +467,30 @@ function Conteudo() {
           )}
         </div>
 
-        {/* Tabs — estilo underline igual ao Figma */}
-        <div className="d-flex gap-0 mb-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setTabAtiva(tab.key)}
-              className="btn d-flex align-items-center gap-2 px-4 py-3 rounded-0 border-0"
-              style={{
-                borderBottom: tabAtiva === tab.key
-                  ? '2px solid #2563eb'
-                  : '2px solid transparent',
-                color: tabAtiva === tab.key ? '#1d4ed8' : '#6b7280',
-                fontSize: '0.875rem',
-                fontWeight: tabAtiva === tab.key ? 600 : 400,
-                marginBottom: '-1px',
-                transition: 'color 0.15s, border-color 0.15s',
-              }}
-            >
-              {TAB_ICONS[tab.key]}
-              {tab.label}
-            </button>
-          ))}
+        {/* Tabs — cartão branco com abas, no mesmo espírito da barra de filtros dos Logs */}
+        <div className="dash-card filtros-bar">
+          <div className="d-flex gap-1 flex-wrap">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setTabAtiva(tab.key)}
+                className="btn d-flex align-items-center gap-2 px-3 py-2"
+                style={{
+                  borderRadius: 8,
+                  border: tabAtiva === tab.key ? '1px solid #93c5fd' : '1px solid transparent',
+                  backgroundColor: tabAtiva === tab.key ? '#eff6ff' : 'transparent',
+                  color: tabAtiva === tab.key ? '#2563eb' : '#64748b',
+                  fontSize: '0.875rem',
+                  fontWeight: tabAtiva === tab.key ? 600 : 500,
+                  transition: 'color 0.15s, border-color 0.15s, background-color 0.15s',
+                }}
+              >
+                {TAB_ICONS[tab.key]}
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── TAB: Página Principal ── */}
@@ -500,7 +498,7 @@ function Conteudo() {
           <div className="d-flex flex-column gap-4">
 
             {/* Secção Hero */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <div className="d-flex align-items-center gap-2 mb-1">
@@ -559,7 +557,7 @@ function Conteudo() {
             </div>
 
             {/* Secção de Serviços */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex align-items-center gap-2 mb-1">
                 <span
                   className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
@@ -724,7 +722,7 @@ function Conteudo() {
           <div className="d-flex flex-column gap-4">
 
             {/* Hero notícias */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <div className="d-flex align-items-center gap-2 mb-1">
@@ -887,7 +885,7 @@ function Conteudo() {
           <div className="d-flex flex-column gap-4">
 
             {/* Cabeçalho da Página */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <div className="d-flex align-items-center gap-2 mb-1">
@@ -935,7 +933,7 @@ function Conteudo() {
             </div>
 
             {/* Informações de Contacto */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex align-items-center gap-2 mb-1">
                 <span
                   className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
@@ -980,7 +978,7 @@ function Conteudo() {
             </div>
 
             {/* Formulário de Contacto */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex align-items-center gap-2 mb-1">
                 <span
                   className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
@@ -1014,7 +1012,7 @@ function Conteudo() {
             </div>
 
             {/* Mensagens Recebidas */}
-            <div className="bg-white rounded-3 p-4" style={{ border: '1px solid #e5e7eb' }}>
+            <div className="dash-card">
               <div className="d-flex align-items-center gap-2 mb-1">
                 <span
                   className="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
@@ -1112,8 +1110,6 @@ function Conteudo() {
             </div>
           </div>
         )}
-
-      </div>
 
       {/* Modal: Criar / Editar Serviço */}
       {modalAberto && (

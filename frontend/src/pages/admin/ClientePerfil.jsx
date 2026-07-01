@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Mail, Phone, Shield, User, FileText, AlertTriangle,
   MessageSquare, Download, CheckCircle, Send, Calendar, Tag,
-  Clock, TrendingUp, ToggleLeft, ToggleRight, XCircle,
+  Clock, TrendingUp, ToggleLeft, ToggleRight, XCircle, Edit2,
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
@@ -68,6 +68,12 @@ function ClientePerfil() {
   const [modoDemo, setModoDemo]         = useState(false);
   const [docs, setDocs]                 = useState([]);
   const [incidentes, setIncidentes]     = useState([]);
+
+  // ── Modal de edição da informação do cliente ──────────────────
+  const [editarModal, setEditarModal]   = useState(false);
+  const [editarForm, setEditarForm]     = useState({});
+  const [editarErro, setEditarErro]     = useState('');
+  const [editarSaving, setEditarSaving] = useState(false);
 
   const mensagensEndRef       = useRef(null);
   const mensagensContainerRef = useRef(null);
@@ -250,6 +256,39 @@ function ClientePerfil() {
     }
   };
 
+  // ── Abrir modal de edição com todos os campos do cliente ─────
+  const abrirEditarModal = () => {
+    setEditarErro('');
+    setEditarForm({
+      nome:                    cliente.nome                    || '',
+      email:                   cliente.email                   || '',
+      telefone:                cliente.telefone                || '',
+      resp_seguranca_nome:     cliente.resp_seguranca_nome     || '',
+      resp_seguranca_email:    cliente.resp_seguranca_email    || '',
+      resp_seguranca_telefone: cliente.resp_seguranca_telefone || '',
+      contacto_perm_nome:      cliente.contacto_perm_nome      || '',
+      contacto_perm_email:     cliente.contacto_perm_email     || '',
+      contacto_perm_telefone:  cliente.contacto_perm_telefone  || '',
+    });
+    setEditarModal(true);
+  };
+
+  // ── Guardar edição ───────────────────────────────────────────
+  const handleGuardarEdicao = async () => {
+    setEditarSaving(true);
+    setEditarErro('');
+    try {
+      const { data } = await api.put(`/clientes/update/${dbClienteId}`, editarForm);
+      // Atualizar o estado local com os dados devolvidos pela API
+      setCliente((prev) => ({ ...prev, ...editarForm, ...data }));
+      setEditarModal(false);
+    } catch {
+      setEditarErro('Erro ao guardar. Tenta novamente.');
+    } finally {
+      setEditarSaving(false);
+    }
+  };
+
   if (clienteCarregando) {
     return (
       <AdminLayout>
@@ -276,11 +315,9 @@ function ClientePerfil() {
   /* Campos calculados a partir dos dados da BD */
   const ativo    = cliente.estado === 'Ativo';
   const cor      = getCor(cliente.id);
-  const criadoEm = cliente.created_at
-    ? new Date(cliente.created_at).toLocaleDateString('pt-PT')
+  const criadoEm = (cliente.created_at || cliente.createdAt)
+    ? new Date(cliente.created_at || cliente.createdAt).toLocaleDateString('pt-PT')
     : '—';
-  const respSeg  = cliente.responsavel_seguranca || null;
-  const contPerm = cliente.contato_permanente    || null;
 
   const abas = [
     { id: 'resumo', label: 'Resumo', Icone: FileText, count: null },
@@ -299,6 +336,94 @@ function ClientePerfil() {
 
   return (
     <AdminLayout>
+
+      {/* ── Modal de edição de informação do cliente ── */}
+      {editarModal && (
+        <div className="modal-overlay" onClick={() => setEditarModal(false)}>
+          <div className="modal-box" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h5>Editar Informação do Cliente</h5>
+              <button className="modal-close" onClick={() => setEditarModal(false)}>×</button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+
+              {/* Informação básica */}
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.75rem' }}>
+                Informação Básica
+              </p>
+              {[
+                { id: 'nome',     label: 'Nome da empresa', type: 'text'  },
+                { id: 'email',    label: 'E-mail',          type: 'email' },
+                { id: 'telefone', label: 'Telefone',        type: 'text'  },
+              ].map(({ id, label, type }) => (
+                <div key={id} style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>{label}</label>
+                  <input
+                    type={type}
+                    value={editarForm[id] || ''}
+                    onChange={(e) => setEditarForm((prev) => ({ ...prev, [id]: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+
+              {/* Responsável de Segurança */}
+              <hr style={{ margin: '1rem 0', borderColor: '#f1f5f9' }} />
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.75rem' }}>
+                Responsável de Segurança
+              </p>
+              {[
+                { id: 'resp_seguranca_nome',     label: 'Nome',     type: 'text'  },
+                { id: 'resp_seguranca_email',    label: 'E-mail',   type: 'email' },
+                { id: 'resp_seguranca_telefone', label: 'Telefone', type: 'text'  },
+              ].map(({ id, label, type }) => (
+                <div key={id} style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>{label}</label>
+                  <input
+                    type={type}
+                    value={editarForm[id] || ''}
+                    onChange={(e) => setEditarForm((prev) => ({ ...prev, [id]: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+
+              {/* Contacto Permanente */}
+              <hr style={{ margin: '1rem 0', borderColor: '#f1f5f9' }} />
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.75rem' }}>
+                Contacto Permanente
+              </p>
+              {[
+                { id: 'contacto_perm_nome',      label: 'Nome',     type: 'text'  },
+                { id: 'contacto_perm_email',     label: 'E-mail',   type: 'email' },
+                { id: 'contacto_perm_telefone',  label: 'Telefone', type: 'text'  },
+              ].map(({ id, label, type }) => (
+                <div key={id} style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>{label}</label>
+                  <input
+                    type={type}
+                    value={editarForm[id] || ''}
+                    onChange={(e) => setEditarForm((prev) => ({ ...prev, [id]: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+
+              {editarErro && (
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', padding: '0.5rem 0.75rem', borderRadius: 7 }}>
+                  {editarErro}
+                </p>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancelar" onClick={() => setEditarModal(false)}>Cancelar</button>
+              <button className="btn-guardar" onClick={handleGuardarEdicao} disabled={editarSaving}>
+                {editarSaving ? 'A guardar…' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {contaModal && (
         <div className="modal-overlay" onClick={() => setContaModal(false)}>
@@ -385,6 +510,14 @@ function ClientePerfil() {
                 {ativo ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
                 {ativo ? 'Desativar' : 'Ativar'}
               </button>
+              {/* Botão para editar informação do cliente */}
+              <button
+                className="btn-toggle-estado"
+                style={{ background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe' }}
+                onClick={abrirEditarModal}
+              >
+                <Edit2 size={13} /> Editar
+              </button>
             </div>
 
             <div className="d-flex flex-wrap gap-3 mb-3">
@@ -448,19 +581,40 @@ function ClientePerfil() {
                   </div>
                 </div>
 
-                {/* Resp. de Segurança — campo extra (quando existir na BD) */}
-                {respSeg && (
-                  <div className="contacto-box contacto-box-permanente">
-                    <div className="contacto-icon contacto-icon-permanente">
-                      <User size={13} color="#16a34a" />
-                    </div>
-                    <div>
-                      <p className="contacto-titulo">Resp. Segurança</p>
-                      <p className="contacto-nome">{respSeg.nome}</p>
-                      <p className="contacto-detalhe">{respSeg.email} · {respSeg.telefone}</p>
-                    </div>
+                {/* Resp. de Segurança — sempre visível, "Não definido" se vazio */}
+                <div className="contacto-box contacto-box-seguranca">
+                  <div className="contacto-icon contacto-icon-seguranca">
+                    <Shield size={13} color="#2563eb" />
                   </div>
-                )}
+                  <div>
+                    <p className="contacto-titulo">Resp. Segurança</p>
+                    {cliente.resp_seguranca_nome
+                      ? <>
+                          <p className="contacto-nome">{cliente.resp_seguranca_nome}</p>
+                          {cliente.resp_seguranca_email    && <p className="contacto-detalhe">{cliente.resp_seguranca_email}</p>}
+                          {cliente.resp_seguranca_telefone && <p className="contacto-detalhe">{cliente.resp_seguranca_telefone}</p>}
+                        </>
+                      : <p className="contacto-detalhe" style={{ color: '#94a3b8', fontStyle: 'italic' }}>Não definido</p>
+                    }
+                  </div>
+                </div>
+                {/* Contacto Permanente — sempre visível */}
+                <div className="contacto-box contacto-box-permanente">
+                  <div className="contacto-icon contacto-icon-permanente">
+                    <User size={13} color="#16a34a" />
+                  </div>
+                  <div>
+                    <p className="contacto-titulo">Contacto Permanente</p>
+                    {cliente.contacto_perm_nome
+                      ? <>
+                          <p className="contacto-nome">{cliente.contacto_perm_nome}</p>
+                          {cliente.contacto_perm_email    && <p className="contacto-detalhe">{cliente.contacto_perm_email}</p>}
+                          {cliente.contacto_perm_telefone && <p className="contacto-detalhe">{cliente.contacto_perm_telefone}</p>}
+                        </>
+                      : <p className="contacto-detalhe" style={{ color: '#94a3b8', fontStyle: 'italic' }}>Não definido</p>
+                    }
+                  </div>
+                </div>
               </div>
             </div>
           </div>

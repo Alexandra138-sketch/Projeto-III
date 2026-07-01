@@ -225,37 +225,38 @@ function Incidentes() {
   return (
     <AdminLayout>
 
-      {/* ── Cabeçalho ── */}
-      <div className="dash-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* ── Cabeçalho — igual ao admin/Incidentes.jsx ── */}
+      <div className="incidentes-header">
         <div>
-          <h4>Os Meus Incidentes</h4>
-          <p>Acompanha e reporta incidentes de segurança da tua empresa.</p>
+          <h4 className="incidentes-titulo">Os Meus Incidentes</h4>
+          <p className="incidentes-subtitulo">
+            {incidentes.length} incidentes · {totalAbertos} abertos · {totalCriticos} críticos
+          </p>
         </div>
         <button className="btn-gradient" onClick={() => setModalReportar(true)}>
           <Plus size={16} /> Reportar Incidente
         </button>
       </div>
 
-      {/* ── Estatísticas rápidas ── */}
-      {!carregando && (
-        <div className="row g-3 mb-4">
-          {[
-            { numero: totalAbertos,  label: 'Abertos',     bg: '#fee2e2', cor: '#dc2626' },
-            { numero: totalCriticos, label: 'Críticos',    bg: '#ffedd5', cor: '#c2410c' },
-            { numero: incidentes.filter((i) => i.nis2_notificado).length,
-              label: 'Notif. NIS2', bg: '#fffbeb', cor: '#b45309' },
-            { numero: incidentes.filter((i) => i.estado === 'Resolvido' || i.estado === 'Fechado').length,
-              label: 'Resolvidos',  bg: '#f0fdf4', cor: '#16a34a' },
-          ].map(({ numero, label, bg, cor }) => (
-            <div key={label} className="col-6 col-md-3">
-              <div className="dash-card" style={{ textAlign: 'center', padding: '1.25rem' }}>
-                <p style={{ fontSize: '1.8rem', fontWeight: 700, color: cor, margin: 0 }}>{numero}</p>
-                <p style={{ fontSize: '0.8rem', color: cor, margin: 0, fontWeight: 500 }}>{label}</p>
-              </div>
-            </div>
-          ))}
+      {/* ── Cards de resumo — mesmo padrão que admin/Incidentes.jsx ── */}
+      <div className="resumo-cards">
+        <div className="resumo-card card-aberto">
+          <p className="resumo-numero">{totalAbertos}</p>
+          <p className="resumo-label">Abertos</p>
         </div>
-      )}
+        <div className="resumo-card card-critico">
+          <p className="resumo-numero">{totalCriticos}</p>
+          <p className="resumo-label">Críticos Ativos</p>
+        </div>
+        <div className="resumo-card card-nis2">
+          <p className="resumo-numero">{incidentes.filter(i => i.nis2_notificado).length}</p>
+          <p className="resumo-label">Notificados NIS2</p>
+        </div>
+        <div className="resumo-card card-total">
+          <p className="resumo-numero">{incidentes.length}</p>
+          <p className="resumo-label">Total</p>
+        </div>
+      </div>
 
       {/* ── Filtros e pesquisa ── */}
       <div className="dash-card filtros-bar mb-4">

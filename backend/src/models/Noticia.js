@@ -36,9 +36,15 @@ const Noticia = sequelize.define('Noticia', {
     type: DataTypes.STRING,
   },
 
-  // URL da imagem de capa (pode ser Unsplash ou upload)
+  // URL da imagem de capa (pode ser Unsplash ou upload em base64)
+  // IMPORTANTE: tem de ser TEXT e não STRING, porque quando o admin faz
+  // upload de uma imagem no painel, ela é guardada como base64 (data:image/...)
+  // que facilmente ultrapassa os 255 caracteres do VARCHAR por defeito do
+  // STRING. Isso fazia o Postgres rejeitar o INSERT/UPDATE com o erro
+  // "value too long for type character varying(255)" e a notícia nunca
+  // era criada/publicada.
   imagem_url: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   },
 
   // Ex: '5 min', '10 min'

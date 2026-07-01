@@ -75,7 +75,7 @@ function Login() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <img src="../public/img/logo2.png" alt="CyberBoxSecur" style={{ width: '150px', height: 'auto' }} />
+          <img src="/img/logo2.png" alt="CyberBoxSecur" style={{ width: '150px', height: 'auto' }} />
           <p style={styles.tagline}>Área Reservada — Acesso Seguro</p>
         </div>
 

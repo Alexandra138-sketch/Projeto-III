@@ -2,14 +2,17 @@
 //  Página: empresa/Ambiente.jsx
 //
 //  Visão geral do "ambiente de segurança" da empresa.
-//  Dividida em secções via separadores (tabs):
-//    1. Resumo         — estado geral, gestor, métricas
-//    2. Documentos     — todos os documentos da empresa
-//    3. Pentests       — documentos do tipo Pentest
-//    4. Incidentes     — lista de incidentes
-//    5. Comunicação    — chat com o gestor responsável
+//  Design consistente com o gestor/ClientePerfil.jsx:
+//    - Cartão de perfil com avatar, KPIs e contactos
+//    - Tabs com abas-wrapper / aba-btn / aba-count
+//    - Chat com cp-chat-* classes
 //
-//  Todos os dados vêm das rotas /empresa/* do backend.
+//  Separadores (tabs):
+//    1. Resumo       — estatísticas + docs/incidentes recentes
+//    2. Documentos   — todos os documentos da empresa
+//    3. Pentests     — documentos do tipo Pentest
+//    4. Incidentes   — lista de incidentes
+//    5. Comunicação  — chat com o gestor responsável
 // ─────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from 'react';
@@ -18,13 +21,12 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import {
   Shield, FileText, AlertTriangle,
-  MessageSquare, Download, File, Send,
+  MessageSquare, Download, Send, Mail, Phone, Calendar, User,
 } from 'lucide-react';
 
-// URL base do backend para construir links de download
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// ── Cores para badges/cards ─────────────────────────────────────
+// ── Cores de badge por severidade e estado ────────────────────
 const SEV = {
   'Crítico': { dot: '#ef4444', bg: '#fee2e2', cor: '#dc2626' },
   'Alto':    { dot: '#f97316', bg: '#ffedd5', cor: '#c2410c' },
@@ -39,14 +41,11 @@ const STA = {
   'Fechado':      { bg: '#f1f5f9', cor: '#64748b' },
 };
 
-// ── Separadores disponíveis ────────────────────────────────────
-const TABS = [
-  { id: 'resumo',       label: 'Resumo',       Icon: Shield },
-  { id: 'documentos',   label: 'Documentos',   Icon: FileText },
-  { id: 'pentests',     label: 'Pentests',      Icon: FileText },
-  { id: 'incidentes',   label: 'Incidentes',   Icon: AlertTriangle },
-  { id: 'comunicacao',  label: 'Comunicação',  Icon: MessageSquare },
-];
+// ── Iniciais do nome da empresa (ex: "Tech Corp" → "TC") ──────
+function iniciais(nome) {
+  if (!nome) return 'EM';
+  return nome.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
 
 function Ambiente() {
   const { utilizador } = useAuth();
@@ -56,16 +55,16 @@ function Ambiente() {
   const [perfil,     setPerfil]     = useState(null);
   const [incidentes, setIncidentes] = useState([]);
   const [documentos, setDocumentos] = useState([]);
+  const [mensagens,  setMensagens]  = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [semConta,   setSemConta]   = useState(false);
 
   // Chat
-  const [mensagens,      setMensagens]      = useState([]);
-  const [novaMensagem,   setNovaMensagem]   = useState('');
-  const [enviando,       setEnviando]       = useState(false);
-  const chatRef = useRef(null);
+  const [novaMensagem, setNovaMensagem] = useState('');
+  const [enviando,     setEnviando]     = useState(false);
+  const mensagensEndRef = useRef(null);
 
-  // ── Carregar dados ──
+  // ── Carregar todos os dados ao arranque ──────────────────────
   useEffect(() => {
     setCarregando(true);
     Promise.allSettled([
@@ -74,55 +73,52 @@ function Ambiente() {
       api.get('/empresa/documentos'),
     ]).then(([perfilRes, incRes, docRes]) => {
       const perfilData = perfilRes.status === 'fulfilled' ? perfilRes.value.data : null;
-
-      // Se perfil for null, a conta ainda não está ligada a nenhum cliente
       if (!perfilData) {
         setSemConta(true);
       } else {
         setPerfil(perfilData);
+        // Carregar mensagens assim que temos o perfil (para o contador da tab)
+        api.get(`/chat/${perfilData.id}`)
+          .then(({ data }) => {
+            const ordenadas = Array.isArray(data) ? [...data].reverse() : [];
+            setMensagens(ordenadas);
+          })
+          .catch(() => {});
       }
-
       if (incRes.status === 'fulfilled') setIncidentes(Array.isArray(incRes.value.data) ? incRes.value.data : []);
       if (docRes.status === 'fulfilled') setDocumentos(Array.isArray(docRes.value.data) ? docRes.value.data : []);
     }).finally(() => setCarregando(false));
   }, []);
 
-  // ── Carregar mensagens do chat quando se muda para a tab Comunicação ──
+  // ── Scroll automático do chat para o fim ─────────────────────
   useEffect(() => {
-    if (tabAtiva !== 'comunicacao' || !perfil?.id) return;
+    if (tabAtiva === 'comunicacao') {
+      setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    }
+  }, [tabAtiva, mensagens]);
 
-    api.get(`/chat/${perfil.id}`)
-      .then(({ data }) => {
-        // getMensagens devolve em ordem DESC — inverter para ASC
-        const ordenadas = Array.isArray(data) ? [...data].reverse() : [];
-        setMensagens(ordenadas);
-        // Scroll para o fim
-        setTimeout(() => {
-          if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-        }, 50);
-      })
-      .catch(() => {});
-  }, [tabAtiva, perfil]);
-
-  // ── Enviar mensagem no chat ──
-  const handleEnviar = async (e) => {
-    e.preventDefault();
+  // ── Enviar mensagem ───────────────────────────────────────────
+  const handleEnviar = async () => {
     if (!novaMensagem.trim() || !perfil?.id) return;
-
+    const conteudo = novaMensagem.trim();
+    setNovaMensagem('');
     setEnviando(true);
+
+    // Mensagem temporária para feedback imediato
+    const tmpId = `tmp_${Date.now()}`;
+    setMensagens(prev => [...prev, {
+      id: tmpId,
+      conteudo,
+      remetente_id: utilizador?.id,
+      criado_em: new Date().toISOString(),
+      remetente: { nome: utilizador?.nome, perfil: 'empresa' },
+      _temp: true,
+    }]);
+    setTimeout(() => mensagensEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+
     try {
-      const { data } = await api.post(`/chat/${perfil.id}`, { conteudo: novaMensagem.trim() });
-      // Adicionar mensagem localmente
-      setMensagens(prev => [...prev, {
-        ...data,
-        remetente: { nome: utilizador?.nome, perfil: 'empresa' },
-        isMe: true,
-      }]);
-      setNovaMensagem('');
-      // Scroll para o fim
-      setTimeout(() => {
-        if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-      }, 50);
+      await api.post(`/chat/${perfil.id}`, { conteudo });
+      setMensagens(prev => prev.filter(m => m.id !== tmpId));
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
     } finally {
@@ -130,24 +126,29 @@ function Ambiente() {
     }
   };
 
-  // Pentests = documentos com tipo 'Pentest'
-  const pentests  = documentos.filter(d => d.tipo === 'Pentest');
+  // Derivados
+  const pentests   = documentos.filter(d => d.tipo === 'Pentest');
   const incAbertos = incidentes.filter(i => i.estado === 'Aberto' || i.estado === 'A Investigar').length;
+  const dataCliente = perfil?.created_at || perfil?.createdAt;
 
-  // ── Aviso: conta não ligada ──
+  // ── Tabs com contadores ───────────────────────────────────────
+  const TABS = [
+    { id: 'resumo',      label: 'Resumo',      Icone: Shield,        count: null             },
+    { id: 'documentos',  label: 'Documentos',  Icone: FileText,      count: documentos.length },
+    { id: 'pentests',    label: 'Pentests',    Icone: Shield,        count: pentests.length  },
+    { id: 'incidentes',  label: 'Incidentes',  Icone: AlertTriangle, count: incidentes.length },
+    { id: 'comunicacao', label: 'Comunicação', Icone: MessageSquare, count: mensagens.length },
+  ];
+
+  // ── Conta não configurada ─────────────────────────────────────
   if (!carregando && semConta) {
     return (
       <AdminLayout>
-        <div className="dash-banner">
-          <h4>Ambiente de Segurança</h4>
-          <p>Visão geral da postura de segurança da tua empresa.</p>
-        </div>
-        <div className="dash-card text-center" style={{ padding: '3rem' }}>
+        <div className="dash-card" style={{ textAlign: 'center', padding: '3rem' }}>
           <Shield size={48} style={{ color: '#94a3b8', marginBottom: '1rem' }} />
           <h5 style={{ color: '#374151' }}>Conta ainda não configurada</h5>
           <p style={{ color: '#64748b' }}>
-            A tua conta de utilizador ainda não está ligada a nenhum cliente no sistema.<br />
-            Contacta o teu gestor para que ele possa configurar o acesso.
+            A tua conta ainda não está ligada a nenhum cliente.<br />Contacta o teu gestor.
           </p>
         </div>
       </AdminLayout>
@@ -157,345 +158,416 @@ function Ambiente() {
   return (
     <AdminLayout>
 
-      {/* ── Cabeçalho ── */}
-      <div className="dash-banner">
-        <h4>Ambiente de Segurança</h4>
-        <p>
-          {perfil ? `${perfil.nome} · Gestor: ${perfil.gestor?.nome || '—'}` : 'A carregar…'}
-        </p>
-        {!carregando && (
-          <div className="row g-3 mt-1">
-            <div className="col-6 col-md-3">
-              <div className="stat-card">
-                <div className="stat-number">{incidentes.length}</div>
-                <div className="stat-label">Incidentes</div>
+      {/* ════════════════════════════════════════════════════════
+          CARTÃO DE PERFIL — igual ao design gestor/ClientePerfil
+      ════════════════════════════════════════════════════════ */}
+      <div className="dash-card perfil-card">
+        {carregando ? (
+          <p style={{ color: '#94a3b8', margin: 0 }}>A carregar…</p>
+        ) : (
+          <div className="d-flex align-items-start gap-3 flex-wrap">
+
+            {/* Avatar de iniciais */}
+            <div className="perfil-avatar" style={{ backgroundColor: '#2563eb' }}>
+              {iniciais(perfil?.nome)}
+            </div>
+
+            {/* Info + KPIs */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Nome + badge estado */}
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <h4 className="perfil-nome">{perfil?.nome || '—'}</h4>
+                <span className="badge-pill" style={{ background: '#dcfce7', color: '#16a34a' }}>
+                  ✓ Conta ativa
+                </span>
+              </div>
+
+              {/* Email · Telefone · Cliente desde */}
+              <div className="d-flex flex-wrap gap-3 mb-3">
+                {perfil?.email && (
+                  <span className="perfil-meta"><Mail size={12} /> {perfil.email}</span>
+                )}
+                {perfil?.telefone && (
+                  <span className="perfil-meta"><Phone size={12} /> {perfil.telefone}</span>
+                )}
+                {dataCliente && (
+                  <span className="perfil-meta">
+                    <Calendar size={12} /> Cliente desde {new Date(dataCliente).toLocaleDateString('pt-PT')}
+                  </span>
+                )}
+              </div>
+
+              {/* KPIs rápidos */}
+              <div className="d-flex gap-3 flex-wrap">
+                <div className="perfil-kpi perfil-kpi-azul">
+                  <p className="kpi-valor kpi-valor-azul">{documentos.length}</p>
+                  <p className="kpi-label">Documentos</p>
+                </div>
+                <div className="perfil-kpi perfil-kpi-laranja">
+                  <p className="kpi-valor kpi-valor-laranja">{incidentes.length}</p>
+                  <p className="kpi-label">Incidentes</p>
+                </div>
+                <div className="perfil-kpi perfil-kpi-verde">
+                  <p className="kpi-valor kpi-valor-verde">{mensagens.length}</p>
+                  <p className="kpi-label">Mensagens</p>
+                </div>
               </div>
             </div>
-            <div className="col-6 col-md-3">
-              <div className="stat-card">
-                <div className="stat-number">{incAbertos}</div>
-                <div className="stat-label">Em Aberto</div>
+
+            {/* Contactos (Resp. Segurança + Contacto Permanente) */}
+            {(perfil?.resp_seguranca_nome || perfil?.contacto_perm_nome) && (
+              <div className="d-flex gap-2 flex-wrap" style={{ flexShrink: 0 }}>
+                {perfil?.resp_seguranca_nome && (
+                  <div className="contacto-box contacto-box-seguranca">
+                    <div className="contacto-icon contacto-icon-seguranca">
+                      <User size={13} style={{ color: '#3b82f6' }} />
+                    </div>
+                    <div>
+                      <p className="contacto-titulo">Resp. Segurança</p>
+                      <p className="contacto-nome">{perfil.resp_seguranca_nome}</p>
+                      {perfil.resp_seguranca_email && (
+                        <p className="contacto-detalhe">{perfil.resp_seguranca_email}</p>
+                      )}
+                      {perfil.resp_seguranca_telefone && (
+                        <p className="contacto-detalhe">{perfil.resp_seguranca_telefone}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {perfil?.contacto_perm_nome && (
+                  <div className="contacto-box contacto-box-permanente">
+                    <div className="contacto-icon contacto-icon-permanente">
+                      <User size={13} style={{ color: '#16a34a' }} />
+                    </div>
+                    <div>
+                      <p className="contacto-titulo">Contacto Permanente</p>
+                      <p className="contacto-nome">{perfil.contacto_perm_nome}</p>
+                      {perfil.contacto_perm_email && (
+                        <p className="contacto-detalhe">{perfil.contacto_perm_email}</p>
+                      )}
+                      {perfil.contacto_perm_telefone && (
+                        <p className="contacto-detalhe">{perfil.contacto_perm_telefone}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="col-6 col-md-3">
-              <div className="stat-card">
-                <div className="stat-number">{documentos.length}</div>
-                <div className="stat-label">Documentos</div>
-              </div>
-            </div>
-            <div className="col-6 col-md-3">
-              <div className="stat-card">
-                <div className="stat-number">{pentests.length}</div>
-                <div className="stat-label">Pentests</div>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* ── Separadores (Tabs) ── */}
-      <div className="dash-card p-0 mb-4" style={{ overflow: 'hidden' }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid #f1f5f9', overflowX: 'auto' }}>
-          {TABS.map(({ id, label, Icon }) => (
+      {/* ════════════════════════════════════════════════════════
+          TABS — mesmo padrão que gestor/ClientePerfil.jsx
+      ════════════════════════════════════════════════════════ */}
+      <div className="dash-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="abas-wrapper">
+          {TABS.map(({ id, label, Icone, count }) => (
             <button
               key={id}
+              className={`aba-btn ${tabAtiva === id ? 'ativa' : ''}`}
               onClick={() => setTabAtiva(id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '0.85rem 1.25rem',
-                border: 'none', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-                fontSize: '0.875rem', fontWeight: 600,
-                color: tabAtiva === id ? '#2563eb' : '#64748b',
-                borderBottom: tabAtiva === id ? '2px solid #2563eb' : '2px solid transparent',
-              }}
             >
-              <Icon size={15} />
-              {label}
+              <Icone size={15} /> {label}
+              {count !== null && !carregando && (
+                <span className={`aba-count ${tabAtiva === id ? 'ativa' : 'inativa'}`}>
+                  {count}
+                </span>
+              )}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* ── Conteúdo da tab ── */}
+        <div className="aba-content">
 
-      {/* TAB: Resumo */}
-      {tabAtiva === 'resumo' && (
-        <div className="dash-card">
-          {carregando ? (
-            <p style={{ color: '#94a3b8' }}>A carregar…</p>
-          ) : (
-            <>
-              <h5 className="mb-3">Informação da Empresa</h5>
-              <div className="row g-3 mb-4">
-                <div className="col-md-6">
-                  <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem' }}>
-                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>Nome</p>
-                    <p style={{ fontWeight: 600, margin: 0 }}>{perfil?.nome || '—'}</p>
+          {/* ════════════ TAB: Resumo ════════════ */}
+          {tabAtiva === 'resumo' && (
+            carregando ? (
+              <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>A carregar…</p>
+            ) : (
+              <>
+                {/* 3 cards coloridos com ícone — igual ao gestor */}
+                <div className="row g-3 mb-4">
+                  {[
+                    { label: 'Documentos',  val: documentos.length,  bg: '#eff6ff', cor: '#2563eb', Icone: FileText       },
+                    { label: 'Incidentes',  val: incidentes.length,  bg: '#fff7ed', cor: '#c2410c', Icone: AlertTriangle  },
+                    { label: 'Mensagens',   val: mensagens.length,   bg: '#f0fdf4', cor: '#16a34a', Icone: MessageSquare  },
+                  ].map(({ label, val, bg, cor: c, Icone: Ico }) => (
+                    <div className="col-12 col-md-4" key={label}>
+                      <div style={{ background: bg, borderRadius: 12, padding: '1.25rem', textAlign: 'center' }}>
+                        <Ico size={22} color={c} style={{ marginBottom: 8 }} />
+                        <p style={{ fontSize: '1.8rem', fontWeight: 700, color: c, margin: 0 }}>{val}</p>
+                        <p style={{ fontSize: '0.8rem', color: c, margin: 0, fontWeight: 500 }}>{label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Documentos recentes + Incidentes recentes lado a lado */}
+                <div className="row g-3">
+
+                  <div className="col-12 col-md-6">
+                    <h6 style={{ fontWeight: 700, color: '#1e293b', marginBottom: '0.75rem' }}>
+                      Documentos recentes
+                    </h6>
+                    {documentos.length === 0 ? (
+                      <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Sem documentos.</p>
+                    ) : documentos.slice(0, 4).map(doc => (
+                      <div key={doc.id} className="resumo-recente-item">
+                        <div className="perfil-item-icon" style={{ background: '#dbeafe' }}>
+                          <FileText size={15} style={{ color: '#2563eb' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p className="perfil-item-titulo">{doc.titulo}</p>
+                          <p className="perfil-item-meta">
+                            {doc.tipo}
+                            {doc.created_at && ` · ${new Date(doc.created_at).toLocaleDateString('pt-PT')}`}
+                          </p>
+                        </div>
+                        <span className="badge-pill" style={{ background: '#dcfce7', color: '#16a34a' }}>Ativo</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="col-12 col-md-6">
+                    <h6 style={{ fontWeight: 700, color: '#1e293b', marginBottom: '0.75rem' }}>
+                      Incidentes recentes
+                    </h6>
+                    {incidentes.length === 0 ? (
+                      <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Sem incidentes.</p>
+                    ) : incidentes.slice(0, 4).map(inc => {
+                      const sev = SEV[inc.severidade] || SEV['Médio'];
+                      const sta = STA[inc.estado]     || STA['Aberto'];
+                      return (
+                        <div key={inc.id} className="resumo-recente-item">
+                          <div style={{ width: 9, height: 9, borderRadius: '50%', background: sev.dot, flexShrink: 0, marginTop: 2 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p className="perfil-item-titulo">{inc.titulo}</p>
+                            <p className="perfil-item-meta">
+                              {inc.severidade}
+                              {inc.created_at && ` · ${new Date(inc.created_at).toLocaleDateString('pt-PT')}`}
+                            </p>
+                          </div>
+                          <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{inc.estado}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-                <div className="col-md-6">
-                  <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem' }}>
-                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>Email</p>
-                    <p style={{ fontWeight: 600, margin: 0 }}>{perfil?.email || '—'}</p>
+
+                {/* Info empresa + gestor */}
+                {dataCliente && (
+                  <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
+                    Empresa registada desde {new Date(dataCliente).toLocaleDateString('pt-PT')}
+                    {incAbertos > 0 && (
+                      <> · <span style={{ color: '#dc2626', fontWeight: 600 }}>⚠️ {incAbertos} incidente{incAbertos > 1 ? 's' : ''} em aberto</span></>
+                    )}
+                  </p>
+                )}
+              </>
+            )
+          )}
+
+          {/* ════════════ TAB: Documentos ════════════ */}
+          {tabAtiva === 'documentos' && (
+            carregando ? (
+              <p style={{ color: '#94a3b8', padding: '1rem 0' }}>A carregar…</p>
+            ) : documentos.length === 0 ? (
+              <p style={{ color: '#94a3b8', padding: '1rem 0' }}>Sem documentos disponíveis.</p>
+            ) : documentos.map(doc => (
+              <div key={doc.id} className="perfil-item">
+                <div className="d-flex align-items-start gap-3">
+                  <div className="perfil-item-icon" style={{ background: '#dbeafe' }}>
+                    <FileText size={16} style={{ color: '#2563eb' }} />
                   </div>
-                </div>
-                <div className="col-md-6">
-                  <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem' }}>
-                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>Telefone</p>
-                    <p style={{ fontWeight: 600, margin: 0 }}>{perfil?.telefone || '—'}</p>
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem' }}>
-                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>Estado do contrato</p>
-                    <p style={{ margin: 0 }}>
-                      <span className="badge-pill" style={perfil?.estado === 'Ativo'
-                        ? { background: '#dcfce7', color: '#16a34a' }
-                        : { background: '#f1f5f9', color: '#64748b' }}>
-                        {perfil?.estado || '—'}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                      <p className="perfil-item-titulo">{doc.titulo}</p>
+                      <span className="badge-pill" style={{ background: '#dbeafe', color: '#2563eb' }}>
+                        {doc.tipo || 'Outro'}
                       </span>
-                    </p>
+                    </div>
+                    {doc.descricao && (
+                      <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 4px' }}>{doc.descricao}</p>
+                    )}
+                    <div className="d-flex perfil-item-meta gap-3">
+                      <span>{doc.tamanho || '—'}</span>
+                      {doc.created_at && <span>{new Date(doc.created_at).toLocaleDateString('pt-PT')}</span>}
+                    </div>
                   </div>
+                  {doc.ficheiro ? (
+                    <a
+                      href={`${API_BASE}/uploads/${doc.ficheiro}`}
+                      download target="_blank" rel="noreferrer"
+                      className="btn-descarregar"
+                    >
+                      <Download size={13} /> Descarregar
+                    </a>
+                  ) : (
+                    <button className="btn-descarregar" disabled>Sem ficheiro</button>
+                  )}
                 </div>
               </div>
-
-              <h5 className="mb-3">Gestor Responsável</h5>
-              {perfil?.gestor ? (
-                <div style={{ background: '#eff6ff', borderRadius: 10, padding: '1rem', borderLeft: '4px solid #2563eb' }}>
-                  <p style={{ fontWeight: 700, margin: 0, color: '#1e40af' }}>{perfil.gestor.nome}</p>
-                  <p style={{ fontSize: '0.85rem', color: '#3b82f6', margin: 0 }}>{perfil.gestor.email}</p>
-                </div>
-              ) : (
-                <p style={{ color: '#94a3b8' }}>Nenhum gestor atribuído ainda.</p>
-              )}
-
-              {/* Estado dos incidentes */}
-              {incidentes.length > 0 && (
-                <>
-                  <h5 className="mb-3 mt-4">Estado de Segurança</h5>
-                  <div style={{
-                    background: incAbertos > 0 ? '#fef2f2' : '#f0fdf4',
-                    border: `1px solid ${incAbertos > 0 ? '#fecaca' : '#bbf7d0'}`,
-                    borderRadius: 10, padding: '1rem',
-                  }}>
-                    {incAbertos > 0 ? (
-                      <p style={{ margin: 0, color: '#dc2626', fontWeight: 600 }}>
-                        ⚠️ Existem {incAbertos} incidente{incAbertos > 1 ? 's' : ''} em aberto que requer{incAbertos > 1 ? 'em' : ''} atenção.
-                      </p>
-                    ) : (
-                      <p style={{ margin: 0, color: '#16a34a', fontWeight: 600 }}>
-                        ✅ Todos os incidentes estão resolvidos ou fechados.
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-            </>
+            ))
           )}
-        </div>
-      )}
 
-      {/* TAB: Documentos */}
-      {tabAtiva === 'documentos' && (
-        <div>
-          {carregando ? (
-            <div className="dash-card"><p style={{ color: '#94a3b8' }}>A carregar…</p></div>
-          ) : documentos.length === 0 ? (
-            <div className="dash-card"><p style={{ color: '#94a3b8' }}>Sem documentos disponíveis.</p></div>
-          ) : (
-            <div className="row g-3">
-              {documentos.map(doc => (
-                <div className="col-12 col-md-6" key={doc.id}>
-                  <div className="dash-card h-100">
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                      <File size={18} style={{ color: '#2563eb' }} />
-                      <span className="badge-pill" style={{ background: '#dbeafe', color: '#2563eb' }}>{doc.tipo || 'Outro'}</span>
+          {/* ════════════ TAB: Pentests ════════════ */}
+          {tabAtiva === 'pentests' && (
+            <>
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '0.85rem 1rem', marginBottom: '1rem' }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#15803d' }}>
+                  <strong>O que é um Pentest?</strong> Um teste de penetração simula um ataque real para identificar vulnerabilidades antes que sejam exploradas.
+                </p>
+              </div>
+              {carregando ? (
+                <p style={{ color: '#94a3b8' }}>A carregar…</p>
+              ) : pentests.length === 0 ? (
+                <p style={{ color: '#94a3b8' }}>Ainda não existem relatórios de Pentest disponíveis.</p>
+              ) : pentests.map(doc => (
+                <div key={doc.id} className="perfil-item" style={{ borderLeft: '3px solid #22c55e' }}>
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="perfil-item-icon" style={{ background: '#dcfce7' }}>
+                      <Shield size={16} style={{ color: '#16a34a' }} />
                     </div>
-                    <h6 className="mb-1">{doc.titulo}</h6>
-                    {doc.descricao && <p style={{ fontSize: '0.83rem', color: '#64748b' }}>{doc.descricao}</p>}
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.75rem' }}>
-                      {doc.tamanho || '—'} · {doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-PT') : '—'}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                        <p className="perfil-item-titulo">{doc.titulo}</p>
+                        <span className="badge-pill" style={{ background: '#dcfce7', color: '#16a34a' }}>Pentest</span>
+                      </div>
+                      {doc.descricao && (
+                        <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 4px' }}>{doc.descricao}</p>
+                      )}
+                      <div className="d-flex perfil-item-meta gap-3">
+                        <span>{doc.tamanho || '—'}</span>
+                        {doc.created_at && <span>{new Date(doc.created_at).toLocaleDateString('pt-PT')}</span>}
+                      </div>
                     </div>
                     {doc.ficheiro ? (
                       <a
                         href={`${API_BASE}/uploads/${doc.ficheiro}`}
                         download target="_blank" rel="noreferrer"
                         className="btn-descarregar"
-                        style={{ justifyContent: 'center' }}
+                        style={{ background: '#dcfce7', borderColor: '#bbf7d0', color: '#16a34a' }}
                       >
                         <Download size={13} /> Descarregar
                       </a>
                     ) : (
-                      <button className="btn-descarregar" style={{ justifyContent: 'center' }} disabled>Sem ficheiro</button>
+                      <button className="btn-descarregar" disabled>Sem ficheiro</button>
                     )}
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB: Pentests */}
-      {tabAtiva === 'pentests' && (
-        <div>
-          <div className="dash-card mb-3" style={{ background: '#f0fdf4', borderLeft: '4px solid #22c55e' }}>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: '#15803d' }}>
-              <strong>O que é um Pentest?</strong> Um teste de penetração (pentest) simula um ataque real ao sistema para identificar vulnerabilidades antes que sejam exploradas por atacantes.
-            </p>
-          </div>
-
-          {carregando ? (
-            <div className="dash-card"><p style={{ color: '#94a3b8' }}>A carregar…</p></div>
-          ) : pentests.length === 0 ? (
-            <div className="dash-card"><p style={{ color: '#94a3b8' }}>Ainda não existem relatórios de Pentest disponíveis.</p></div>
-          ) : (
-            <div className="row g-3">
-              {pentests.map(doc => (
-                <div className="col-12 col-md-6" key={doc.id}>
-                  <div className="dash-card h-100" style={{ borderLeft: '3px solid #22c55e' }}>
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                      <File size={18} style={{ color: '#22c55e' }} />
-                      <span className="badge-pill" style={{ background: '#dcfce7', color: '#16a34a' }}>Pentest</span>
-                    </div>
-                    <h6 className="mb-1">{doc.titulo}</h6>
-                    {doc.descricao && <p style={{ fontSize: '0.83rem', color: '#64748b' }}>{doc.descricao}</p>}
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.75rem' }}>
-                      {doc.tamanho || '—'} · {doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-PT') : '—'}
-                    </div>
-                    {doc.ficheiro ? (
-                      <a
-                        href={`${API_BASE}/uploads/${doc.ficheiro}`}
-                        download target="_blank" rel="noreferrer"
-                        className="btn-descarregar"
-                        style={{ justifyContent: 'center', background: '#dcfce7', borderColor: '#bbf7d0', color: '#16a34a' }}
-                      >
-                        <Download size={13} /> Descarregar relatório
-                      </a>
-                    ) : (
-                      <button className="btn-descarregar" style={{ justifyContent: 'center' }} disabled>Sem ficheiro</button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB: Incidentes */}
-      {tabAtiva === 'incidentes' && (
-        <>
-          {carregando ? (
-            <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
-              A carregar…
-            </div>
-          ) : incidentes.length === 0 ? (
-            <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
-              Sem incidentes registados.
-            </div>
-          ) : incidentes.map(inc => {
-            const sev = SEV[inc.severidade] || SEV['Médio'];
-            const sta = STA[inc.estado]     || STA['Aberto'];
-            return (
-              <div key={inc.id} className="dash-card incidente-card">
-                <div className="d-flex align-items-start gap-3">
-                  <div className="incidente-dot" style={{ backgroundColor: sev.dot, marginTop: 4 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
-                      <p className="incidente-nome">{inc.titulo}</p>
-                      <span className="badge-pill" style={{ background: sev.bg, color: sev.cor }}>{inc.severidade}</span>
-                      <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{inc.estado}</span>
-                    </div>
-                    {inc.descricao && <p className="incidente-descricao">{inc.descricao}</p>}
-                    <div className="d-flex flex-wrap gap-3">
-                      {inc.responsavel?.nome && <span className="incidente-data">Responsável: {inc.responsavel.nome}</span>}
-                      {inc.created_at && <span className="incidente-data">{new Date(inc.created_at).toLocaleDateString('pt-PT')}</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </>
-      )}
-
-      {/* TAB: Comunicação */}
-      {tabAtiva === 'comunicacao' && (
-        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', height: 520 }}>
-          <h5 className="mb-3">Chat com o Gestor</h5>
-
-          {!perfil ? (
-            <p style={{ color: '#94a3b8' }}>Sem perfil de empresa ligado — não é possível aceder ao chat.</p>
-          ) : (
-            <>
-              {/* Área de mensagens */}
-              <div
-                ref={chatRef}
-                style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem' }}
-              >
-                {mensagens.length === 0 ? (
-                  <p style={{ color: '#94a3b8', textAlign: 'center', marginTop: '2rem' }}>
-                    Ainda não existem mensagens. Envia a primeira!
-                  </p>
-                ) : (
-                  mensagens.map((msg, i) => {
-                    // A empresa vê as suas próprias mensagens à direita
-                    const souEu = msg.remetente?.perfil === 'empresa' || msg.isMe;
-                    return (
-                      <div
-                        key={msg.id || i}
-                        style={{
-                          display: 'flex',
-                          justifyContent: souEu ? 'flex-end' : 'flex-start',
-                        }}
-                      >
-                        <div style={{
-                          maxWidth: '70%',
-                          background: souEu ? '#2563eb' : '#f1f5f9',
-                          color: souEu ? '#fff' : '#1e293b',
-                          borderRadius: souEu ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                          padding: '0.6rem 0.9rem',
-                          fontSize: '0.875rem',
-                        }}>
-                          {!souEu && (
-                            <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 700, opacity: 0.7, marginBottom: 2 }}>
-                              {msg.remetente?.nome || 'Gestor'}
-                            </p>
-                          )}
-                          <p style={{ margin: 0 }}>{msg.conteudo}</p>
-                          <p style={{ margin: 0, fontSize: '0.68rem', opacity: 0.65, marginTop: 3, textAlign: 'right' }}>
-                            {msg.criado_em ? new Date(msg.criado_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : ''}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Caixa de texto */}
-              <form onSubmit={handleEnviar} style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  className="form-control"
-                  placeholder="Escreve uma mensagem…"
-                  value={novaMensagem}
-                  onChange={e => setNovaMensagem(e.target.value)}
-                  disabled={enviando}
-                />
-                <button
-                  type="submit"
-                  className="btn btn-primary d-flex align-items-center gap-1"
-                  disabled={!novaMensagem.trim() || enviando}
-                >
-                  <Send size={15} />
-                  {enviando ? '…' : 'Enviar'}
-                </button>
-              </form>
             </>
           )}
-        </div>
-      )}
+
+          {/* ════════════ TAB: Incidentes ════════════ */}
+          {tabAtiva === 'incidentes' && (
+            carregando ? (
+              <p style={{ color: '#94a3b8', padding: '1rem 0' }}>A carregar…</p>
+            ) : incidentes.length === 0 ? (
+              <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sem incidentes registados.</p>
+            ) : incidentes.map(inc => {
+              const sev = SEV[inc.severidade] || SEV['Médio'];
+              const sta = STA[inc.estado]     || STA['Aberto'];
+              return (
+                <div key={inc.id} className="perfil-item">
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="incidente-dot" style={{ backgroundColor: sev.dot, marginTop: 5 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                        <p className="incidente-nome">{inc.titulo}</p>
+                        <span className="badge-pill" style={{ background: sev.bg, color: sev.cor }}>{inc.severidade}</span>
+                        <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{inc.estado}</span>
+                      </div>
+                      {inc.descricao && <p className="incidente-descricao">{inc.descricao}</p>}
+                      <div className="d-flex flex-wrap gap-3">
+                        {inc.responsavel?.nome && <span className="incidente-data">Responsável: {inc.responsavel.nome}</span>}
+                        {inc.created_at && <span className="incidente-data">{new Date(inc.created_at).toLocaleDateString('pt-PT')}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* ════════════ TAB: Comunicação ════════════ */}
+          {tabAtiva === 'comunicacao' && (
+            !perfil ? (
+              <p style={{ color: '#94a3b8' }}>Sem perfil ligado — não é possível aceder ao chat.</p>
+            ) : (
+              <div className="cp-chat-wrapper">
+                <div className="cp-chat-mensagens" ref={el => {
+                  // Auto scroll para o fim quando entra na tab
+                  if (el) el.scrollTop = el.scrollHeight;
+                }}>
+                  {mensagens.length === 0 ? (
+                    <div className="cp-chat-vazio">
+                      <MessageSquare size={40} color="#e2e8f0" />
+                      <p>Ainda não existem mensagens.</p>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Inicia a conversa abaixo.</p>
+                    </div>
+                  ) : mensagens.map((msg, i) => {
+                    const euEnviei = msg.remetente?.perfil === 'empresa' || msg.isMe || String(msg.remetente_id) === String(utilizador?.id);
+                    const nomeRem  = msg.remetente?.nome || 'Gestor';
+                    const inic     = nomeRem.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    const hora     = msg.criado_em
+                      ? new Date(msg.criado_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+                      : '';
+                    return (
+                      <div key={msg.id || i} className={`cp-mensagem-row${euEnviei ? ' minha' : ''}`}>
+                        {!euEnviei && <div className="cp-mensagem-avatar">{inic}</div>}
+                        <div className={`cp-mensagem-body${euEnviei ? ' minha' : ''}`}>
+                          <div className={`cp-mensagem-bubble${euEnviei ? ' minha' : ''}${msg._temp ? ' temp' : ''}`}>
+                            {msg.conteudo}
+                          </div>
+                          <div className={`cp-mensagem-meta${euEnviei ? ' minha' : ''}`}>
+                            {!euEnviei && <span>{nomeRem} · </span>}
+                            <span>{hora}</span>
+                            {euEnviei && !msg._temp && <span> ✓</span>}
+                          </div>
+                        </div>
+                        {euEnviei && (
+                          <div className="cp-mensagem-avatar eu">
+                            {(utilizador?.nome || 'E').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div ref={mensagensEndRef} />
+                </div>
+
+                <div className="cp-chat-input-area">
+                  <textarea
+                    className="cp-chat-input"
+                    rows={1}
+                    value={novaMensagem}
+                    onChange={e => setNovaMensagem(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleEnviar();
+                      }
+                    }}
+                    placeholder="Escreve uma mensagem para o gestor…"
+                    disabled={enviando}
+                  />
+                  <button
+                    className={`cp-chat-enviar${novaMensagem.trim() ? ' ativo' : ''}`}
+                    onClick={handleEnviar}
+                    disabled={!novaMensagem.trim() || enviando}
+                  >
+                    <Send size={16} />
+                  </button>
+                  <span className="cp-chat-hint">Enter para enviar · Shift+Enter para nova linha</span>
+                </div>
+              </div>
+            )
+          )}
+
+        </div>{/* fim aba-content */}
+      </div>{/* fim dash-card tabs */}
 
     </AdminLayout>
   );

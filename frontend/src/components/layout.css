@@ -1469,15 +1469,19 @@
 }
 
 /* ── KPI no perfil (borda e fundo dinâmicos via variante) ── */
-.perfil-kpi-azul   { border-color: #bfdbfe; background: #eff6ff; }
-.perfil-kpi-roxo   { border-color: #ddd6fe; background: #faf5ff; }
-.perfil-kpi-vermelho { border-color: #fca5a5; background: #fef2f2; }
-.perfil-kpi-neutro { border-color: #e2e8f0; background: #f8fafc; }
+.perfil-kpi-azul    { border-color: #bfdbfe; background: #eff6ff; }
+.perfil-kpi-roxo    { border-color: #ddd6fe; background: #faf5ff; }
+.perfil-kpi-vermelho{ border-color: #fca5a5; background: #fef2f2; }
+.perfil-kpi-neutro  { border-color: #e2e8f0; background: #f8fafc; }
+.perfil-kpi-laranja { border-color: #fdba74; background: #fff7ed; }
+.perfil-kpi-verde   { border-color: #86efac; background: #f0fdf4; }
 
 .kpi-valor-azul    { color: #2563eb; }
 .kpi-valor-roxo    { color: #7c3aed; }
 .kpi-valor-vermelho{ color: #dc2626; }
 .kpi-valor-neutro  { color: #64748b; }
+.kpi-valor-laranja { color: #c2410c; }
+.kpi-valor-verde   { color: #16a34a; }
 
 /* ── Resumo KPI variantes ── */
 .resumo-kpi-azul     { border-color: #bfdbfe; background: #eff6ff; }

@@ -27,7 +27,12 @@ const utilizador_detail = async (req, res) => {
 
 const utilizador_create = async (req, res) => {
   try {
-    const { nome, email, password, telefone, perfil } = req.body;
+    // Campos base + campos extra para quando perfil = 'empresa'
+    const {
+      nome, email, password, telefone, perfil,
+      resp_seguranca_nome, resp_seguranca_email, resp_seguranca_telefone,
+      contacto_perm_nome,  contacto_perm_email,  contacto_perm_telefone,
+    } = req.body;
 
     if (!nome || !email || !password) {
       return res.status(400).json({ erro: 'Nome, email e password são obrigatórios.' });
@@ -45,9 +50,17 @@ const utilizador_create = async (req, res) => {
       const cliente = await Cliente.create({
         nome,
         email,
-        telefone: telefone || null,
-        estado: 'Ativo',
-        utilizador_id: novo.id,
+        telefone:                telefone                || null,
+        estado:                  'Ativo',
+        utilizador_id:           novo.id,
+        // Responsável de Segurança
+        resp_seguranca_nome:     resp_seguranca_nome     || null,
+        resp_seguranca_email:    resp_seguranca_email    || null,
+        resp_seguranca_telefone: resp_seguranca_telefone || null,
+        // Contacto Permanente
+        contacto_perm_nome:      contacto_perm_nome      || null,
+        contacto_perm_email:     contacto_perm_email     || null,
+        contacto_perm_telefone:  contacto_perm_telefone  || null,
       });
       /* Guardar o id do cliente no utilizador (se a coluna existir) — ignorar erro caso não exista */
       try { await novo.update({ cliente_id: cliente.id }); } catch (_) {}

@@ -20,20 +20,19 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 
-// Cores dos badges de severidade
-const BADGE_SEVERIDADE = {
-  Crítico: 'badge bg-danger',
-  Alto:    'badge bg-warning text-dark',
-  Médio:   'badge bg-primary',
-  Baixo:   'badge bg-success',
+// Cores por severidade/estado do incidente
+const SEV = {
+  'Crítico': { dot: '#ef4444', bg: '#fee2e2', cor: '#dc2626' },
+  'Alto':    { dot: '#f97316', bg: '#ffedd5', cor: '#c2410c' },
+  'Médio':   { dot: '#f59e0b', bg: '#fef9c3', cor: '#ca8a04' },
+  'Baixo':   { dot: '#22c55e', bg: '#dcfce7', cor: '#16a34a' },
 };
 
-// Cores dos badges de estado do incidente
-const BADGE_ESTADO = {
-  Aberto:          'badge bg-danger',
-  'A Investigar':  'badge bg-warning text-dark',
-  Resolvido:       'badge bg-success',
-  Fechado:         'badge bg-secondary',
+const STA = {
+  'Aberto':       { bg: '#dbeafe', cor: '#2563eb' },
+  'A Investigar': { bg: '#fef9c3', cor: '#ca8a04' },
+  'Resolvido':    { bg: '#dcfce7', cor: '#16a34a' },
+  'Fechado':      { bg: '#f1f5f9', cor: '#64748b' },
 };
 
 function Dashboard() {
@@ -111,59 +110,47 @@ function Dashboard() {
       {erro && <div className="alert alert-danger">{erro}</div>}
 
       {/* ── Incidentes recentes ── */}
-      <div className="dash-card mb-4">
+      <div className="mb-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="mb-0">Incidentes Recentes</h5>
-          <Link to="/empresa/incidentes" className="btn btn-sm btn-outline-primary">
+          <Link to="/empresa/incidentes" className="ver-todos-link">
             Ver todos
           </Link>
         </div>
 
         {carregando ? (
-          <p style={{ color: '#94a3b8' }}>A carregar…</p>
+          <div className="dash-card" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>A carregar…</div>
         ) : incidentesRecentes.length === 0 ? (
-          <p style={{ color: '#94a3b8' }}>Sem incidentes registados.</p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Severidade</th>
-                  <th>Estado</th>
-                  <th>Responsável</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {incidentesRecentes.map(inc => (
-                  <tr key={inc.id}>
-                    <td>{inc.titulo}</td>
-                    <td>
-                      <span className={BADGE_SEVERIDADE[inc.severidade] || 'badge bg-secondary'}>
-                        {inc.severidade}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={BADGE_ESTADO[inc.estado] || 'badge bg-secondary'}>
-                        {inc.estado}
-                      </span>
-                    </td>
-                    <td>{inc.responsavel?.nome || '—'}</td>
-                    <td>{inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+          <div className="dash-card" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Sem incidentes registados.</div>
+        ) : incidentesRecentes.map(inc => {
+          const sev = SEV[inc.severidade] || SEV['Médio'];
+          const sta = STA[inc.estado]     || STA['Aberto'];
+          return (
+            <div key={inc.id} className="dash-card incidente-card">
+              <div className="d-flex align-items-start gap-3">
+                <div className="incidente-dot" style={{ backgroundColor: sev.dot, marginTop: 4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <p className="incidente-nome">{inc.titulo}</p>
+                    <span className="badge-pill" style={{ background: sev.bg, color: sev.cor }}>{inc.severidade}</span>
+                    <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{inc.estado}</span>
+                  </div>
+                  <div className="d-flex flex-wrap gap-3">
+                    {inc.responsavel?.nome && <span className="incidente-data">Responsável: {inc.responsavel.nome}</span>}
+                    {inc.created_at && <span className="incidente-data">{new Date(inc.created_at).toLocaleDateString('pt-PT')}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ── Documentos recentes ── */}
       <div className="dash-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="mb-0">Documentos Recentes</h5>
-          <Link to="/empresa/documentos" className="btn btn-sm btn-outline-primary">
+          <Link to="/empresa/documentos" className="ver-todos-link">
             Ver todos
           </Link>
         </div>
@@ -172,32 +159,18 @@ function Dashboard() {
           <p style={{ color: '#94a3b8' }}>A carregar…</p>
         ) : documentosRecentes.length === 0 ? (
           <p style={{ color: '#94a3b8' }}>Sem documentos disponíveis.</p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Tipo</th>
-                  <th>Tamanho</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {documentosRecentes.map(doc => (
-                  <tr key={doc.id}>
-                    <td>{doc.titulo}</td>
-                    <td>
-                      <span className="badge bg-info text-dark">{doc.tipo || '—'}</span>
-                    </td>
-                    <td>{doc.tamanho || '—'}</td>
-                    <td>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-PT') : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        ) : documentosRecentes.map(doc => (
+          <div key={doc.id} className="d-flex align-items-center justify-content-between" style={{ padding: '0.6rem 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+              <span className="incidente-nome" style={{ fontSize: '0.88rem' }}>{doc.titulo}</span>
+              <span className="badge-pill" style={{ background: '#dbeafe', color: '#2563eb' }}>{doc.tipo || '—'}</span>
+            </div>
+            <div className="d-flex gap-3" style={{ fontSize: '0.8rem', color: '#94a3b8', flexShrink: 0 }}>
+              <span>{doc.tamanho || '—'}</span>
+              <span>{doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-PT') : '—'}</span>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
     </AdminLayout>

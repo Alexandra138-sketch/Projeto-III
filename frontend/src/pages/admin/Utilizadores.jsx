@@ -3,9 +3,9 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import {
-  FiPlus, FiSearch, FiEye, FiEdit2, FiToggleLeft, FiToggleRight,
-  FiX, FiCheck, FiUser, FiMail, FiPhone, FiShield, FiInfo,
-} from 'react-icons/fi';
+  Plus, Search, Eye, Edit2, ToggleLeft, ToggleRight,
+  X, Check, User, Mail, Phone, Shield, Info,
+} from 'lucide-react';
 
 /* ── helpers ── */
 const PERFIL_LABEL  = { admin: 'Admin',   gestor: 'Gestor', empresa: 'Empresa' };
@@ -54,7 +54,7 @@ function EstadoBadge({ estado }) {
       background: ok ? '#dcfce7' : '#fee2e2',
       color: ok ? '#16a34a' : '#dc2626',
     }}>
-      {ok ? <FiCheck size={11} /> : <FiX size={11} />}
+      {ok ? <Check size={11} /> : <X size={11} />}
       {estado || 'Ativo'}
     </span>
   );
@@ -82,7 +82,7 @@ function Modal({ title, onClose, children }) {
           <button onClick={onClose} style={{
             background: 'none', border: 'none', cursor: 'pointer',
             color: '#94a3b8', padding: 4,
-          }}><FiX size={18} /></button>
+          }}><X size={18} /></button>
         </div>
         <div style={{ padding: '1.4rem' }}>{children}</div>
       </div>
@@ -112,10 +112,10 @@ function DetalheModal({ utilizador, onClose }) {
         </div>
 
         {[
-          { icon: FiShield, label: 'Perfil', value: <PerfilBadge perfil={utilizador.perfil} /> },
-          { icon: FiCheck,  label: 'Estado', value: <EstadoBadge estado={utilizador.estado} /> },
-          { icon: FiPhone,  label: 'Telefone', value: utilizador.telefone || '—' },
-          { icon: FiMail,   label: 'Criado em', value: getDate(utilizador) },
+          { icon: Shield, label: 'Perfil', value: <PerfilBadge perfil={utilizador.perfil} /> },
+          { icon: Check,  label: 'Estado', value: <EstadoBadge estado={utilizador.estado} /> },
+          { icon: Phone,  label: 'Telefone', value: utilizador.telefone || '—' },
+          { icon: Mail,   label: 'Criado em', value: getDate(utilizador) },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} style={{
             display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -208,9 +208,9 @@ function FormModal({ utilizador, onClose, onSaved }) {
   };
 
   const fields = [
-    { id: 'nome',     label: 'Nome completo', type: 'text',  icon: FiUser,  placeholder: 'ex. João Silva' },
-    { id: 'email',    label: 'E-mail',        type: 'email', icon: FiMail,  placeholder: 'joao@empresa.pt' },
-    { id: 'telefone', label: 'Telefone',      type: 'text',  icon: FiPhone, placeholder: '+351 912 000 000' },
+    { id: 'nome',     label: 'Nome completo', type: 'text',  icon: User,  placeholder: 'ex. João Silva' },
+    { id: 'email',    label: 'E-mail',        type: 'email', icon: Mail,  placeholder: 'joao@empresa.pt' },
+    { id: 'telefone', label: 'Telefone',      type: 'text',  icon: Phone, placeholder: '+351 912 000 000' },
   ];
 
   return (
@@ -262,7 +262,7 @@ function FormModal({ utilizador, onClose, onSaved }) {
             padding: '0.65rem 0.9rem', borderRadius: 8,
             background: '#eff6ff', border: '1px solid #bfdbfe',
           }}>
-            <FiInfo size={14} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }} />
+            <Info size={14} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }} />
             <p style={{ margin: 0, fontSize: 12, color: '#1d4ed8', lineHeight: 1.5 }}>
               Será criada automaticamente uma <strong>empresa cliente</strong> com o nome, email e telefone indicados. O utilizador poderá entrar na área de empresa.
             </p>
@@ -280,7 +280,7 @@ function FormModal({ utilizador, onClose, onSaved }) {
               padding: '0.5rem 0.75rem',
               background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
             }}>
-              <FiShield size={14} color="#16a34a" style={{ flexShrink: 0 }} />
+              <Shield size={14} color="#16a34a" style={{ flexShrink: 0 }} />
               <code style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: '#15803d', letterSpacing: '0.05em', userSelect: 'all' }}>
                 {form.password}
               </code>
@@ -407,7 +407,7 @@ export default function Utilizadores() {
             boxShadow: '0 2px 8px rgba(37,99,235,0.35)',
           }}
         >
-          <FiPlus size={16} /> Novo Utilizador
+          <Plus size={16} /> Novo Utilizador
         </button>
       </div>
 
@@ -415,7 +415,7 @@ export default function Utilizadores() {
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
         {/* search */}
         <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: 460 }}>
-          <FiSearch size={15} style={{
+          <Search size={15} style={{
             position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8',
           }} />
           <input
@@ -557,13 +557,13 @@ export default function Utilizadores() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   {/* view */}
                   <ActionBtn title="Ver detalhes" onClick={() => setViewModal(u)}>
-                    <FiEye size={14} />
+                    <Eye size={14} />
                   </ActionBtn>
 
                   {/* edit (not admin) */}
                   {!isAdmin && (
                     <ActionBtn title="Editar" onClick={() => setFormModal(u)}>
-                      <FiEdit2 size={14} />
+                      <Edit2 size={14} />
                     </ActionBtn>
                   )}
 
@@ -575,8 +575,8 @@ export default function Utilizadores() {
                       color={u.estado === 'Ativo' ? '#16a34a' : '#dc2626'}
                     >
                       {u.estado === 'Ativo'
-                        ? <FiToggleRight size={16} />
-                        : <FiToggleLeft size={16} />}
+                        ? <ToggleRight size={16} />
+                        : <ToggleLeft size={16} />}
                     </ActionBtn>
                   )}
                 </div>

@@ -14,19 +14,20 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
-import { FiDownload, FiFile } from 'react-icons/fi';
+import { Download, FileText } from 'lucide-react';
 
 // URL base do backend para construir links de download
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Cores dos badges por tipo de documento
-const BADGE_TIPO = {
-  Política:  'badge bg-purple',
-  Pentest:   'badge bg-success',
-  Auditoria: 'badge bg-warning text-dark',
-  Contrato:  'badge bg-pink',
-  Relatório: 'badge bg-info text-dark',
+// Cores por tipo de documento
+const TIPO_CFG = {
+  Política:  { bg: '#ede9fe', cor: '#7c3aed' },
+  Pentest:   { bg: '#dcfce7', cor: '#16a34a' },
+  Auditoria: { bg: '#fef9c3', cor: '#ca8a04' },
+  Contrato:  { bg: '#fce7f3', cor: '#db2777' },
+  Relatório: { bg: '#dbeafe', cor: '#2563eb' },
 };
+const TIPO_PADRAO = { bg: '#f1f5f9', cor: '#475569' };
 
 function Documentos() {
   const [documentos,   setDocumentos]   = useState([]);
@@ -122,14 +123,16 @@ function Documentos() {
         </div>
       ) : (
         <div className="row g-3">
-          {listaFiltrada.map(doc => (
+          {listaFiltrada.map(doc => {
+            const tipoCfg = TIPO_CFG[doc.tipo] || TIPO_PADRAO;
+            return (
             <div className="col-12 col-md-6 col-lg-4" key={doc.id}>
               <div className="dash-card h-100 d-flex flex-column">
 
                 {/* Ícone e tipo */}
                 <div className="d-flex align-items-center gap-2 mb-2">
-                  <FiFile size={20} style={{ color: '#2563eb' }} />
-                  <span className={BADGE_TIPO[doc.tipo] || 'badge bg-secondary'}>
+                  <FileText size={20} style={{ color: tipoCfg.cor }} />
+                  <span className="badge-pill" style={{ background: tipoCfg.bg, color: tipoCfg.cor }}>
                     {doc.tipo || 'Outro'}
                   </span>
                 </div>
@@ -169,23 +172,20 @@ function Documentos() {
                     download
                     target="_blank"
                     rel="noreferrer"
-                    className="btn btn-sm btn-outline-primary mt-3 d-flex align-items-center gap-1 justify-content-center"
+                    className="btn-descarregar mt-3"
+                    style={{ justifyContent: 'center' }}
                   >
-                    <FiDownload size={14} />
-                    Descarregar
+                    <Download size={14} /> Descarregar
                   </a>
                 ) : (
-                  <button
-                    className="btn btn-sm btn-outline-secondary mt-3"
-                    disabled
-                  >
+                  <button className="btn-descarregar mt-3" style={{ justifyContent: 'center' }} disabled>
                     Sem ficheiro
                   </button>
                 )}
 
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
 

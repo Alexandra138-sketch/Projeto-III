@@ -1171,6 +1171,11 @@
   background: #dbeafe;
 }
 
+.btn-descarregar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── Pentest findings bar ── */
 
 .findings-bar {

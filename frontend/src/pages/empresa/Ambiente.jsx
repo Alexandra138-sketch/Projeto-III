@@ -17,35 +17,35 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import {
-  FiShield, FiFileText, FiAlertTriangle,
-  FiMessageSquare, FiDownload, FiFile, FiSend,
-} from 'react-icons/fi';
+  Shield, FileText, AlertTriangle,
+  MessageSquare, Download, File, Send,
+} from 'lucide-react';
 
 // URL base do backend para construir links de download
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// ── Cores para badges ──────────────────────────────────────────
-const BADGE_SEVERIDADE = {
-  Crítico: 'badge bg-danger',
-  Alto:    'badge bg-warning text-dark',
-  Médio:   'badge bg-primary',
-  Baixo:   'badge bg-success',
+// ── Cores para badges/cards ─────────────────────────────────────
+const SEV = {
+  'Crítico': { dot: '#ef4444', bg: '#fee2e2', cor: '#dc2626' },
+  'Alto':    { dot: '#f97316', bg: '#ffedd5', cor: '#c2410c' },
+  'Médio':   { dot: '#f59e0b', bg: '#fef9c3', cor: '#ca8a04' },
+  'Baixo':   { dot: '#22c55e', bg: '#dcfce7', cor: '#16a34a' },
 };
 
-const BADGE_ESTADO_INC = {
-  Aberto:          'badge bg-danger',
-  'A Investigar':  'badge bg-warning text-dark',
-  Resolvido:       'badge bg-success',
-  Fechado:         'badge bg-secondary',
+const STA = {
+  'Aberto':       { bg: '#dbeafe', cor: '#2563eb' },
+  'A Investigar': { bg: '#fef9c3', cor: '#ca8a04' },
+  'Resolvido':    { bg: '#dcfce7', cor: '#16a34a' },
+  'Fechado':      { bg: '#f1f5f9', cor: '#64748b' },
 };
 
 // ── Separadores disponíveis ────────────────────────────────────
 const TABS = [
-  { id: 'resumo',       label: 'Resumo',       Icon: FiShield },
-  { id: 'documentos',   label: 'Documentos',   Icon: FiFileText },
-  { id: 'pentests',     label: 'Pentests',      Icon: FiFileText },
-  { id: 'incidentes',   label: 'Incidentes',   Icon: FiAlertTriangle },
-  { id: 'comunicacao',  label: 'Comunicação',  Icon: FiMessageSquare },
+  { id: 'resumo',       label: 'Resumo',       Icon: Shield },
+  { id: 'documentos',   label: 'Documentos',   Icon: FileText },
+  { id: 'pentests',     label: 'Pentests',      Icon: FileText },
+  { id: 'incidentes',   label: 'Incidentes',   Icon: AlertTriangle },
+  { id: 'comunicacao',  label: 'Comunicação',  Icon: MessageSquare },
 ];
 
 function Ambiente() {
@@ -143,7 +143,7 @@ function Ambiente() {
           <p>Visão geral da postura de segurança da tua empresa.</p>
         </div>
         <div className="dash-card text-center" style={{ padding: '3rem' }}>
-          <FiShield size={48} style={{ color: '#94a3b8', marginBottom: '1rem' }} />
+          <Shield size={48} style={{ color: '#94a3b8', marginBottom: '1rem' }} />
           <h5 style={{ color: '#374151' }}>Conta ainda não configurada</h5>
           <p style={{ color: '#64748b' }}>
             A tua conta de utilizador ainda não está ligada a nenhum cliente no sistema.<br />
@@ -249,7 +249,9 @@ function Ambiente() {
                   <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem' }}>
                     <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>Estado do contrato</p>
                     <p style={{ margin: 0 }}>
-                      <span className={perfil?.estado === 'Ativo' ? 'badge bg-success' : 'badge bg-secondary'}>
+                      <span className="badge-pill" style={perfil?.estado === 'Ativo'
+                        ? { background: '#dcfce7', color: '#16a34a' }
+                        : { background: '#f1f5f9', color: '#64748b' }}>
                         {perfil?.estado || '—'}
                       </span>
                     </p>
@@ -306,8 +308,8 @@ function Ambiente() {
                 <div className="col-12 col-md-6" key={doc.id}>
                   <div className="dash-card h-100">
                     <div className="d-flex align-items-center gap-2 mb-2">
-                      <FiFile size={18} style={{ color: '#2563eb' }} />
-                      <span className="badge bg-info text-dark">{doc.tipo || 'Outro'}</span>
+                      <File size={18} style={{ color: '#2563eb' }} />
+                      <span className="badge-pill" style={{ background: '#dbeafe', color: '#2563eb' }}>{doc.tipo || 'Outro'}</span>
                     </div>
                     <h6 className="mb-1">{doc.titulo}</h6>
                     {doc.descricao && <p style={{ fontSize: '0.83rem', color: '#64748b' }}>{doc.descricao}</p>}
@@ -318,12 +320,13 @@ function Ambiente() {
                       <a
                         href={`${API_BASE}/uploads/${doc.ficheiro}`}
                         download target="_blank" rel="noreferrer"
-                        className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 justify-content-center"
+                        className="btn-descarregar"
+                        style={{ justifyContent: 'center' }}
                       >
-                        <FiDownload size={13} /> Descarregar
+                        <Download size={13} /> Descarregar
                       </a>
                     ) : (
-                      <button className="btn btn-sm btn-outline-secondary" disabled>Sem ficheiro</button>
+                      <button className="btn-descarregar" style={{ justifyContent: 'center' }} disabled>Sem ficheiro</button>
                     )}
                   </div>
                 </div>
@@ -352,8 +355,8 @@ function Ambiente() {
                 <div className="col-12 col-md-6" key={doc.id}>
                   <div className="dash-card h-100" style={{ borderLeft: '3px solid #22c55e' }}>
                     <div className="d-flex align-items-center gap-2 mb-2">
-                      <FiFile size={18} style={{ color: '#22c55e' }} />
-                      <span className="badge bg-success">Pentest</span>
+                      <File size={18} style={{ color: '#22c55e' }} />
+                      <span className="badge-pill" style={{ background: '#dcfce7', color: '#16a34a' }}>Pentest</span>
                     </div>
                     <h6 className="mb-1">{doc.titulo}</h6>
                     {doc.descricao && <p style={{ fontSize: '0.83rem', color: '#64748b' }}>{doc.descricao}</p>}
@@ -364,12 +367,13 @@ function Ambiente() {
                       <a
                         href={`${API_BASE}/uploads/${doc.ficheiro}`}
                         download target="_blank" rel="noreferrer"
-                        className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 justify-content-center"
+                        className="btn-descarregar"
+                        style={{ justifyContent: 'center', background: '#dcfce7', borderColor: '#bbf7d0', color: '#16a34a' }}
                       >
-                        <FiDownload size={13} /> Descarregar relatório
+                        <Download size={13} /> Descarregar relatório
                       </a>
                     ) : (
-                      <button className="btn btn-sm btn-outline-secondary" disabled>Sem ficheiro</button>
+                      <button className="btn-descarregar" style={{ justifyContent: 'center' }} disabled>Sem ficheiro</button>
                     )}
                   </div>
                 </div>
@@ -381,55 +385,39 @@ function Ambiente() {
 
       {/* TAB: Incidentes */}
       {tabAtiva === 'incidentes' && (
-        <div className="dash-card">
+        <>
           {carregando ? (
-            <p style={{ color: '#94a3b8' }}>A carregar…</p>
-          ) : incidentes.length === 0 ? (
-            <p style={{ color: '#94a3b8' }}>Sem incidentes registados.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Título</th>
-                    <th>Severidade</th>
-                    <th>Estado</th>
-                    <th>Responsável</th>
-                    <th>Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {incidentes.map(inc => (
-                    <tr key={inc.id}>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{inc.titulo}</div>
-                        {inc.descricao && (
-                          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                            {inc.descricao.length > 80 ? inc.descricao.slice(0, 80) + '…' : inc.descricao}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <span className={BADGE_SEVERIDADE[inc.severidade] || 'badge bg-secondary'}>
-                          {inc.severidade}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={BADGE_ESTADO_INC[inc.estado] || 'badge bg-secondary'}>
-                          {inc.estado}
-                        </span>
-                      </td>
-                      <td>{inc.responsavel?.nome || '—'}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        {inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
+              A carregar…
             </div>
-          )}
-        </div>
+          ) : incidentes.length === 0 ? (
+            <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
+              Sem incidentes registados.
+            </div>
+          ) : incidentes.map(inc => {
+            const sev = SEV[inc.severidade] || SEV['Médio'];
+            const sta = STA[inc.estado]     || STA['Aberto'];
+            return (
+              <div key={inc.id} className="dash-card incidente-card">
+                <div className="d-flex align-items-start gap-3">
+                  <div className="incidente-dot" style={{ backgroundColor: sev.dot, marginTop: 4 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                      <p className="incidente-nome">{inc.titulo}</p>
+                      <span className="badge-pill" style={{ background: sev.bg, color: sev.cor }}>{inc.severidade}</span>
+                      <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{inc.estado}</span>
+                    </div>
+                    {inc.descricao && <p className="incidente-descricao">{inc.descricao}</p>}
+                    <div className="d-flex flex-wrap gap-3">
+                      {inc.responsavel?.nome && <span className="incidente-data">Responsável: {inc.responsavel.nome}</span>}
+                      {inc.created_at && <span className="incidente-data">{new Date(inc.created_at).toLocaleDateString('pt-PT')}</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </>
       )}
 
       {/* TAB: Comunicação */}
@@ -500,7 +488,7 @@ function Ambiente() {
                   className="btn btn-primary d-flex align-items-center gap-1"
                   disabled={!novaMensagem.trim() || enviando}
                 >
-                  <FiSend size={15} />
+                  <Send size={15} />
                   {enviando ? '…' : 'Enviar'}
                 </button>
               </form>

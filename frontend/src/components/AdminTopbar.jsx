@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiHome, FiBell, FiLogOut } from 'react-icons/fi';
+import { Home, Bell, LogOut } from 'lucide-react';
 import './layout.css';
 
 const PAGE_TITLES = {
@@ -49,18 +49,18 @@ function AdminTopbar() {
 
       <div className="d-flex align-items-center gap-2">
         <button className="topbar-btn" title="Página Inicial" onClick={() => navigate('/')}>
-          <FiHome size={17} />
+          <Home size={17} />
         </button>
 
         <div className="topbar-bell">
           <button className="topbar-btn" title="Notificações">
-            <FiBell size={17} />
+            <Bell size={17} />
           </button>
           <span className="notif-badge">2</span>
         </div>
 
         <button className="topbar-btn logout" title="Sair" onClick={handleLogout}>
-          <FiLogOut size={15} />
+          <LogOut size={15} />
           <span>Sair</span>
         </button>
       </div>

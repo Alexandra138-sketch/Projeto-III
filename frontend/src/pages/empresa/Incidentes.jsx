@@ -15,6 +15,7 @@ import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
 // SweetAlert2 para feedback após submissão
 import Swal from 'sweetalert2';
+import { Plus, Search, AlertTriangle } from 'lucide-react';
 
 // Tipos de incidente baseados no template CNCS
 const TIPOS_INCIDENTE = [
@@ -23,20 +24,19 @@ const TIPOS_INCIDENTE = [
   'Força Bruta', 'Man-in-the-Middle', 'Zero-Day', 'Outro',
 ];
 
-// Cores dos badges de severidade
-const BADGE_SEVERIDADE = {
-  Crítico: 'badge bg-danger',
-  Alto:    'badge bg-warning text-dark',
-  Médio:   'badge bg-primary',
-  Baixo:   'badge bg-success',
+// Cores por severidade/estado
+const SEV = {
+  'Crítico': { dot: '#ef4444', bg: '#fee2e2', cor: '#dc2626' },
+  'Alto':    { dot: '#f97316', bg: '#ffedd5', cor: '#c2410c' },
+  'Médio':   { dot: '#f59e0b', bg: '#fef9c3', cor: '#ca8a04' },
+  'Baixo':   { dot: '#22c55e', bg: '#dcfce7', cor: '#16a34a' },
 };
 
-// Cores dos badges de estado
-const BADGE_ESTADO = {
-  Aberto:          'badge bg-danger',
-  'A Investigar':  'badge bg-warning text-dark',
-  Resolvido:       'badge bg-success',
-  Fechado:         'badge bg-secondary',
+const STA = {
+  'Aberto':       { bg: '#dbeafe', cor: '#2563eb' },
+  'A Investigar': { bg: '#fef9c3', cor: '#ca8a04' },
+  'Resolvido':    { bg: '#dcfce7', cor: '#16a34a' },
+  'Fechado':      { bg: '#f1f5f9', cor: '#64748b' },
 };
 
 // ── Formulário vazio para novo incidente ──
@@ -78,7 +78,9 @@ function ModalReportarIncidente({ onClose, onReportado }) {
       <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header bg-danger text-white">
-            <h5 className="modal-title">⚠ Reportar Incidente de Segurança</h5>
+            <h5 className="modal-title d-flex align-items-center gap-2">
+              <AlertTriangle size={18} /> Reportar Incidente de Segurança
+            </h5>
             <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
           </div>
           <form onSubmit={handleSubmit}>
@@ -164,15 +166,18 @@ function ModalReportarIncidente({ onClose, onReportado }) {
               </div>
 
               {/* Nota NIS2 */}
-              <div className="alert alert-warning mb-0">
-                <strong>⚠ Nota NIS2:</strong> Se este incidente for grave, as autoridades devem ser
-                notificadas em <strong>24 horas</strong> (alerta inicial) e <strong>72 horas</strong> (relatório
-                detalhado). O teu gestor irá verificar e tratar da notificação ao CNCS se necessário.
+              <div className="alert alert-warning mb-0 d-flex align-items-start gap-2">
+                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>
+                  <strong>Nota NIS2:</strong> Se este incidente for grave, as autoridades devem ser
+                  notificadas em <strong>24 horas</strong> (alerta inicial) e <strong>72 horas</strong> (relatório
+                  detalhado). O teu gestor irá verificar e tratar da notificação ao CNCS se necessário.
+                </span>
               </div>
 
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+              <button type="button" className="btn-cancelar" onClick={onClose}>Cancelar</button>
               <button type="submit" className="btn btn-danger" disabled={aEnviar}>
                 {aEnviar ? 'A submeter…' : 'Reportar Incidente'}
               </button>
@@ -226,8 +231,8 @@ function Incidentes() {
           <h4>Os Meus Incidentes</h4>
           <p>Acompanha e reporta incidentes de segurança da tua empresa.</p>
         </div>
-        <button className="btn btn-danger" onClick={() => setModalReportar(true)}>
-          ⚠ Reportar Incidente
+        <button className="btn-gradient" onClick={() => setModalReportar(true)}>
+          <Plus size={16} /> Reportar Incidente
         </button>
       </div>
 
@@ -253,33 +258,29 @@ function Incidentes() {
       )}
 
       {/* ── Filtros e pesquisa ── */}
-      <div className="dash-card mb-4">
-        <div className="row g-2">
-          <div className="col-12 col-md-5">
-            <input type="text" className="form-control"
+      <div className="dash-card filtros-bar mb-4">
+        <div className="d-flex flex-wrap gap-2 align-items-center">
+          <div className="pesquisa-wrapper">
+            <Search size={15} />
+            <input
               placeholder="Pesquisar por título…"
               value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} />
           </div>
-          <div className="col-6 col-md-3">
-            <select className="form-select" value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}>
-              <option value="">Todos os estados</option>
-              <option value="Aberto">Aberto</option>
-              <option value="A Investigar">A Investigar</option>
-              <option value="Resolvido">Resolvido</option>
-              <option value="Fechado">Fechado</option>
-            </select>
-          </div>
-          <div className="col-6 col-md-3">
-            <select className="form-select" value={filtroSev}
-              onChange={(e) => setFiltroSev(e.target.value)}>
-              <option value="">Todas as severidades</option>
-              <option value="Crítico">Crítico</option>
-              <option value="Alto">Alto</option>
-              <option value="Médio">Médio</option>
-              <option value="Baixo">Baixo</option>
-            </select>
-          </div>
+          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <option value="">Todos os estados</option>
+            <option value="Aberto">Aberto</option>
+            <option value="A Investigar">A Investigar</option>
+            <option value="Resolvido">Resolvido</option>
+            <option value="Fechado">Fechado</option>
+          </select>
+          <select value={filtroSev} onChange={(e) => setFiltroSev(e.target.value)}>
+            <option value="">Todas as severidades</option>
+            <option value="Crítico">Crítico</option>
+            <option value="Alto">Alto</option>
+            <option value="Médio">Médio</option>
+            <option value="Baixo">Baixo</option>
+          </select>
+          <span className="filtros-count ms-auto">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
@@ -287,70 +288,41 @@ function Incidentes() {
       {erro && <div className="alert alert-danger">{erro}</div>}
 
       {/* ── Tabela de incidentes ── */}
-      <div className="dash-card">
-        {carregando ? (
-          <p style={{ color: '#94a3b8' }}>A carregar incidentes…</p>
-        ) : filtrados.length === 0 ? (
-          <p style={{ color: '#94a3b8' }}>
-            {incidentes.length === 0 ? 'Ainda não tens incidentes registados.' : 'Nenhum resultado para os filtros aplicados.'}
-          </p>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Severidade</th>
-                  <th>Estado</th>
-                  <th>NIS2</th>
-                  <th>Responsável</th>
-                  <th>Data</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtrados.map((inc) => (
-                  <tr key={inc.id}>
-                    <td>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{inc.titulo}</p>
-                      {inc.descricao && (
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
-                          {inc.descricao.slice(0, 60)}…
-                        </p>
-                      )}
-                    </td>
-                    <td>
-                      <span className={BADGE_SEVERIDADE[inc.severidade] || 'badge bg-secondary'}>
-                        {inc.severidade}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={BADGE_ESTADO[inc.estado] || 'badge bg-secondary'}>
-                        {inc.estado}
-                      </span>
-                    </td>
-                    <td>
-                      {inc.nis2_notificado
-                        ? <span className="badge bg-info text-dark">Sim</span>
-                        : <span className="badge bg-light text-muted">Não</span>}
-                    </td>
-                    <td style={{ fontSize: '0.85rem' }}>{inc.responsavel?.nome || '—'}</td>
-                    <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                      {inc.created_at ? new Date(inc.created_at).toLocaleDateString('pt-PT') : '—'}
-                    </td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-secondary"
-                        onClick={() => setModalIncidente(inc)}>
-                        Ver
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {carregando ? (
+        <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
+          A carregar incidentes…
+        </div>
+      ) : filtrados.length === 0 ? (
+        <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
+          {incidentes.length === 0 ? 'Ainda não tens incidentes registados.' : 'Nenhum resultado para os filtros aplicados.'}
+        </div>
+      ) : filtrados.map((inc) => {
+        const sev = SEV[inc.severidade] || SEV['Médio'];
+        const sta = STA[inc.estado]     || STA['Aberto'];
+        return (
+          <div key={inc.id} className="dash-card incidente-card">
+            <div className="d-flex align-items-start gap-3">
+              <div className="incidente-dot" style={{ backgroundColor: sev.dot, marginTop: 4 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <p className="incidente-nome">{inc.titulo}</p>
+                  <span className="badge-pill" style={{ background: sev.bg, color: sev.cor }}>{inc.severidade}</span>
+                  <span className="badge-pill" style={{ background: sta.bg, color: sta.cor }}>{inc.estado}</span>
+                  {inc.nis2_notificado && (
+                    <span className="badge-pill" style={{ background: '#e0e7ff', color: '#4338ca' }}>NIS2</span>
+                  )}
+                </div>
+                {inc.descricao && <p className="incidente-descricao">{inc.descricao}</p>}
+                <div className="d-flex flex-wrap gap-3">
+                  {inc.responsavel?.nome && <span className="incidente-data">Responsável: {inc.responsavel.nome}</span>}
+                  {inc.created_at && <span className="incidente-data">{new Date(inc.created_at).toLocaleDateString('pt-PT')}</span>}
+                </div>
+              </div>
+              <button className="btn-editar" onClick={() => setModalIncidente(inc)}>Ver</button>
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })}
 
       {/* Modal de detalhe do incidente */}
       {modalIncidente && (
@@ -365,13 +337,19 @@ function Incidentes() {
                 <div className="row g-3">
                   <div className="col-6">
                     <strong>Severidade:</strong>{' '}
-                    <span className={BADGE_SEVERIDADE[modalIncidente.severidade] || 'badge bg-secondary'}>
+                    <span className="badge-pill" style={{
+                      background: (SEV[modalIncidente.severidade] || SEV['Médio']).bg,
+                      color: (SEV[modalIncidente.severidade] || SEV['Médio']).cor,
+                    }}>
                       {modalIncidente.severidade}
                     </span>
                   </div>
                   <div className="col-6">
                     <strong>Estado:</strong>{' '}
-                    <span className={BADGE_ESTADO[modalIncidente.estado] || 'badge bg-secondary'}>
+                    <span className="badge-pill" style={{
+                      background: (STA[modalIncidente.estado] || STA['Aberto']).bg,
+                      color: (STA[modalIncidente.estado] || STA['Aberto']).cor,
+                    }}>
                       {modalIncidente.estado}
                     </span>
                   </div>
@@ -408,7 +386,7 @@ function Incidentes() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setModalIncidente(null)}>
+                <button className="btn-cancelar" onClick={() => setModalIncidente(null)}>
                   Fechar
                 </button>
               </div>

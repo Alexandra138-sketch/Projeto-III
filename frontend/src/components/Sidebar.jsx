@@ -1,36 +1,36 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  FiGrid, FiBarChart2, FiUsers, FiBriefcase, FiFileText,
-  FiAlertTriangle, FiActivity, FiGlobe, FiLogOut, FiShield, FiLayers,
-} from 'react-icons/fi';
+  LayoutGrid, BarChart2, Users, Briefcase, FileText,
+  AlertTriangle, Activity, Globe, LogOut, Layers,
+} from 'lucide-react';
 import './layout.css';
 
 const ADMIN_LINKS = [
-  { to: '/admin',              label: 'Dashboard',           icon: FiGrid,          end: true },
-  { to: '/admin/analises',     label: 'Análises & Gráficos', icon: FiBarChart2 },
-  { to: '/admin/utilizadores', label: 'Utilizadores',        icon: FiUsers },
-  { to: '/admin/clientes',     label: 'Clientes',            icon: FiBriefcase },
-  { to: '/admin/documentos',   label: 'Documentos',          icon: FiFileText },
-  { to: '/admin/incidentes',   label: 'Incidentes',          icon: FiAlertTriangle },
-  { to: '/admin/logs',         label: 'Logs de Atividade',   icon: FiActivity },
-  { to: '/admin/conteudo',     label: 'Conteúdo do Site',    icon: FiGlobe },
+  { to: '/admin',              label: 'Dashboard',           icon: LayoutGrid,      end: true },
+  { to: '/admin/analises',     label: 'Análises & Gráficos', icon: BarChart2 },
+  { to: '/admin/utilizadores', label: 'Utilizadores',        icon: Users },
+  { to: '/admin/clientes',     label: 'Clientes',            icon: Briefcase },
+  { to: '/admin/documentos',   label: 'Documentos',          icon: FileText },
+  { to: '/admin/incidentes',   label: 'Incidentes',          icon: AlertTriangle },
+  { to: '/admin/logs',         label: 'Logs de Atividade',   icon: Activity },
+  { to: '/admin/conteudo',     label: 'Conteúdo do Site',    icon: Globe },
 ];
 
 const GESTOR_LINKS = [
-  { to: '/gestor',            label: 'Dashboard',           icon: FiGrid,          end: true },
-  { to: '/gestor/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
-  { to: '/gestor/clientes',   label: 'Clientes',            icon: FiBriefcase },
-  { to: '/gestor/documentos', label: 'Documentos',          icon: FiFileText },
-  { to: '/gestor/incidentes', label: 'Incidentes',          icon: FiAlertTriangle },
+  { to: '/gestor',            label: 'Dashboard',           icon: LayoutGrid,      end: true },
+  { to: '/gestor/analises',   label: 'Análises & Gráficos', icon: BarChart2 },
+  { to: '/gestor/clientes',   label: 'Clientes',            icon: Briefcase },
+  { to: '/gestor/documentos', label: 'Documentos',          icon: FileText },
+  { to: '/gestor/incidentes', label: 'Incidentes',          icon: AlertTriangle },
 ];
 
 const EMPRESA_LINKS = [
-  { to: '/empresa',            label: 'Dashboard',           icon: FiGrid,          end: true },
-  { to: '/empresa/ambiente',   label: 'Ambiente',            icon: FiLayers },
-  { to: '/empresa/analises',   label: 'Análises & Gráficos', icon: FiBarChart2 },
-  { to: '/empresa/incidentes', label: 'Incidentes',          icon: FiAlertTriangle },
-  { to: '/empresa/documentos', label: 'Os Meus Documentos',  icon: FiFileText },
+  { to: '/empresa',            label: 'Dashboard',           icon: LayoutGrid,      end: true },
+  { to: '/empresa/ambiente',   label: 'Ambiente',            icon: Layers },
+  { to: '/empresa/analises',   label: 'Análises & Gráficos', icon: BarChart2 },
+  { to: '/empresa/incidentes', label: 'Incidentes',          icon: AlertTriangle },
+  { to: '/empresa/documentos', label: 'Os Meus Documentos',  icon: FileText },
 ];
 
 const ROLE_LABELS = {
@@ -86,7 +86,7 @@ function Sidebar() {
           <span className="user-role">{roleLabel}</span>
               </div>
         <button className="sidebar-logout" onClick={handleLogout} title="Sair">
-          <FiLogOut size={16} />
+          <LogOut size={16} />
         </button>
       </div>
     </div>

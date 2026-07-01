@@ -439,9 +439,9 @@ function GestorClientePerfil() {
                 ))}
               </div>
 
-              {cliente.created_at && (
+              {(cliente.created_at || cliente.createdAt) && (
                 <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
-                  Cliente registado desde {new Date(cliente.created_at).toLocaleDateString('pt-PT')}
+                  Cliente registado desde {new Date(cliente.created_at || cliente.createdAt).toLocaleDateString('pt-PT')}
                 </p>
               )}
             </div>

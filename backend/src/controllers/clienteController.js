@@ -128,7 +128,10 @@ const cliente_detail = async (req, res) => {
       return res.status(403).json({ erro: 'Não tens permissão para ver este cliente.' });
     }
 
-    res.json(cliente);
+    // Serializar e garantir que created_at está sempre presente
+    const dados = cliente.toJSON();
+    dados.created_at = dados.created_at || dados.createdAt || null;
+    res.json(dados);
   } catch (err) {
     console.error('[Clientes] Erro ao obter detalhe:', err.message);
     res.status(500).json({ erro: 'Erro ao obter dados do cliente.' });
@@ -233,4 +236,6 @@ module.exports = {
   cliente_create,
   cliente_update,
   cliente_delete,
+};
+lete,
 };

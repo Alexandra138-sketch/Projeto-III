@@ -276,8 +276,8 @@ function ClientePerfil() {
   /* Campos calculados a partir dos dados da BD */
   const ativo    = cliente.estado === 'Ativo';
   const cor      = getCor(cliente.id);
-  const criadoEm = cliente.created_at
-    ? new Date(cliente.created_at).toLocaleDateString('pt-PT')
+  const criadoEm = (cliente.created_at || cliente.createdAt)
+    ? new Date(cliente.created_at || cliente.createdAt).toLocaleDateString('pt-PT')
     : '—';
   const respSeg  = cliente.responsavel_seguranca || null;
   const contPerm = cliente.contato_permanente    || null;

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Users, Mail, Phone, FileText,
-  AlertTriangle, MessageSquare, ChevronRight,
-  CheckCircle, XCircle, Loader, UserCog, X,
+  AlertTriangle, MessageSquare, CheckCircle, XCircle, UserCog, Loader,
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
@@ -27,58 +26,42 @@ function ModalAtribuirGestor({ cliente, gestores, onClose, onGuardar }) {
   };
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, zIndex: 1050, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabeçalho */}
-        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
           <div>
-            <h5 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Atribuir Gestor</h5>
+            <h5>Atribuir Gestor</h5>
             <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>{cliente.nome}</p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 }}>
-            <X size={20} />
-          </button>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
-        {/* Corpo */}
         <form onSubmit={handleSubmit}>
-          <div style={{ padding: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
-              Gestor Responsável
-            </label>
-            <select
-              value={gestorId}
-              onChange={(e) => setGestorId(e.target.value)}
-              style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#f8fafc' }}
-            >
-              <option value="">— Sem gestor atribuído —</option>
-              {gestores.map((g) => (
-                <option key={g.id} value={g.id}>{g.nome} ({g.email})</option>
-              ))}
-            </select>
+          <div className="modal-body">
+            <div className="mb-3">
+              <label className="form-label">Gestor Responsável</label>
+              <select
+                className="form-select"
+                value={gestorId}
+                onChange={(e) => setGestorId(e.target.value)}
+              >
+                <option value="">— Sem gestor atribuído —</option>
+                {gestores.map((g) => (
+                  <option key={g.id} value={g.id}>{g.nome} ({g.email})</option>
+                ))}
+              </select>
 
-            {/* Gestor atual */}
-            {cliente.gestor_nome && (
-              <p style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: '#64748b' }}>
-                Atual: <strong style={{ color: '#2563eb' }}>{cliente.gestor_nome}</strong>
-              </p>
-            )}
+              {cliente.gestor_nome && (
+                <p style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: '#64748b' }}>
+                  Atual: <strong style={{ color: '#2563eb' }}>{cliente.gestor_nome}</strong>
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Rodapé */}
-          <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <button type="button" onClick={onClose}
-              style={{ padding: '0.5rem 1.1rem', borderRadius: 8, border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
-              Cancelar
-            </button>
-            <button type="submit" disabled={a_guardar}
-              style={{ padding: '0.5rem 1.3rem', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: a_guardar ? 0.7 : 1 }}>
+          <div className="modal-footer">
+            <button type="button" className="btn-cancelar" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-guardar" disabled={a_guardar}>
               {a_guardar ? 'A guardar…' : 'Guardar'}
             </button>
           </div>
@@ -145,43 +128,46 @@ function AdminClientes() {
     <AdminLayout>
 
       {/* Cabeçalho */}
-      <div className="clientes-header">
+      <div className="incidentes-header">
         <div>
-          <h4 className="clientes-titulo">Gestão de Clientes</h4>
-          <p className="clientes-subtitulo">
-            {carregando ? 'A carregar…' : `${totalAtivos} cliente${totalAtivos !== 1 ? 's' : ''} ativo${totalAtivos !== 1 ? 's' : ''} · ${totalInativos} inativo${totalInativos !== 1 ? 's' : ''}`}
+          <h4 className="incidentes-titulo">Gestão de Clientes</h4>
+          <p className="incidentes-subtitulo">
+            {carregando ? 'A carregar…' : `${clientes.length} clientes · ${totalAtivos} ativos · ${totalInativos} inativos`}
           </p>
-        </div>
-        <div className="clientes-total-badge">
-          <Users size={16} />
-          {clientes.length} no total
         </div>
       </div>
 
+      {/* Cards de resumo */}
+      <div className="resumo-cards">
+        {[
+          { numero: carregando ? '…' : totalAtivos,     label: 'Ativos',   classe: 'card-aberto'  },
+          { numero: carregando ? '…' : totalInativos,   label: 'Inativos', classe: 'card-critico' },
+          { numero: carregando ? '…' : clientes.length, label: 'Total',    classe: 'card-total'   },
+        ].map(({ numero, label, classe }) => (
+          <div key={label} className={`resumo-card ${classe}`}>
+            <p className="resumo-numero">{numero}</p>
+            <p className="resumo-label">{label}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Filtros */}
-      <div className="d-flex flex-wrap gap-3 mb-4 align-items-center">
-        <div className="pesquisa-wrapper" style={{ flex: 1, minWidth: 220 }}>
-          <Search size={15} />
-          <input
-            placeholder="Pesquisar por nome ou e-mail..."
-            value={pesquisa}
-            onChange={(e) => setPesquisa(e.target.value)}
-          />
-        </div>
-        <div className="filtro-tabs">
-          {[
-            { k: 'all',      l: 'Todos'   },
-            { k: 'active',   l: 'Ativos'  },
-            { k: 'inactive', l: 'Inativos'},
-          ].map((opt) => (
-            <button
-              key={opt.k}
-              className={`filtro-tab ${filtroAtivo === opt.k ? 'ativo' : 'inativo-tab'}`}
-              onClick={() => setFiltroAtivo(opt.k)}
-            >
-              {opt.l}
-            </button>
-          ))}
+      <div className="dash-card filtros-bar">
+        <div className="d-flex flex-wrap gap-2 align-items-center">
+          <div className="pesquisa-wrapper">
+            <Search size={15} />
+            <input
+              placeholder="Pesquisar por nome ou e-mail…"
+              value={pesquisa}
+              onChange={(e) => setPesquisa(e.target.value)}
+            />
+          </div>
+          <select value={filtroAtivo} onChange={(e) => setFiltroAtivo(e.target.value)}>
+            <option value="all">Todos os estados</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+          </select>
+          <span className="filtros-count ms-auto">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
@@ -197,10 +183,13 @@ function AdminClientes() {
           <p style={{ margin: 0 }}>{erro}</p>
         </div>
       ) : filtrados.length === 0 ? (
-        <div className="dash-card" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-          {pesquisa
-            ? 'Nenhum cliente corresponde à pesquisa.'
-            : 'Ainda não existem clientes registados.'}
+        <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
+          <Users size={40} color="#e2e8f0" style={{ marginBottom: 12 }} />
+          <p style={{ margin: 0 }}>
+            {pesquisa
+              ? 'Nenhum cliente corresponde à pesquisa.'
+              : 'Ainda não existem clientes registados.'}
+          </p>
         </div>
       ) : (
         filtrados.map((c) => {
@@ -208,17 +197,23 @@ function AdminClientes() {
           const cor   = getCor(c.id);
 
           return (
-            <button
+            <div
               key={c.id}
-              className="cliente-card"
+              className="dash-card incidente-card"
+              style={{ cursor: 'pointer' }}
               onClick={() => navigate(`/admin/clientes/${c.id}`)}
             >
               <div className="d-flex align-items-start gap-3">
 
                 {/* Avatar */}
                 <div
-                  className="cliente-avatar"
-                  style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: ativo ? cor : '#94a3b8' }}
+                  style={{
+                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: ativo ? `${cor}1a` : '#f1f5f9',
+                    color: ativo ? cor : '#94a3b8',
+                    fontWeight: 700, fontSize: '0.8rem',
+                  }}
                 >
                   {c.nome.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
@@ -226,7 +221,7 @@ function AdminClientes() {
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
-                    <p className="cliente-nome">{c.nome}</p>
+                    <p className="incidente-nome">{c.nome}</p>
                     <span
                       className="badge-pill"
                       style={{ background: ativo ? '#dcfce7' : '#f1f5f9', color: ativo ? '#16a34a' : '#94a3b8' }}
@@ -242,51 +237,40 @@ function AdminClientes() {
                     )}
                   </div>
 
-                  <div className="d-flex flex-wrap gap-3 mb-2">
-                    {c.email    && <span className="perfil-meta"><Mail  size={12} /> {c.email}</span>}
-                    {c.telefone && <span className="perfil-meta"><Phone size={12} /> {c.telefone}</span>}
+                  <div className="d-flex flex-wrap gap-3">
+                    {c.email    && <span className="incidente-data"><Mail  size={12} /> {c.email}</span>}
+                    {c.telefone && <span className="incidente-data"><Phone size={12} /> {c.telefone}</span>}
+                    {c.gestor_nome
+                      ? <span className="incidente-data">Gestor: <strong style={{ color: '#2563eb' }}>{c.gestor_nome}</strong></span>
+                      : <span className="incidente-data" style={{ fontStyle: 'italic' }}>Sem gestor atribuído</span>}
+                    {c.created_at && <span className="incidente-data">Desde {new Date(c.created_at).toLocaleDateString('pt-PT')}</span>}
                   </div>
 
-                  <div className="d-flex flex-wrap gap-4">
+                  <div className="d-flex flex-wrap gap-4 mt-2">
                     {[
                       { Icone: FileText,      cor: '#3b82f6', val: c.total_documentos,  label: 'documentos' },
                       { Icone: AlertTriangle, cor: '#f97316', val: c.total_incidentes,  label: 'incidentes' },
                       { Icone: MessageSquare, cor: '#22c55e', val: c.total_mensagens,   label: 'mensagens'  },
                     ].map(({ Icone, cor: iconCor, val, label }) => (
-                      <span key={label} className="cliente-metrica">
-                        <Icone size={13} color={iconCor} />
-                        <strong>{val ?? 0}</strong> {label}
+                      <span key={label} className="incidente-data">
+                        <Icone size={13} color={iconCor} /> <strong>{val ?? 0}</strong> {label}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                {/* Gestor + botão atribuir + seta */}
-                <div className="d-none d-lg-flex flex-column align-items-end gap-1" style={{ flexShrink: 0, minWidth: 180 }}>
-                  <div className="text-end">
-                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Gestor responsável</p>
-                    {c.gestor_nome
-                      ? <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2563eb', margin: 0 }}>{c.gestor_nome}</p>
-                      : <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>Não atribuído</p>
-                    }
-                  </div>
+                {/* Ação: atribuir gestor */}
+                <div className="d-flex gap-2 flex-shrink-0">
                   <button
+                    className="btn-editar"
                     onClick={(e) => { e.stopPropagation(); setModalGestor(c); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0.25rem 0.65rem', borderRadius: 6, border: '1.5px solid #dbeafe', background: '#eff6ff', color: '#2563eb', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                     title="Atribuir / alterar gestor"
                   >
-                    <UserCog size={13} /> Atribuir gestor
+                    <UserCog size={13} /> Gestor
                   </button>
-                  {c.created_at && (
-                    <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>
-                      Desde {new Date(c.created_at).toLocaleDateString('pt-PT')}
-                    </p>
-                  )}
                 </div>
-
-                <ChevronRight size={18} color="#d1d5db" style={{ flexShrink: 0, marginTop: 2 }} />
               </div>
-            </button>
+            </div>
           );
         })
       )}

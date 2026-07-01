@@ -93,6 +93,55 @@ const utilizador_update = async (req, res) => {
   }
 };
 
+const meu_perfil_get = async (req, res) => {
+  try {
+    const utilizador = await Utilizador.findByPk(req.utilizador.id, {
+      attributes: { exclude: ['password'] },
+    });
+    if (!utilizador) return res.status(404).json({ erro: 'Não encontrado' });
+    res.json(utilizador);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+};
+
+const meu_perfil_update = async (req, res) => {
+  try {
+    const utilizador = await Utilizador.findByPk(req.utilizador.id);
+    if (!utilizador) return res.status(404).json({ erro: 'Não encontrado' });
+
+    const { nome, email, telefone, password_atual, password_nova } = req.body;
+
+    const campos = {};
+    if (nome     !== undefined) campos.nome     = nome;
+    if (telefone !== undefined) campos.telefone = telefone;
+
+    if (email !== undefined && email !== utilizador.email) {
+      const existe = await Utilizador.findOne({ where: { email } });
+      if (existe) return res.status(400).json({ erro: 'Já existe um utilizador com este e-mail.' });
+      campos.email = email;
+    }
+
+    if (password_nova) {
+      if (!password_atual) {
+        return res.status(400).json({ erro: 'Introduz a password atual para a alterar.' });
+      }
+      const correta = await bcrypt.compare(password_atual, utilizador.password);
+      if (!correta) return res.status(401).json({ erro: 'Password atual incorreta.' });
+      campos.password = await bcrypt.hash(password_nova, 10);
+    }
+
+    await utilizador.update(campos);
+
+    const atualizado = await Utilizador.findByPk(req.utilizador.id, {
+      attributes: { exclude: ['password'] },
+    });
+    res.json(atualizado);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+};
+
 const utilizador_delete = async (req, res) => {
   try {
     const utilizador = await Utilizador.findByPk(req.params.id);
@@ -110,4 +159,6 @@ module.exports = {
   utilizador_create,
   utilizador_update,
   utilizador_delete,
+  meu_perfil_get,
+  meu_perfil_update,
 };

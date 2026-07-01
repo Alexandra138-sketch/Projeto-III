@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, Bell, LogOut } from 'lucide-react';
+import { Home, Bell, LogOut, User } from 'lucide-react';
+import ModalPerfil from './ModalPerfil';
 import './layout.css';
 
 const PAGE_TITLES = {
@@ -31,6 +33,7 @@ function AdminTopbar() {
   const { utilizador, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [modalPerfil, setModalPerfil] = useState(false);
 
   const pageTitle = PAGE_TITLES[location.pathname] || 'Painel';
   const areaLabel = `CyberBoxSecur — ${AREA_LABELS[utilizador?.perfil] || 'Painel'}`;
@@ -52,6 +55,10 @@ function AdminTopbar() {
           <Home size={17} />
         </button>
 
+        <button className="topbar-btn" title="O Meu Perfil" onClick={() => setModalPerfil(true)}>
+          <User size={17} />
+        </button>
+
         <div className="topbar-bell">
           <button className="topbar-btn" title="Notificações">
             <Bell size={17} />
@@ -64,6 +71,8 @@ function AdminTopbar() {
           <span>Sair</span>
         </button>
       </div>
+
+      {modalPerfil && <ModalPerfil onClose={() => setModalPerfil(false)} />}
     </header>
   );
 }

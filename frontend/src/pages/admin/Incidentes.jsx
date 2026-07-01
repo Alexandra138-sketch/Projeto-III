@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Shield } from 'lucide-react';
+import { Plus, Search, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import api from '../../api/axios';
@@ -20,7 +20,7 @@ const STA = {
   'Fechado':      { label: 'Fechado',      bg: '#f1f5f9', cor: '#64748b' },
 };
 
-function ModalIncidente({ incidente, onClose, onGuardar }) {
+function ModalIncidente({ incidente, clientes, onClose, onGuardar }) {
   const { utilizador } = useAuth();
   const [form, setForm] = useState({
     titulo:         incidente?.titulo         || '',
@@ -28,6 +28,7 @@ function ModalIncidente({ incidente, onClose, onGuardar }) {
     estado:         incidente?.estado         || 'Aberto',
     descricao:      incidente?.descricao      || '',
     nis2_notificado: incidente?.nis2_notificado || false,
+    cliente_id:     incidente?.cliente_id     || '',
   });
   const [a_guardar, setAGuardar] = useState(false);
 
@@ -85,6 +86,20 @@ function ModalIncidente({ incidente, onClose, onGuardar }) {
               </div>
             </div>
             <div className="mb-3">
+              <label className="form-label">Cliente *</label>
+              <select
+                required
+                className="form-select"
+                value={form.cliente_id}
+                onChange={(e) => setForm({ ...form, cliente_id: e.target.value })}
+              >
+                <option value="">— Selecionar cliente —</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-3">
               <label className="form-label">Descrição *</label>
               <textarea
                 required
@@ -122,20 +137,53 @@ function ModalIncidente({ incidente, onClose, onGuardar }) {
   );
 }
 
+function ModalConfirmar({ titulo, onConfirmar, onCancelar }) {
+  return (
+    <div className="modal-overlay" onClick={onCancelar}>
+      <div className="modal-box" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h5>Eliminar Incidente</h5>
+          <button className="modal-close" onClick={onCancelar}>×</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>
+            Tem a certeza que pretende eliminar o incidente <strong>"{titulo}"</strong>?
+            Esta ação não pode ser revertida.
+          </p>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-cancelar" onClick={onCancelar}>Cancelar</button>
+          <button className="btn-guardar" style={{ background: '#ef4444' }} onClick={onConfirmar}>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminIncidentes() {
   const [incidentes,   setIncidentes]   = useState([]);
+  const [clientes,     setClientes]     = useState([]);
   const [carregando,   setCarregando]   = useState(true);
   const [pesquisa,     setPesquisa]     = useState('');
   const [filtroSev,    setFiltroSev]    = useState('all');
   const [filtroEstado, setFiltroEstado] = useState('all');
   const [modal,        setModal]        = useState(undefined);
+  const [aEliminar,    setAEliminar]    = useState(null);
 
-  // ── Carregar incidentes reais da BD ──
+  // ── Carregar incidentes e clientes reais da BD ──
   useEffect(() => {
     setCarregando(true);
-    api.get('/incidentes')
-      .then(({ data }) => setIncidentes(Array.isArray(data) ? data : []))
-      .catch(() => setIncidentes([]))
+    Promise.all([api.get('/incidentes'), api.get('/clientes')])
+      .then(([resIncidentes, resClientes]) => {
+        setIncidentes(Array.isArray(resIncidentes.data) ? resIncidentes.data : []);
+        setClientes(Array.isArray(resClientes.data) ? resClientes.data : []);
+      })
+      .catch(() => {
+        setIncidentes([]);
+        setClientes([]);
+      })
       .finally(() => setCarregando(false));
   }, []);
 
@@ -163,11 +211,23 @@ function AdminIncidentes() {
         const { data } = await api.post('/incidentes/create', dados);
         setIncidentes((prev) => [data, ...prev]);
       }
-    } catch {
-      // Se a API falhar, recarregar da BD para manter consistência
-      api.get('/incidentes').then(({ data }) => setIncidentes(Array.isArray(data) ? data : []));
+      setModal(undefined);
+    } catch (err) {
+      alert(err?.response?.data?.erro || 'Erro ao guardar incidente. Verifica os campos obrigatórios.');
     }
-    setModal(undefined);
+  };
+
+  // ── Eliminar incidente via API ──
+  const handleEliminar = async () => {
+    if (!aEliminar) return;
+    try {
+      await api.delete(`/incidentes/delete/${aEliminar.id}`);
+      setIncidentes((prev) => prev.filter((i) => i.id !== aEliminar.id));
+      setAEliminar(null);
+    } catch (err) {
+      console.error('Erro ao eliminar incidente:', err);
+      alert(err?.response?.data?.erro || 'Erro ao eliminar incidente.');
+    }
   };
 
   return (
@@ -274,7 +334,16 @@ function AdminIncidentes() {
                   )}
                 </div>
               </div>
-              <button className="btn-editar" onClick={() => setModal(inc)}>Editar</button>
+              <div className="d-flex gap-2 flex-shrink-0">
+                <button className="btn-editar" onClick={() => setModal(inc)}>Editar</button>
+                <button
+                  onClick={() => setAEliminar(inc)}
+                  style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 8, padding: '0.35rem 0.6rem', cursor: 'pointer' }}
+                  title="Eliminar"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -291,8 +360,17 @@ function AdminIncidentes() {
       {modal !== undefined && (
         <ModalIncidente
           incidente={modal}
+          clientes={clientes}
           onClose={() => setModal(undefined)}
           onGuardar={handleGuardar}
+        />
+      )}
+
+      {aEliminar && (
+        <ModalConfirmar
+          titulo={aEliminar.titulo}
+          onConfirmar={handleEliminar}
+          onCancelar={() => setAEliminar(null)}
         />
       )}
     </AdminLayout>

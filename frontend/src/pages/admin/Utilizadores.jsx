@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import {
   Plus, Search, Eye, Edit2, ToggleLeft, ToggleRight,
-  X, Check, User, Mail, Phone, Shield, Info,
+  X, Check, User, Mail, Phone, Shield, Info, Users, Loader,
 } from 'lucide-react';
 
 /* ── helpers ── */
@@ -32,13 +32,7 @@ const getDate = (u) => {
 /* ── badge components ── */
 function PerfilBadge({ perfil }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center',
-      padding: '3px 10px', borderRadius: 20,
-      fontSize: 12, fontWeight: 600,
-      background: PERFIL_BG[perfil] || '#f1f5f9',
-      color: PERFIL_COLOR[perfil] || '#64748b',
-    }}>
+    <span className="badge-pill" style={{ background: PERFIL_BG[perfil] || '#f1f5f9', color: PERFIL_COLOR[perfil] || '#64748b' }}>
       {PERFIL_LABEL[perfil] || perfil}
     </span>
   );
@@ -47,44 +41,22 @@ function PerfilBadge({ perfil }) {
 function EstadoBadge({ estado }) {
   const ok = estado === 'Ativo';
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      padding: '3px 10px', borderRadius: 20,
-      fontSize: 12, fontWeight: 600,
-      background: ok ? '#dcfce7' : '#fee2e2',
-      color: ok ? '#16a34a' : '#dc2626',
-    }}>
-      {ok ? <Check size={11} /> : <X size={11} />}
-      {estado || 'Ativo'}
+    <span className="badge-pill" style={{ background: ok ? '#dcfce7' : '#fee2e2', color: ok ? '#16a34a' : '#dc2626' }}>
+      {ok ? <Check size={11} /> : <X size={11} />} {estado || 'Ativo'}
     </span>
   );
 }
 
-/* ── modal ── */
+/* ── modal base ── */
 function Modal({ title, onClose, children }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.45)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }} onClick={onClose}>
-      <div style={{
-        background: '#fff', borderRadius: 14, width: 480, maxWidth: '95vw',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-        overflow: 'hidden',
-      }} onClick={e => e.stopPropagation()}>
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '1.1rem 1.4rem',
-          borderBottom: '1px solid #f1f5f9',
-        }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{title}</h3>
-          <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#94a3b8', padding: 4,
-          }}><X size={18} /></button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h5>{title}</h5>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
-        <div style={{ padding: '1.4rem', maxHeight: '75vh', overflowY: 'auto' }}>{children}</div>
+        <div className="modal-body">{children}</div>
       </div>
     </div>
   );
@@ -259,179 +231,166 @@ function FormModal({ utilizador, onClose, onSaved }) {
   ];
 
   return (
-    <Modal title={isEdit ? 'Editar Utilizador' : 'Novo Utilizador'} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-        {fields.map(({ id, label, type, icon: Icon, placeholder }) => (
-          <label key={id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{label}</span>
-            <div style={{ position: 'relative' }}>
-              <Icon size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h5>{isEdit ? 'Editar Utilizador' : 'Novo Utilizador'}</h5>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+
+        <div className="modal-body">
+          {fields.map(({ id, label, type, icon: Icon, placeholder }) => (
+            <div className="mb-3" key={id}>
+              <label className="form-label"><Icon size={13} style={{ marginRight: 5, verticalAlign: -2 }} />{label}</label>
               <input
                 type={type}
+                className="form-input"
                 value={form[id]}
                 onChange={e => set(id, e.target.value)}
                 placeholder={placeholder}
-                style={{
-                  width: '100%', boxSizing: 'border-box',
-                  padding: '0.55rem 0.75rem 0.55rem 2rem',
-                  border: '1px solid #e2e8f0', borderRadius: 8,
-                  fontSize: 13, color: '#0f172a', outline: 'none',
-                  background: '#f8fafc',
-                }}
               />
             </div>
-          </label>
-        ))}
+          ))}
 
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Perfil</span>
-          <select
-            value={form.perfil}
-            onChange={e => set('perfil', e.target.value)}
-            style={{
-              padding: '0.55rem 0.75rem', border: '1px solid #e2e8f0',
-              borderRadius: 8, fontSize: 13, color: '#0f172a',
-              background: '#f8fafc', outline: 'none',
-            }}
-          >
-            <option value="admin">Administrador</option>
-            <option value="gestor">Gestor</option>
-            <option value="empresa">Empresa / Cliente</option>
-          </select>
-        </label>
-
-        {/* aviso quando perfil = empresa */}
-        {form.perfil === 'empresa' && !isEdit && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 8,
-            padding: '0.65rem 0.9rem', borderRadius: 8,
-            background: '#eff6ff', border: '1px solid #bfdbfe',
-          }}>
-            <Info size={14} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }} />
-            <p style={{ margin: 0, fontSize: 12, color: '#1d4ed8', lineHeight: 1.5 }}>
-              Será criada automaticamente uma <strong>empresa cliente</strong> com o nome, email e telefone indicados. O utilizador poderá entrar na área de empresa.
-            </p>
+          <div className="mb-3">
+            <label className="form-label">Perfil</label>
+            <select className="form-select" value={form.perfil} onChange={e => set('perfil', e.target.value)}>
+              <option value="admin">Administrador</option>
+              <option value="gestor">Gestor</option>
+              <option value="empresa">Empresa / Cliente</option>
+            </select>
           </div>
-        )}
 
-        {/* Campos extra de contacto — ao criar OU editar utilizador empresa */}
-        {form.perfil === 'empresa' && (
-          <div style={{
-            padding: '0.9rem', borderRadius: 8,
-            background: '#f8fafc', border: '1px solid #e2e8f0',
-            display: 'flex', flexDirection: 'column', gap: '0.65rem',
-          }}>
-            {/* Responsável de Segurança */}
-            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Responsável de Segurança
-            </p>
-            {[
-              { id: 'resp_seguranca_nome',     label: 'Nome',     type: 'text',  ph: 'ex. Maria Santos'  },
-              { id: 'resp_seguranca_email',    label: 'E-mail',   type: 'email', ph: 'maria@empresa.pt'  },
-              { id: 'resp_seguranca_telefone', label: 'Telefone', type: 'text',  ph: '+351 912 000 000'  },
-            ].map(({ id, label, type, ph }) => (
-              <label key={id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{label}</span>
-                <input
-                  type={type}
-                  value={form[id]}
-                  onChange={e => set(id, e.target.value)}
-                  placeholder={ph}
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    padding: '0.45rem 0.65rem',
-                    border: '1px solid #e2e8f0', borderRadius: 7,
-                    fontSize: 13, color: '#0f172a', outline: 'none', background: '#fff',
-                  }}
-                />
-              </label>
-            ))}
-
-            {/* Contacto Permanente */}
-            <p style={{ margin: '0.25rem 0 0', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Contacto Permanente
-            </p>
-            {[
-              { id: 'contacto_perm_nome',      label: 'Nome',     type: 'text',  ph: 'ex. Pedro Costa'   },
-              { id: 'contacto_perm_email',     label: 'E-mail',   type: 'email', ph: 'pedro@empresa.pt'  },
-              { id: 'contacto_perm_telefone',  label: 'Telefone', type: 'text',  ph: '+351 913 000 000'  },
-            ].map(({ id, label, type, ph }) => (
-              <label key={id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{label}</span>
-                <input
-                  type={type}
-                  value={form[id]}
-                  onChange={e => set(id, e.target.value)}
-                  placeholder={ph}
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    padding: '0.45rem 0.65rem',
-                    border: '1px solid #e2e8f0', borderRadius: 7,
-                    fontSize: 13, color: '#0f172a', outline: 'none', background: '#fff',
-                  }}
-                />
-              </label>
-            ))}
-          </div>
-        )}
-
-        {/* password gerada automaticamente — só ao criar */}
-        {!isEdit && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>
-              Password gerada automaticamente
-            </span>
+          {/* aviso quando perfil = empresa */}
+          {form.perfil === 'empresa' && !isEdit && (
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '0.5rem 0.75rem',
-              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              padding: '0.65rem 0.9rem', borderRadius: 8, marginBottom: '0.9rem',
+              background: '#eff6ff', border: '1px solid #bfdbfe',
             }}>
-              <Shield size={14} color="#16a34a" style={{ flexShrink: 0 }} />
-              <code style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: '#15803d', letterSpacing: '0.05em', userSelect: 'all' }}>
-                {form.password}
-              </code>
-              <button onClick={copiar} title="Copiar" style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: copied ? '#16a34a' : '#64748b', padding: '2px 4px', fontSize: 11, fontWeight: 600,
-              }}>
-                {copied ? '✓ Copiado' : 'Copiar'}
-              </button>
-              <button onClick={regenerar} title="Gerar nova" style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#64748b', padding: '2px 4px', fontSize: 11, fontWeight: 600,
-              }}>
-                ↻ Nova
-              </button>
+              <Info size={14} color="#2563eb" style={{ marginTop: 2, flexShrink: 0 }} />
+              <p style={{ margin: 0, fontSize: 12, color: '#1d4ed8', lineHeight: 1.5 }}>
+                Será criada automaticamente uma <strong>empresa cliente</strong> com o nome, email e telefone indicados. O utilizador poderá entrar na área de empresa.
+              </p>
             </div>
-            <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>
-              Copia esta password antes de criar — não será mostrada novamente.
+          )}
+
+          {/* Campos extra de contacto — ao criar OU editar utilizador empresa */}
+          {form.perfil === 'empresa' && (
+            <div style={{
+              padding: '0.9rem', borderRadius: 8, marginBottom: '0.9rem',
+              background: '#f8fafc', border: '1px solid #e2e8f0',
+              display: 'flex', flexDirection: 'column', gap: '0.65rem',
+            }}>
+              {/* Responsável de Segurança */}
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Responsável de Segurança
+              </p>
+              {[
+                { id: 'resp_seguranca_nome',     label: 'Nome',     type: 'text',  ph: 'ex. Maria Santos'  },
+                { id: 'resp_seguranca_email',    label: 'E-mail',   type: 'email', ph: 'maria@empresa.pt'  },
+                { id: 'resp_seguranca_telefone', label: 'Telefone', type: 'text',  ph: '+351 912 000 000'  },
+              ].map(({ id, label, type, ph }) => (
+                <div key={id}>
+                  <label className="form-label">{label}</label>
+                  <input
+                    type={type}
+                    className="form-input"
+                    value={form[id]}
+                    onChange={e => set(id, e.target.value)}
+                    placeholder={ph}
+                  />
+                </div>
+              ))}
+
+              {/* Contacto Permanente */}
+              <p style={{ margin: '0.25rem 0 0', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Contacto Permanente
+              </p>
+              {[
+                { id: 'contacto_perm_nome',      label: 'Nome',     type: 'text',  ph: 'ex. Pedro Costa'   },
+                { id: 'contacto_perm_email',     label: 'E-mail',   type: 'email', ph: 'pedro@empresa.pt'  },
+                { id: 'contacto_perm_telefone',  label: 'Telefone', type: 'text',  ph: '+351 913 000 000'  },
+              ].map(({ id, label, type, ph }) => (
+                <div key={id}>
+                  <label className="form-label">{label}</label>
+                  <input
+                    type={type}
+                    className="form-input"
+                    value={form[id]}
+                    onChange={e => set(id, e.target.value)}
+                    placeholder={ph}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* password gerada automaticamente — só ao criar */}
+          {!isEdit && (
+            <div className="mb-3">
+              <label className="form-label">Password gerada automaticamente</label>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '0.5rem 0.75rem',
+                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              }}>
+                <Shield size={14} color="#16a34a" style={{ flexShrink: 0 }} />
+                <code style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: '#15803d', letterSpacing: '0.05em', userSelect: 'all' }}>
+                  {form.password}
+                </code>
+                <button onClick={copiar} title="Copiar" style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: copied ? '#16a34a' : '#64748b', padding: '2px 4px', fontSize: 11, fontWeight: 600,
+                }}>
+                  {copied ? '✓ Copiado' : 'Copiar'}
+                </button>
+                <button onClick={regenerar} title="Gerar nova" style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#64748b', padding: '2px 4px', fontSize: 11, fontWeight: 600,
+                }}>
+                  ↻ Nova
+                </button>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#94a3b8' }}>
+                Copia esta password antes de criar — não será mostrada novamente.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <p style={{ margin: 0, fontSize: 12, color: '#dc2626', background: '#fef2f2', padding: '0.5rem 0.75rem', borderRadius: 7 }}>
+              {error}
             </p>
-          </div>
-        )}
+          )}
+        </div>
 
-        {error && (
-          <p style={{ margin: 0, fontSize: 12, color: '#dc2626', background: '#fef2f2', padding: '0.5rem 0.75rem', borderRadius: 7 }}>
-            {error}
-          </p>
-        )}
-
-        <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: 4 }}>
-          <button onClick={onClose} style={{
-            padding: '0.55rem 1.1rem', borderRadius: 8,
-            border: '1px solid #e2e8f0', background: '#fff',
-            color: '#64748b', fontSize: 13, cursor: 'pointer', fontWeight: 500,
-          }}>Cancelar</button>
-          <button onClick={handleSubmit} disabled={saving} style={{
-            padding: '0.55rem 1.3rem', borderRadius: 8,
-            border: 'none', background: '#2563eb',
-            color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 600,
-            opacity: saving ? 0.7 : 1,
-          }}>
+        <div className="modal-footer">
+          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
+          <button className="btn-guardar" disabled={saving} onClick={handleSubmit}>
             {saving ? 'A guardar…' : (isEdit ? 'Guardar' : 'Criar')}
           </button>
         </div>
       </div>
-    </Modal>
+    </div>
+  );
+}
+
+/* small icon button */
+function ActionBtn({ title, onClick, color = '#64748b', children }) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      style={{
+        width: 28, height: 28,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: 7, border: 'none',
+        background: '#f1f5f9', cursor: 'pointer', color,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -488,211 +447,133 @@ export default function Utilizadores() {
     todos:    utilizadores.length,
     gestores: utilizadores.filter(u => u.perfil === 'gestor').length,
     empresas: utilizadores.filter(u => u.perfil === 'empresa').length,
+    admins:   utilizadores.filter(u => u.perfil === 'admin').length,
   };
 
   return (
     <AdminLayout>
-    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      {/* ── header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+
+      {/* Cabeçalho */}
+      <div className="incidentes-header">
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a' }}>
-            Gestão de Utilizadores
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
-            {utilizadores.length} utilizador{utilizadores.length !== 1 ? 'es' : ''} registado{utilizadores.length !== 1 ? 's' : ''}
+          <h4 className="incidentes-titulo">Gestão de Utilizadores</h4>
+          <p className="incidentes-subtitulo">
+            {loading ? 'A carregar…' : `${utilizadores.length} utilizador${utilizadores.length !== 1 ? 'es' : ''} registado${utilizadores.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button
-          onClick={() => setFormModal('new')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '0.6rem 1.2rem', borderRadius: 10,
-            border: 'none', background: '#2563eb',
-            color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(37,99,235,0.35)',
-          }}
-        >
+        <button className="btn-gradient" onClick={() => setFormModal('new')}>
           <Plus size={16} /> Novo Utilizador
         </button>
       </div>
 
-      {/* ── toolbar ── */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        {/* search */}
-        <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: 460 }}>
-          <Search size={15} style={{
-            position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8',
-          }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Pesquisar por nome ou e-mail…"
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              padding: '0.58rem 0.85rem 0.58rem 2.1rem',
-              border: '1px solid #e2e8f0', borderRadius: 10,
-              fontSize: 13.5, color: '#0f172a', outline: 'none',
-              background: '#fff',
-            }}
-          />
-        </div>
+      {/* Cards de resumo */}
+      <div className="resumo-cards">
+        {[
+          { numero: loading ? '…' : counts.gestores, label: 'Gestores', classe: 'card-aberto'  },
+          { numero: loading ? '…' : counts.empresas, label: 'Empresas', classe: 'card-nis2'    },
+          { numero: loading ? '…' : counts.admins,   label: 'Admins',   classe: 'card-critico' },
+          { numero: loading ? '…' : counts.todos,    label: 'Total',    classe: 'card-total'   },
+        ].map(({ numero, label, classe }) => (
+          <div key={label} className={`resumo-card ${classe}`}>
+            <p className="resumo-numero">{numero}</p>
+            <p className="resumo-label">{label}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* filter tabs */}
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[
-            { key: 'todos',    label: 'Todos' },
-            { key: 'gestores', label: 'Gestores' },
-            { key: 'empresas', label: 'Empresas' },
-          ].map(({ key, label }) => {
-            const active = filtro === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setFiltro(key)}
-                style={{
-                  padding: '0.5rem 1rem', borderRadius: 9,
-                  border: active ? 'none' : '1px solid #e2e8f0',
-                  background: active ? '#2563eb' : '#fff',
-                  color: active ? '#fff' : '#475569',
-                  fontSize: 13, fontWeight: active ? 600 : 500,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {label} ({counts[key] ?? 0})
-              </button>
-            );
-          })}
+      {/* Filtros */}
+      <div className="dash-card filtros-bar">
+        <div className="d-flex flex-wrap gap-2 align-items-center">
+          <div className="pesquisa-wrapper">
+            <Search size={15} />
+            <input
+              placeholder="Pesquisar por nome ou e-mail…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <select value={filtro} onChange={e => setFiltro(e.target.value)}>
+            <option value="todos">Todos os perfis ({counts.todos})</option>
+            <option value="gestores">Gestores ({counts.gestores})</option>
+            <option value="empresas">Empresas ({counts.empresas})</option>
+          </select>
+          <span className="filtros-count ms-auto">{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
-      {/* ── table ── */}
-      <div style={{
-        background: '#fff', borderRadius: 14,
-        border: '1px solid #e2e8f0',
-        overflow: 'hidden',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      }}>
-        {/* table header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '2.5fr 1.8fr 1fr 1fr 1.2fr 1fr',
-          padding: '0.7rem 1.2rem',
-          borderBottom: '1px solid #f1f5f9',
-          background: '#f8fafc',
-        }}>
-          {['UTILIZADOR', 'CONTACTO', 'PERFIL', 'ESTADO', 'CRIADO EM', 'AÇÕES'].map(col => (
-            <span key={col} style={{
-              fontSize: 11, fontWeight: 700, color: '#94a3b8',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-            }}>
-              {col}
-            </span>
-          ))}
+      {/* Estados: a carregar / vazio / lista */}
+      {loading ? (
+        <div className="dash-card" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+          <Loader size={28} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
+          <p style={{ margin: 0 }}>A carregar utilizadores…</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="dash-card" style={{ textAlign: 'center', padding: '2.5rem', color: '#94a3b8' }}>
+          <Users size={40} color="#e2e8f0" style={{ marginBottom: 12 }} />
+          <p style={{ margin: 0 }}>Nenhum utilizador encontrado.</p>
+        </div>
+      ) : (
+        filtered.map((u) => {
+          const bg = avatarColor(u.nome);
+          const isAdmin = u.perfil === 'admin';
+          return (
+            <div key={u.id} className="dash-card incidente-card">
+              <div className="d-flex align-items-start gap-3">
 
-        {/* rows */}
-        {loading ? (
-          <div style={{ padding: '2.5rem', textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
-            A carregar…
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: '2.5rem', textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
-            Nenhum utilizador encontrado.
-          </div>
-        ) : (
-          filtered.map((u, i) => {
-            const bg = avatarColor(u.nome);
-            const isAdmin = u.perfil === 'admin';
-            return (
-              <div
-                key={u.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2.5fr 1.8fr 1fr 1fr 1.2fr 1fr',
-                  padding: '0.85rem 1.2rem',
-                  alignItems: 'center',
-                  borderBottom: i < filtered.length - 1 ? '1px solid #f8fafc' : 'none',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = '#fafbfd'}
-                onMouseLeave={e => e.currentTarget.style.background = ''}
-              >
-                {/* user */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: bg, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', color: '#fff',
-                    fontSize: 14, fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {initials(u.nome)}
+                {/* Avatar */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                  background: bg, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', color: '#fff',
+                  fontSize: 14, fontWeight: 700,
+                }}>
+                  {initials(u.nome)}
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <p className="incidente-nome">{u.nome}</p>
+                    <PerfilBadge perfil={u.perfil} />
+                    <EstadoBadge estado={u.estado} />
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: 13.5, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {u.nome}
-                    </p>
-                    <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>{u.email}</p>
+
+                  <div className="d-flex flex-wrap gap-3">
+                    <span className="incidente-data"><Mail size={12} /> {u.email}</span>
+                    {u.telefone && <span className="incidente-data"><Phone size={12} /> {u.telefone}</span>}
+                    <span className="incidente-data">Criado em {getDate(u)}</span>
                   </div>
                 </div>
 
-                {/* contacto */}
-                <div>
-                  <p style={{ margin: 0, fontSize: 13, color: '#334155' }}>{u.telefone || '—'}</p>
-                </div>
-
-                {/* perfil */}
-                <div>
-                  <PerfilBadge perfil={u.perfil} />
-                </div>
-
-                {/* estado */}
-                <div>
-                  <EstadoBadge estado={u.estado} />
-                </div>
-
-                {/* criado em */}
-                <div>
-                  <span style={{ fontSize: 13, color: '#64748b' }}>
-                    {getDate(u)}
-                  </span>
-                </div>
-
-                {/* ações */}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {/* view */}
+                {/* Ações */}
+                <div className="d-flex gap-2 flex-shrink-0">
                   <ActionBtn title="Ver detalhes" onClick={() => setViewModal(u)}>
                     <Eye size={14} />
                   </ActionBtn>
 
-                  {/* edit (not admin) */}
                   {!isAdmin && (
                     <ActionBtn title="Editar" onClick={() => setFormModal(u)}>
                       <Edit2 size={14} />
                     </ActionBtn>
                   )}
 
-                  {/* toggle estado (not admin) */}
                   {!isAdmin && (
                     <ActionBtn
                       title={u.estado === 'Ativo' ? 'Desativar' : 'Ativar'}
                       onClick={() => toggleEstado(u)}
                       color={u.estado === 'Ativo' ? '#16a34a' : '#dc2626'}
                     >
-                      {u.estado === 'Ativo'
-                        ? <ToggleRight size={16} />
-                        : <ToggleLeft size={16} />}
+                      {u.estado === 'Ativo' ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                     </ActionBtn>
                   )}
                 </div>
               </div>
-            );
-          })
-        )}
-      </div>
+            </div>
+          );
+        })
+      )}
 
-      {/* ── modals ── */}
+      {/* Modais */}
       {viewModal && (
         <DetalheModal utilizador={viewModal} onClose={() => setViewModal(null)} />
       )}
@@ -711,28 +592,7 @@ export default function Utilizadores() {
           }}
         />
       )}
-    </div>
-    </AdminLayout>
-  );
-}
 
-/* small icon button */
-function ActionBtn({ title, onClick, color = '#64748b', children }) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      style={{
-        width: 30, height: 30,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderRadius: 7, border: '1px solid #e2e8f0',
-        background: '#fff', cursor: 'pointer', color,
-        transition: 'all 0.15s',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-    >
-      {children}
-    </button>
+    </AdminLayout>
   );
 }
